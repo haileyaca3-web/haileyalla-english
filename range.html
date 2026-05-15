@@ -13,7 +13,7 @@
     <div class="top-bar with-back">
       <button class="back-btn" onclick="window.location.href='home.html'">←</button>
       <div class="top-info">
-        <div class="top-school" id="school-label">매산고등학교 · 고2 영어Ⅰ</div>
+        <div class="top-school" id="school-label">매산고등학교</div>
         <div class="top-title">시험 범위 선택</div>
       </div>
     </div>
@@ -24,106 +24,9 @@
         <div class="selected-count" id="cnt">0개</div>
       </div>
 
-      <!-- 교과서 -->
-      <div class="section-label">교과서</div>
-      <div class="cat-card">
-        <div class="cat-header" onclick="toggle('t1')">
-          <div class="cat-icon" style="background:#EBF2FF">📖</div>
-          <div class="cat-info">
-            <div class="cat-name">동아출판 (박용예)</div>
-            <div class="cat-sub">Lesson 3, 4</div>
-          </div>
-          <span class="cat-arrow" id="arr-t1">▼</span>
-        </div>
-        <div class="cat-items" id="t1">
-          <div class="item-row" onclick="toggleItem(this,'교과서_3과')">
-            <div class="item-check">✓</div>
-            <div class="item-name">Lesson 3 — Whales, the Earth's Guardians</div>
-            <span class="item-badge ib-blue">3과</span>
-          </div>
-          <div class="item-row" onclick="toggleItem(this,'교과서_4과')">
-            <div class="item-check">✓</div>
-            <div class="item-name">Lesson 4 — Tips for a Healthier Digital Life</div>
-            <span class="item-badge ib-blue">4과</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 부교재 -->
-      <div class="section-label" style="margin-top:8px">부교재</div>
-      <div class="cat-card">
-        <div class="cat-header" onclick="toggle('t2')">
-          <div class="cat-icon" style="background:#EEEDFE">📔</div>
-          <div class="cat-info">
-            <div class="cat-name">리딩마스터</div>
-            <div class="cat-sub">1·2·3·15·16강 + 리뷰 1·5회</div>
-          </div>
-          <span class="cat-arrow" id="arr-t2">▼</span>
-        </div>
-        <div class="cat-items" id="t2">
-          <div class="sub-label" style="font-size:10px;color:#888780;margin-bottom:4px">강별 지문</div>
-          <div class="item-row" onclick="toggleItem(this,'리딩_1강')">
-            <div class="item-check">✓</div>
-            <div class="item-name">1강 — 글의 요지 및 필자의 주장</div>
-            <span class="item-badge ib-purple">1강</span>
-          </div>
-          <div class="item-row" onclick="toggleItem(this,'리딩_2강')">
-            <div class="item-check">✓</div>
-            <div class="item-name">2강 — 글의 주제</div>
-            <span class="item-badge ib-purple">2강</span>
-          </div>
-          <div class="item-row" onclick="toggleItem(this,'리딩_3강')">
-            <div class="item-check">✓</div>
-            <div class="item-name">3강 — 글의 제목</div>
-            <span class="item-badge ib-purple">3강</span>
-          </div>
-          <div class="item-row" onclick="toggleItem(this,'리딩_11강')">
-            <div class="item-check">✓</div>
-            <div class="item-name">11강 — 흐름과 무관한 문장</div>
-            <span class="item-badge ib-purple">11강</span>
-          </div>
-          <div class="item-row" onclick="toggleItem(this,'리딩_15강')">
-            <div class="item-check">✓</div>
-            <div class="item-name">15강 — 어법</div>
-            <span class="item-badge ib-purple">15강</span>
-          </div>
-          <div class="item-row" onclick="toggleItem(this,'리딩_16강')">
-            <div class="item-check">✓</div>
-            <div class="item-name">16강 — 어휘</div>
-            <span class="item-badge ib-purple">16강</span>
-          </div>
-          <div style="height:0.5px;background:#EEF2FF;margin:6px 0"></div>
-          <div class="sub-label" style="font-size:10px;color:#888780;margin-bottom:4px">리뷰 모의고사</div>
-          <div class="item-row" onclick="toggleItem(this,'리뷰_1회')">
-            <div class="item-check">✓</div>
-            <div class="item-name">리뷰 모의고사 1회</div>
-            <span class="item-badge ib-amber">1회</span>
-          </div>
-          <div class="item-row" onclick="toggleItem(this,'리뷰_5회')">
-            <div class="item-check">✓</div>
-            <div class="item-name">리뷰 모의고사 5회</div>
-            <span class="item-badge ib-amber">5회</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 모의고사 -->
-      <div class="section-label" style="margin-top:8px">모의고사</div>
-      <div class="cat-card">
-        <div class="cat-header" onclick="toggle('t3')">
-          <div class="cat-icon" style="background:#E6F1FB">📄</div>
-          <div class="cat-info">
-            <div class="cat-name">2026년 3월 고2 모의고사</div>
-            <div class="cat-sub">전국연합학력평가</div>
-          </div>
-          <span class="cat-arrow" id="arr-t3">▼</span>
-        </div>
-        <div class="cat-items" id="t3">
-          <div class="item-row" onclick="toggleItem(this,'모의고사_3월')">
-            <div class="item-check">✓</div>
-            <div class="item-name">2026년 3월 고2 전체 지문</div>
-            <span class="item-badge ib-blue">45문항</span>
-          </div>
+      <div id="range-list">
+        <div style="text-align:center;padding:30px;font-size:13px;color:#888780">
+          범위 불러오는 중...
         </div>
       </div>
 
@@ -134,42 +37,144 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+  import { auth, db } from './js/firebase.js';
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const school  = localStorage.getItem('selectedSchool') || '매산고';
   const selected = new Set();
 
-  // 학교 라벨
-  const school = localStorage.getItem('selectedSchool') || '';
-  document.getElementById('school-label').textContent = school + ' · 고2 영어Ⅰ';
+  document.getElementById('school-label').textContent = school + '등학교';
 
-  function toggle(id) {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    await loadRanges();
+  });
+
+  async function loadRanges() {
+    const listEl = document.getElementById('range-list');
+
+    try {
+      // Firebase에서 해당 학교 지문 불러와서 범위 자동 추출
+      const snap = await getDocs(
+        query(collection(db, 'passages'),
+          where('school', 'in', [school, '전체'])
+        )
+      );
+
+      // 범위별로 그룹핑
+      const rangeMap = {}; // { '리딩마스터_11강': { textbook, unit, count } }
+      snap.forEach(d => {
+        const p = d.data();
+        const key = p.range; // 예: '리딩마스터_11강'
+        if (!rangeMap[key]) {
+          rangeMap[key] = { textbook: p.textbook, unit: p.unit, count: 0 };
+        }
+        rangeMap[key].count++;
+      });
+
+      if (Object.keys(rangeMap).length === 0) {
+        listEl.innerHTML = `
+          <div style="text-align:center;padding:30px;font-size:13px;color:#888780;line-height:1.8">
+            저장된 지문이 없어요.<br>
+            <span style="font-size:11px">관리자 화면에서 지문을 먼저 추가해주세요.</span>
+          </div>`;
+        return;
+      }
+
+      // 교재별로 그룹핑
+      const byTextbook = {};
+      Object.entries(rangeMap).forEach(([key, val]) => {
+        if (!byTextbook[val.textbook]) byTextbook[val.textbook] = [];
+        byTextbook[val.textbook].push({ key, ...val });
+      });
+
+      // 교재 순서 정렬
+      const order = ['교과서', '리딩마스터', '리뷰', '모의고사'];
+      const sorted = Object.entries(byTextbook).sort(
+        ([a], [b]) => order.indexOf(a) - order.indexOf(b)
+      );
+
+      let html = '';
+      sorted.forEach(([textbook, ranges]) => {
+        const iconMap = { '교과서':'📖', '리딩마스터':'📔', '리뷰':'📝', '모의고사':'📄' };
+        const colorMap = {
+          '교과서':'#EBF2FF', '리딩마스터':'#EEEDFE',
+          '리뷰':'#FFF5E8', '모의고사':'#E6F1FB'
+        };
+        const badgeMap = {
+          '교과서':'ib-blue', '리딩마스터':'ib-purple',
+          '리뷰':'ib-amber', '모의고사':'ib-blue'
+        };
+
+        const unitLabel = ranges.map(r => r.unit).join('·');
+        const catId = 'cat-' + textbook;
+
+        html += `
+          <div class="section-label">${textbook}</div>
+          <div class="cat-card">
+            <div class="cat-header" onclick="toggle('${catId}')">
+              <div class="cat-icon" style="background:${colorMap[textbook]||'#EBF2FF'}">${iconMap[textbook]||'📄'}</div>
+              <div class="cat-info">
+                <div class="cat-name">${textbook}</div>
+                <div class="cat-sub">${unitLabel}</div>
+              </div>
+              <span class="cat-arrow" id="arr-${catId}">▼</span>
+            </div>
+            <div class="cat-items" id="${catId}">`;
+
+        ranges.sort((a,b) => a.unit.localeCompare(b.unit, 'ko')).forEach(r => {
+          html += `
+              <div class="item-row" onclick="toggleItem(this,'${r.key}')">
+                <div class="item-check">✓</div>
+                <div class="item-name">${r.unit} (${r.count}개 지문)</div>
+                <span class="item-badge ${badgeMap[textbook]||'ib-blue'}">${r.unit}</span>
+              </div>`;
+        });
+
+        html += `</div></div>`;
+      });
+
+      listEl.innerHTML = html;
+
+      // 첫 번째 카드 자동 열기
+      const firstKey = 'cat-' + sorted[0][0];
+      toggle(firstKey);
+
+    } catch(e) {
+      listEl.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:#E24B4A">범위를 불러오지 못했어요</div>';
+      console.error(e);
+    }
+  }
+
+  window.toggle = (id) => {
     const el  = document.getElementById(id);
     const arr = document.getElementById('arr-' + id);
+    if (!el) return;
     const isOpen = el.classList.contains('open');
     el.classList.toggle('open', !isOpen);
     arr.textContent = isOpen ? '▼' : '▲';
-  }
+  };
 
-  function toggleItem(row, key) {
-    const check  = row.querySelector('.item-check');
-    const isOn   = check.classList.contains('on');
+  window.toggleItem = (row, key) => {
+    const check = row.querySelector('.item-check');
+    const isOn  = check.classList.contains('on');
     check.classList.toggle('on', !isOn);
-    check.style.color = isOn ? 'transparent' : '#fff';
-    check.style.background = isOn ? '#fff' : '#1A3566';
+    check.style.color       = isOn ? 'transparent' : '#fff';
+    check.style.background  = isOn ? '#fff' : '#1A3566';
     check.style.borderColor = isOn ? '#A8C4F5' : '#1A3566';
     if (!isOn) selected.add(key);
     else selected.delete(key);
     document.getElementById('cnt').textContent = selected.size + '개';
     document.getElementById('btn-next').disabled = selected.size === 0;
-  }
+  };
 
-  function goNext() {
+  window.goNext = () => {
     if (selected.size === 0) return;
     localStorage.setItem('selectedRanges', JSON.stringify([...selected]));
     window.location.href = 'passage.html';
-  }
-
-  // 교과서 기본 열기
-  toggle('t1');
+  };
 </script>
 
 </body>
