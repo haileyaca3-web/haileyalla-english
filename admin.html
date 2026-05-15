@@ -17,8 +17,8 @@
     </div>
     <div class="body">
       <div class="field-wrap">
-        <div class="field-label">아이디</div>
-        <input type="text" id="admin-id" placeholder="관리자 아이디">
+        <div class="field-label">이메일</div>
+        <input type="text" id="admin-id" placeholder="이메일 주소">
       </div>
       <div class="field-wrap">
         <div class="field-label">비밀번호</div>
@@ -46,364 +46,431 @@
     <!-- 탭 -->
     <div style="background:#fff;padding:0 14px">
       <div class="tab-row" style="margin-bottom:0;border-bottom:0.5px solid #D6E4FF">
-        <div class="tab on" onclick="switchTab('approve')" id="tab-approve">승인 관리</div>
-        <div class="tab" onclick="switchTab('records')" id="tab-records">학생 기록</div>
+        <div class="tab on" onclick="switchTab('approve')"  id="tab-approve">승인</div>
+        <div class="tab"    onclick="switchTab('passages')" id="tab-passages">지문</div>
+        <div class="tab"    onclick="switchTab('records')"  id="tab-records">기록</div>
       </div>
     </div>
 
-    <!-- 승인 관리 탭 -->
+    <!-- 승인 탭 -->
     <div class="scroll-body" id="section-approve">
       <div class="section-label">승인 대기 중</div>
-      <div id="pending-list">
-        <div class="empty-msg">대기 중인 학생이 없어요</div>
+      <div id="pending-list"><div class="empty-msg">대기 중인 학생이 없어요</div></div>
+      <div class="divider"></div>
+      <div class="section-label">승인된 학생</div>
+      <div id="approved-list"><div class="empty-msg">승인된 학생이 없어요</div></div>
+    </div>
+
+    <!-- 지문 관리 탭 -->
+    <div class="scroll-body hidden" id="section-passages">
+      <div class="section-label">교재 선택</div>
+      <div class="field-wrap">
+        <select id="p-textbook" onchange="updateUnitOptions()">
+          <option value="">교재를 선택하세요</option>
+          <option value="교과서">교과서 (동아 박용예)</option>
+          <option value="리딩마스터">리딩마스터</option>
+          <option value="리뷰">리뷰 모의고사</option>
+          <option value="모의고사">모의고사</option>
+        </select>
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">강/회차/과</div>
+        <select id="p-unit">
+          <option value="">교재를 먼저 선택하세요</option>
+        </select>
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">학교</div>
+        <select id="p-school">
+          <option value="전체">전체 공통</option>
+          <option value="매산고">매산고</option>
+          <option value="효천고">효천고</option>
+          <option value="복성고">복성고</option>
+        </select>
+      </div>
+
+      <div class="section-label" style="margin-top:4px">지문 전체 붙여넣기</div>
+      <div style="font-size:11px;color:#5A7BAD;margin-bottom:8px;line-height:1.6">
+        지문 번호(01, 02...)를 기준으로 자동 분리돼요.<br>전체를 한꺼번에 붙여넣으세요.
+      </div>
+      <textarea id="p-text"
+        style="width:100%;min-height:200px;padding:10px 12px;border-radius:8px;border:0.5px solid #D6E4FF;font-size:13px;line-height:1.8;resize:vertical;background:#fff;color:#2C2C2A"
+        placeholder="01&#10;It's remarkable that positive fantasies...&#10;&#10;02&#10;Dopamine can be a great motivator..."></textarea>
+
+      <div class="error-msg" id="p-error"></div>
+      <div id="p-preview" style="display:none;background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#1A3566;line-height:1.6"></div>
+
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-sub" style="flex:1" onclick="previewPassages()">미리보기</button>
+        <button class="btn-main" style="flex:1" id="btn-save-passages" onclick="savePassages()" disabled>Firebase 저장</button>
       </div>
 
       <div class="divider"></div>
-      <div class="section-label">승인된 학생</div>
-      <div id="approved-list">
-        <div class="empty-msg">승인된 학생이 없어요</div>
+      <div class="section-label">저장된 지문 목록</div>
+      <div class="field-wrap">
+        <select id="filter-school" onchange="loadPassageList()">
+          <option value="전체">전체</option>
+          <option value="매산고">매산고</option>
+          <option value="효천고">효천고</option>
+          <option value="복성고">복성고</option>
+        </select>
       </div>
+      <div id="passage-saved-list"><div class="empty-msg">저장된 지문이 없어요</div></div>
     </div>
 
     <!-- 학생 기록 탭 -->
     <div class="scroll-body hidden" id="section-records">
       <div class="section-label">학생별 주간 기록</div>
-      <div id="records-list">
-        <div class="empty-msg">기록이 없어요</div>
-      </div>
+      <div id="records-list"><div class="empty-msg">기록이 없어요</div></div>
     </div>
   </div>
 </div>
 
 <style>
-.btn-logout {
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 12px;
-  font-size: 12px;
-  cursor: pointer;
-}
-.btn-logout:hover { background: rgba(255,255,255,0.2); }
-.empty-msg {
-  font-size: 12px;
-  color: #888780;
-  text-align: center;
-  padding: 16px 0;
-}
-.approved-row {
-  background: #fff;
-  border: 0.5px solid #D6E4FF;
-  border-radius: 10px;
-  padding: 10px 13px;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.approved-row .s-avatar { background: #EAF3DE; color: #27500A; }
+.btn-logout{background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
+.btn-logout:hover{background:rgba(255,255,255,0.2)}
+.empty-msg{font-size:12px;color:#888780;text-align:center;padding:16px 0}
+.approved-row{background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:10px 13px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.p-item{background:#fff;border:0.5px solid #D6E4FF;border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.p-item-name{font-size:12px;color:#1A3566;font-weight:500}
+.p-item-sub{font-size:11px;color:#888780;margin-top:1px}
+.del-btn{font-size:11px;color:#E24B4A;border:0.5px solid #E24B4A;background:transparent;border-radius:6px;padding:3px 8px;cursor:pointer;flex-shrink:0}
 </style>
 
 <script type="module">
   import { auth, db } from './js/firebase.js';
   import {
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged
+    signInWithEmailAndPassword, signOut, onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
     collection, getDocs, doc, getDoc,
-    updateDoc, query, where, orderBy
+    setDoc, updateDoc, deleteDoc, query, where
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // 탭 전환
+  // ── 탭 전환 ──
   window.switchTab = (tab) => {
-    document.getElementById('section-approve').classList.add('hidden');
-    document.getElementById('section-records').classList.add('hidden');
-    document.getElementById('tab-approve').classList.remove('on');
-    document.getElementById('tab-records').classList.remove('on');
-
-    document.getElementById('section-' + tab).classList.remove('hidden');
-    document.getElementById('tab-' + tab).classList.add('on');
-
-    if (tab === 'records') loadRecords();
+    ['approve','passages','records'].forEach(t => {
+      document.getElementById('section-'+t).classList.add('hidden');
+      document.getElementById('tab-'+t).classList.remove('on');
+    });
+    document.getElementById('section-'+tab).classList.remove('hidden');
+    document.getElementById('tab-'+tab).classList.add('on');
+    if (tab === 'records')  loadRecords();
+    if (tab === 'passages') loadPassageList();
   };
 
-  // 관리자 로그인
+  // ── 로그인 ──
   window.adminLogin = async () => {
     const id  = document.getElementById('admin-id').value.trim();
     const pw  = document.getElementById('admin-pw').value.trim();
     const err = document.getElementById('admin-error');
     err.textContent = '';
-
-    if (!id || !pw) {
-      err.textContent = '아이디와 비밀번호를 입력해주세요.';
-      return;
-    }
-
+    if (!id || !pw) { err.textContent = '이메일과 비밀번호를 입력해주세요.'; return; }
     try {
-      // 관리자는 이메일 직접 입력 또는 Gmail 사용
-const email = id.includes('@') ? id : id + '@haileyalla.com';
+      const email = id.includes('@') ? id : id + '@haileyalla.com';
       const cred  = await signInWithEmailAndPassword(auth, email, pw);
-
-      const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
-      if (!userDoc.exists() || userDoc.data().role !== 'admin') {
+      const snap  = await getDoc(doc(db, 'users', cred.user.uid));
+      if (!snap.exists() || snap.data().role !== 'admin') {
         err.textContent = '관리자 계정이 아니에요.';
-        await signOut(auth);
-        return;
+        await signOut(auth); return;
       }
-
       showAdminMain();
-      loadPendingUsers();
-
-    } catch (e) {
-      err.textContent = '아이디 또는 비밀번호가 틀렸어요.';
-    }
+    } catch(e) { err.textContent = '이메일 또는 비밀번호가 틀렸어요.'; }
   };
 
-  // 관리자 로그아웃
   window.adminLogout = async () => {
     await signOut(auth);
     document.getElementById('page-admin-login').classList.remove('hidden');
     document.getElementById('page-admin-main').classList.add('hidden');
   };
 
-  // 관리자 메인 보여주기
   function showAdminMain() {
     document.getElementById('page-admin-login').classList.add('hidden');
     document.getElementById('page-admin-main').classList.remove('hidden');
+    loadPendingUsers();
   }
 
-  // 승인 대기 목록 불러오기
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if (snap.exists() && snap.data().role === 'admin') showAdminMain();
+    }
+  });
+
+  // ── 승인 관리 ──
   async function loadPendingUsers() {
-    const pendingEl  = document.getElementById('pending-list');
-    const approvedEl = document.getElementById('approved-list');
-    pendingEl.innerHTML  = '';
-    approvedEl.innerHTML = '';
-
+    const pEl = document.getElementById('pending-list');
+    const aEl = document.getElementById('approved-list');
+    pEl.innerHTML = aEl.innerHTML = '';
     const snap = await getDocs(collection(db, 'users'));
-    let pendingCount  = 0;
-    let approvedCount = 0;
-
-    snap.forEach(docSnap => {
-      const u = docSnap.data();
+    let pc = 0, ac = 0;
+    snap.forEach(d => {
+      const u = d.data();
       if (u.role === 'admin') return;
-
       if (!u.approved) {
-        pendingCount++;
-        pendingEl.innerHTML += `
-          <div class="pending-card" id="pc-${docSnap.id}">
-            <div class="p-avatar s-avatar">${u.name?.[0] || '?'}</div>
-            <div class="p-info" style="flex:1">
-              <div class="s-name">${u.name || '이름없음'}</div>
-              <div class="s-sub">${u.school || ''} · ${u.grade || ''} · ${u.userId || ''}</div>
+        pc++;
+        pEl.innerHTML += `
+          <div class="pending-card">
+            <div style="width:32px;height:32px;border-radius:50%;background:#FFF5E8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#854F0B;flex-shrink:0">${u.name?.[0]||'?'}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500;color:#2C2C2A">${u.name||''}</div>
+              <div style="font-size:11px;color:#888780">${u.school||''} · ${u.grade||''} · ${u.userId||''}</div>
             </div>
-            <button class="approve-btn" onclick="approveUser('${docSnap.id}','${u.name}')">승인</button>
-            <button class="reject-btn" onclick="rejectUser('${docSnap.id}')">거절</button>
+            <button class="approve-btn" onclick="approveUser('${d.id}','${u.name}')">승인</button>
+            <button class="reject-btn"  onclick="rejectUser('${d.id}')">거절</button>
           </div>`;
       } else {
-        approvedCount++;
-        approvedEl.innerHTML += `
+        ac++;
+        aEl.innerHTML += `
           <div class="approved-row">
-            <div class="s-avatar">${u.name?.[0] || '?'}</div>
+            <div style="width:32px;height:32px;border-radius:50%;background:#EAF3DE;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#27500A;flex-shrink:0">${u.name?.[0]||'?'}</div>
             <div style="flex:1">
-              <div class="s-name">${u.name || '이름없음'}</div>
-              <div class="s-sub">${u.school || ''} · ${u.grade || ''} · ${u.userId || ''}</div>
+              <div style="font-size:13px;font-weight:500;color:#1A3566">${u.name||''}</div>
+              <div style="font-size:11px;color:#888780">${u.school||''} · ${u.grade||''} · ${u.userId||''}</div>
             </div>
-            <button class="reject-btn" onclick="revokeUser('${docSnap.id}')">취소</button>
+            <button class="reject-btn" onclick="revokeUser('${d.id}')">취소</button>
           </div>`;
       }
     });
-
-    if (pendingCount  === 0) pendingEl.innerHTML  = '<div class="empty-msg">대기 중인 학생이 없어요</div>';
-    if (approvedCount === 0) approvedEl.innerHTML = '<div class="empty-msg">승인된 학생이 없어요</div>';
+    if (pc===0) pEl.innerHTML = '<div class="empty-msg">대기 중인 학생이 없어요</div>';
+    if (ac===0) aEl.innerHTML = '<div class="empty-msg">승인된 학생이 없어요</div>';
   }
 
-  // 승인
-  window.approveUser = async (uid, name) => {
-    await updateDoc(doc(db, 'users', uid), { approved: true });
-    alert(`${name} 학생을 승인했어요!`);
+  window.approveUser = async (uid,name) => {
+    await updateDoc(doc(db,'users',uid),{approved:true});
+    alert(name+' 학생을 승인했어요!');
     loadPendingUsers();
   };
-
-  // 거절 (계정 삭제 대신 비승인 유지)
   window.rejectUser = async (uid) => {
     if (!confirm('정말 거절하시겠어요?')) return;
-    await updateDoc(doc(db, 'users', uid), { approved: false, rejected: true });
+    await updateDoc(doc(db,'users',uid),{approved:false,rejected:true});
     loadPendingUsers();
   };
-
-  // 승인 취소
   window.revokeUser = async (uid) => {
     if (!confirm('승인을 취소하시겠어요?')) return;
-    await updateDoc(doc(db, 'users', uid), { approved: false });
+    await updateDoc(doc(db,'users',uid),{approved:false});
     loadPendingUsers();
   };
 
-  // 학생 기록 불러오기
+  // ── 지문 관리 ──
+  const unitOptions = {
+    '교과서':    ['Lesson 1','Lesson 2','Lesson 3','Lesson 4','Lesson 5','Lesson 6'],
+    '리딩마스터':['1강','2강','3강','4강','5강','6강','7강','8강','9강','10강','11강','12강','13강','14강','15강','16강'],
+    '리뷰':      ['1회','2회','3회','4회','5회'],
+    '모의고사':  ['3월 고2','6월 고2','9월 고2','11월 고2','3월 고1'],
+  };
+
+  window.updateUnitOptions = () => {
+    const tb  = document.getElementById('p-textbook').value;
+    const sel = document.getElementById('p-unit');
+    sel.innerHTML = '<option value="">선택하세요</option>';
+    (unitOptions[tb]||[]).forEach(u => sel.innerHTML += `<option value="${u}">${u}</option>`);
+  };
+
+  // 지문 분리
+  function splitPassages(text) {
+    const lines    = text.split('\n');
+    const passages = [];
+    let current    = null;
+    lines.forEach(line => {
+      const t = line.trim();
+      if (/^(\d{1,2})$/.test(t)) {
+        if (current) passages.push(current);
+        current = { num: t.padStart(2,'0'), text:'', footnote:'' };
+      } else if (current) {
+        if (t.startsWith('*')) current.footnote += t + '\n';
+        else if (t) current.text += (current.text?' ':'') + t;
+      }
+    });
+    if (current) passages.push(current);
+    return passages;
+  }
+
+  // 미리보기
+  window.previewPassages = () => {
+    const text = document.getElementById('p-text').value.trim();
+    const tb   = document.getElementById('p-textbook').value;
+    const unit = document.getElementById('p-unit').value;
+    const err  = document.getElementById('p-error');
+    const prev = document.getElementById('p-preview');
+    err.textContent = '';
+    if (!tb||!unit) { err.textContent='교재와 강/회차를 선택해주세요.'; return; }
+    if (!text)      { err.textContent='지문을 붙여넣어 주세요.'; return; }
+    const passages = splitPassages(text);
+    if (passages.length===0) { err.textContent='지문을 인식하지 못했어요. 번호(01,02...)로 시작하는지 확인해주세요.'; return; }
+    prev.style.display = 'block';
+    prev.innerHTML = `<b>${tb} ${unit} — 총 ${passages.length}개 지문 인식됨</b><br><br>`
+      + passages.map((p,i) => `${i+1}. [${p.num}] ${p.text.substring(0,50)}...`).join('<br>');
+    document.getElementById('btn-save-passages').disabled = false;
+  };
+
+  // Firebase 저장
+  window.savePassages = async () => {
+    const text   = document.getElementById('p-text').value.trim();
+    const tb     = document.getElementById('p-textbook').value;
+    const unit   = document.getElementById('p-unit').value;
+    const school = document.getElementById('p-school').value;
+    const err    = document.getElementById('p-error');
+    const btn    = document.getElementById('btn-save-passages');
+    btn.disabled = true; btn.textContent = '저장 중...';
+    err.textContent = '';
+    const passages = splitPassages(text);
+    try {
+      for (const p of passages) {
+        const docId = `${school}_${tb}_${unit}_${p.num}`.replace(/[\s/]+/g,'_');
+        await setDoc(doc(db,'passages',docId), {
+          school, textbook:tb, unit,
+          num:p.num, text:p.text, footnote:p.footnote.trim(),
+          range: tb+'_'+unit,
+          createdAt: new Date().toISOString()
+        });
+      }
+      alert(`${passages.length}개 지문이 저장됐어요!`);
+      document.getElementById('p-text').value = '';
+      document.getElementById('p-preview').style.display = 'none';
+      loadPassageList();
+    } catch(e) { err.textContent = '저장 오류: '+e.message; }
+    btn.disabled = false; btn.textContent = 'Firebase 저장';
+  };
+
+  // 저장된 지문 목록
+  async function loadPassageList() {
+    const listEl = document.getElementById('passage-saved-list');
+    const school = document.getElementById('filter-school').value;
+    listEl.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
+    const snap = await getDocs(collection(db,'passages'));
+    let html='', count=0;
+    snap.forEach(d => {
+      const p = d.data();
+      if (school!=='전체' && p.school!==school) return;
+      count++;
+      html += `
+        <div class="p-item">
+          <div style="flex:1;min-width:0">
+            <div class="p-item-name">${p.textbook} ${p.unit} — ${p.num}번</div>
+            <div class="p-item-sub">${p.school} · ${p.text.substring(0,35)}...</div>
+          </div>
+          <button class="del-btn" onclick="deletePassage('${d.id}')">삭제</button>
+        </div>`;
+    });
+    listEl.innerHTML = count===0 ? '<div class="empty-msg">저장된 지문이 없어요</div>' : html;
+  }
+  window.loadPassageList = loadPassageList;
+
+  window.deletePassage = async (id) => {
+    if (!confirm('이 지문을 삭제하시겠어요?')) return;
+    await deleteDoc(doc(db,'passages',id));
+    loadPassageList();
+  };
+
+  // ── 학생 기록 ──
   async function loadRecords() {
     const listEl = document.getElementById('records-list');
     listEl.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
-
-    const snap = await getDocs(collection(db, 'users'));
-    let html = '';
-    let count = 0;
-
-    snap.forEach(docSnap => {
-      const u = docSnap.data();
-      if (u.role === 'admin' || !u.approved) return;
+    const snap = await getDocs(collection(db,'users'));
+    let html='', count=0;
+    snap.forEach(d => {
+      const u = d.data();
+      if (u.role==='admin'||!u.approved) return;
       count++;
-      html += buildStudentCard(docSnap.id, u);
+      html += buildStudentCard(d.id,u);
     });
-
-    listEl.innerHTML = count === 0
-      ? '<div class="empty-msg">기록이 없어요</div>'
-      : html;
+    listEl.innerHTML = count===0 ? '<div class="empty-msg">기록이 없어요</div>' : html;
   }
 
-  function buildStudentCard(uid, u) {
+  function buildStudentCard(uid,u) {
     return `
       <div class="student-card">
-        <div class="student-header" onclick="toggleStudent('${uid}')">
-          <div class="s-avatar">${u.name?.[0] || '?'}</div>
+        <div class="student-header" onclick="toggleStudent('${uid}','${u.name}','${u.userId}','${u.school}')">
+          <div style="width:32px;height:32px;border-radius:50%;background:#EBF2FF;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#1A3566;flex-shrink:0">${u.name?.[0]||'?'}</div>
           <div class="s-info">
-            <div class="s-name">${u.name || ''} <span style="font-size:10px;color:#5A7BAD">${u.userId || ''}</span></div>
-            <div class="s-sub">${u.school || ''} · ${u.grade || ''}</div>
+            <div style="font-size:13px;font-weight:500;color:#1A3566">${u.name||''} <span style="font-size:10px;color:#5A7BAD">${u.userId||''}</span></div>
+            <div style="font-size:11px;color:#5A7BAD;margin-top:1px">${u.school||''} · ${u.grade||''}</div>
           </div>
           <span style="font-size:14px;color:#A8C4F5" id="arr-${uid}">▼</span>
         </div>
         <div class="week-body" id="wb-${uid}">
-          <div id="rec-${uid}">
-            <div class="empty-msg">기록 불러오는 중...</div>
-          </div>
+          <div id="rec-${uid}"><div class="empty-msg">불러오는 중...</div></div>
           <div id="toast-${uid}" class="copy-toast">카톡 복사 완료!</div>
-          <button class="kakao-btn" onclick="copyKakao('${uid}','${u.name}','${u.userId}','${u.school}')">
-            카톡으로 복사
-          </button>
+          <button class="kakao-btn" onclick="copyKakao('${uid}','${u.name}','${u.userId}','${u.school}')">카톡으로 복사</button>
         </div>
       </div>`;
   }
 
   window.toggleStudent = async (uid) => {
-    const wb  = document.getElementById('wb-' + uid);
-    const arr = document.getElementById('arr-' + uid);
+    const wb  = document.getElementById('wb-'+uid);
+    const arr = document.getElementById('arr-'+uid);
     const isOpen = wb.classList.contains('open');
-
-    wb.classList.toggle('open', !isOpen);
+    wb.classList.toggle('open',!isOpen);
     arr.textContent = isOpen ? '▼' : '▲';
-
     if (!isOpen) await loadStudentRecords(uid);
   };
 
-  // 학생별 기록 불러오기
   async function loadStudentRecords(uid) {
-    const recEl = document.getElementById('rec-' + uid);
-
-    // 일주일치 날짜 범위
-    const now   = new Date();
+    const recEl   = document.getElementById('rec-'+uid);
+    const now     = new Date();
     const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-
+    weekAgo.setDate(weekAgo.getDate()-7);
     try {
-      const snap = await getDocs(
-        query(
-          collection(db, 'progress'),
-          where('userId', '==', uid),
-          where('date', '>=', weekAgo.toISOString().split('T')[0])
-        )
-      );
-
-      if (snap.empty) {
-        recEl.innerHTML = '<div class="empty-msg">이번 주 학습 기록이 없어요</div>';
-        return;
-      }
-
-      // 날짜별 그룹핑
+      const snap = await getDocs(query(collection(db,'progress'),
+        where('userId','==',uid),
+        where('date','>=',weekAgo.toISOString().split('T')[0])
+      ));
+      if (snap.empty) { recEl.innerHTML='<div class="empty-msg">이번 주 학습 기록이 없어요</div>'; return; }
       const byDate = {};
       snap.forEach(d => {
         const data = d.data();
-        const date = data.date;
-        if (!byDate[date]) byDate[date] = [];
-        byDate[date].push(data);
+        if (!byDate[data.date]) byDate[data.date]=[];
+        byDate[data.date].push(data);
       });
-
-      let html = '';
+      let html='';
       Object.keys(byDate).sort().reverse().forEach(date => {
-        const items = byDate[date];
+        const items  = byDate[date];
         const dayStr = formatDate(date);
-        html += `<div class="day-row">
-          <div class="day-label">
-            <span>${dayStr}</span>
-            <span style="color:#3B6D11">${items.length}문제</span>
+        html += `<div class="day-row" style="margin-bottom:8px">
+          <div style="font-size:10px;color:#888780;margin-bottom:4px;display:flex;justify-content:space-between">
+            <span>${dayStr}</span><span style="color:#3B6D11">${items.length}문제</span>
           </div>
-          <div class="day-items">`;
+          <div style="display:flex;flex-wrap:wrap;gap:4px">`;
         items.forEach(item => {
-          const cls = item.correct ? 'di-correct' : 'di-wrong';
-          html += `<span class="day-item ${cls}">${item.typeName} ${item.round}회차 ${item.correct ? '정답' : '오답'}</span>`;
+          const cls = item.correct?'di-correct':'di-wrong';
+          html += `<span class="day-item ${cls}" style="font-size:10px;padding:3px 7px;border-radius:6px;font-weight:500">${item.typeName} ${item.round}회차 ${item.correct?'정답':'오답'}</span>`;
         });
         html += `</div></div>`;
       });
-
       recEl.innerHTML = html;
-
-    } catch (e) {
-      recEl.innerHTML = '<div class="empty-msg">기록을 불러올 수 없어요</div>';
-    }
+    } catch(e) { recEl.innerHTML='<div class="empty-msg">기록을 불러올 수 없어요</div>'; }
   }
 
   function formatDate(dateStr) {
-    const d = new Date(dateStr);
-    const days = ['일','월','화','수','목','금','토'];
+    const d=new Date(dateStr);
+    const days=['일','월','화','수','목','금','토'];
     return `${d.getMonth()+1}/${d.getDate()} (${days[d.getDay()]})`;
   }
 
-  // 카톡 복사
-  window.copyKakao = async (uid, name, userId, school) => {
-    const recEl = document.getElementById('rec-' + uid);
+  window.copyKakao = async (uid,name,userId,school) => {
+    const recEl = document.getElementById('rec-'+uid);
     const rows  = recEl.querySelectorAll('.day-row');
-
-    let text = `[헤일리올라 영어학원]\n`;
-    text += `━━━━━━━━━━━━━━\n`;
-    text += `학생: ${name} (${userId})\n`;
-    text += `학교: ${school}\n`;
-    text += `━━━━━━━━━━━━━━\n`;
-    text += `이번주 학습 기록\n\n`;
-
-    if (rows.length === 0) {
-      text += `이번 주 학습 기록 없음\n`;
+    let text = `[헤일리올라 영어학원]\n━━━━━━━━━━━━━━\n학생: ${name} (${userId})\n학교: ${school}\n━━━━━━━━━━━━━━\n이번주 학습 기록\n\n`;
+    if (rows.length===0) {
+      text += '이번 주 학습 기록 없음\n';
     } else {
       rows.forEach(row => {
-        const label = row.querySelector('.day-label span:first-child').textContent;
+        const label = row.querySelector('span:first-child').textContent;
         const items = row.querySelectorAll('.day-item');
         text += `${label}\n`;
         items.forEach(item => {
-          const ok = item.classList.contains('di-correct');
-          text += `${ok ? '✅' : '❌'} ${item.textContent}\n`;
+          text += `${item.classList.contains('di-correct')?'✅':'❌'} ${item.textContent}\n`;
         });
         text += '\n';
       });
     }
-
-    text += `━━━━━━━━━━━━━━\n`;
-    text += `헤일리올라영어학원`;
-
+    text += `━━━━━━━━━━━━━━\n헤일리올라영어학원`;
     await navigator.clipboard.writeText(text);
-    const toast = document.getElementById('toast-' + uid);
+    const toast = document.getElementById('toast-'+uid);
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
+    setTimeout(()=>toast.classList.remove('show'),2000);
   };
-
-  // 페이지 로드시 로그인 상태 확인
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists() && userDoc.data().role === 'admin') {
-        showAdminMain();
-        loadPendingUsers();
-      }
-    }
-  });
 </script>
 
 </body>
