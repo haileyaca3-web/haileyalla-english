@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>지문 선택 — 헤일리올라</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page">
+  <div class="phone">
+    <div class="top-bar with-back">
+      <button class="back-btn" onclick="goBack()">←</button>
+      <div class="top-info">
+        <div class="top-school" id="school-label">매산고등학교</div>
+        <div class="top-title" id="page-title">지문 선택</div>
+      </div>
+    </div>
+
+    <!-- 스텝 표시 -->
+    <div style="background:#fff;padding:12px 14px 0">
+      <div class="step-row">
+        <div class="step">
+          <div class="step-num active" id="sn1">1</div>
+          <div class="step-text active" id="st1">지문 선택</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-num" id="sn2">2</div>
+          <div class="step-text" id="st2">유형 선택</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step">
+          <div class="step-num" id="sn3">3</div>
+          <div class="step-text" id="st3">문제 풀기</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: 지문 선택 -->
+    <div class="scroll-body" id="step1">
+      <div id="loading" style="text-align:center;padding:30px;font-size:13px;color:#888780">
+        지문 불러오는 중...
+      </div>
+      <div id="passage-list"></div>
+      <button class="btn-main" id="btn-step1" disabled onclick="goStep2()">
+        다음 — 유형 선택
+      </button>
+    </div>
+
+    <!-- Step 2: 유형 선택 -->
+    <div class="scroll-body hidden" id="step2">
+      <div id="selected-passage-info"
+        style="background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#1A3566;">
+      </div>
+
+      <div class="section-label">선택형 유형</div>
+      <div class="type-grid" id="type-grid-select"></div>
+
+      <div class="section-label" style="margin-top:4px">서답형 유형</div>
+      <div class="type-grid" id="type-grid-written"></div>
+
+      <button class="btn-main" id="btn-step2" disabled onclick="goStep3()" style="margin-top:8px">
+        문제 풀기 시작
+      </button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db } from './js/firebase.js';
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    collection, getDocs, query, where
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const school         = localStorage.getItem('selectedSchool') || '매산고';
+  const selectedRanges = JSON.parse(localStorage.getItem('selectedRanges') || '[]');
+  let selectedPassage  = null;
+  let selectedTypes    = new Set();
+  let allPassages      = [];
+
+  document.getElementById('school-label').textContent = school + '등학교';
+
+  // 로그인 확인
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    await loadPassages();
+  });
+
+  // ── Firebase에서 지문 불러오기 ──
+  async function loadPassages() {
+    const loadingEl = document.getElementById('loading');
+    const listEl    = document.getElementById('passage-list');
+
+    try {
+      // 선택한 범위에 해당하는 지문만 불러오기
+      const snap = await getDocs(
+        query(collection(db, 'passages'),
+          where('school', 'in', [school, '전체'])
+        )
+      );
+
+      allPassages = [];
+      snap.forEach(d => {
+        const p = d.data();
+        // 선택한 범위에 포함되는지 확인
+        if (selectedRanges.includes(p.range)) {
+          allPassages.push({ id: d.id, ...p });
+        }
+      });
+
+      loadingEl.style.display = 'none';
+
+      if (allPassages.length === 0) {
+        listEl.innerHTML = `
+          <div style="text-align:center;padding:30px;font-size:13px;color:#888780;line-height:1.8">
+            선택한 범위에 저장된 지문이 없어요.<br>
+            <span style="font-size:11px">관리자 화면에서 지문을 먼저 추가해주세요.</span>
+          </div>`;
+        return;
+      }
+
+      // 범위별로 그룹핑
+      const groups = {};
+      allPassages.forEach(p => {
+        const label = rangeLabel(p.range);
+        if (!groups[label]) groups[label] = [];
+        groups[label].push(p);
+      });
+
+      // 각 그룹 내에서 번호순 정렬
+      Object.keys(groups).forEach(g => {
+        groups[g].sort((a,b) => a.num.localeCompare(b.num));
+      });
+
+      let html = '';
+      Object.entries(groups).forEach(([label, items]) => {
+        html += `<div class="section-label">${label}</div>`;
+        items.forEach(p => {
+          const preview = p.text.substring(0, 40) + '...';
+          html += `
+            <div class="passage-card" onclick="selectPassage(this,'${p.id}','${p.unit} ${p.num}번','${escapeHtml(p.text.substring(0,30))}')">
+              <div class="p-num">${p.num}</div>
+              <div class="p-info">
+                <div class="p-name">${p.textbook} ${p.unit} — ${p.num}번</div>
+                <div class="p-sub">${escapeHtml(preview)}</div>
+              </div>
+            </div>`;
+        });
+      });
+      listEl.innerHTML = html;
+
+    } catch(e) {
+      loadingEl.textContent = '지문을 불러오지 못했어요. 다시 시도해주세요.';
+      console.error(e);
+    }
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
+  }
+
+  function rangeLabel(range) {
+    const map = {
+      '교과서_Lesson 1':'교과서 · Lesson 1', '교과서_Lesson 2':'교과서 · Lesson 2',
+      '교과서_Lesson 3':'교과서 · Lesson 3', '교과서_Lesson 4':'교과서 · Lesson 4',
+      '리딩마스터_1강':'리딩마스터 · 1강',   '리딩마스터_2강':'리딩마스터 · 2강',
+      '리딩마스터_3강':'리딩마스터 · 3강',   '리딩마스터_11강':'리딩마스터 · 11강',
+      '리딩마스터_15강':'리딩마스터 · 15강', '리딩마스터_16강':'리딩마스터 · 16강',
+      '리뷰_1회':'리뷰 모의고사 · 1회',      '리뷰_5회':'리뷰 모의고사 · 5회',
+      '모의고사_3월 고2':'3월 고2 모의고사',
+    };
+    return map[range] || range;
+  }
+
+  window.selectPassage = (card, id, name, preview) => {
+    document.querySelectorAll('.passage-card').forEach(c => c.classList.remove('on'));
+    card.classList.add('on');
+    selectedPassage = { id, name };
+    document.getElementById('btn-step1').disabled = false;
+  };
+
+  // ── 학교별 유형 데이터 ──
+  const typeData = {
+    '매산고': {
+      select: [
+        { key:'흐름무관', name:'흐름무관', sub:'전체 흐름 파악' },
+        { key:'낱말쓰임', name:'낱말쓰임', sub:'어색한 낱말' },
+        { key:'글의제목', name:'글의 제목', sub:'제목 추론' },
+        { key:'글의순서', name:'글의 순서', sub:'순서 배열' },
+        { key:'요약빈칸', name:'요약빈칸', sub:'(A)(B) 완성' },
+        { key:'문장삽입', name:'문장삽입', sub:'삽입 위치' },
+        { key:'밑줄의미', name:'밑줄의미', sub:'함축 의미' },
+        { key:'어법',     name:'어법',     sub:'틀린 어법' },
+        { key:'빈칸추론', name:'빈칸추론', sub:'논리 추론' },
+      ],
+      written: [
+        { key:'요지빈칸', name:'요지빈칸', sub:'(A)(B) 서술' },
+        { key:'이유서술', name:'이유서술', sub:'국문 서술' },
+        { key:'밑줄영작', name:'밑줄영작', sub:'조건 영작' },
+      ]
+    },
+    '효천고': {
+      select: [
+        { key:'어법',     name:'어법',     sub:'틀린 어법' },
+        { key:'빈칸추론', name:'빈칸추론', sub:'논리 추론' },
+        { key:'문장삽입', name:'문장삽입', sub:'삽입 위치' },
+        { key:'글의순서', name:'글의 순서', sub:'순서 배열' },
+        { key:'내용일치', name:'내용일치', sub:'일치 여부' },
+        { key:'낱말쓰임', name:'낱말쓰임', sub:'어색한 낱말' },
+        { key:'요약빈칸', name:'요약빈칸', sub:'(A)(B) 완성' },
+      ],
+      written: [
+        { key:'단어배열', name:'단어배열', sub:'조건 배열' },
+      ]
+    },
+    '복성고': {
+      select: [
+        { key:'빈칸추론', name:'빈칸추론', sub:'논리 추론' },
+        { key:'문장삽입', name:'문장삽입', sub:'삽입 위치' },
+        { key:'낱말쓰임', name:'낱말쓰임', sub:'어색한 낱말' },
+        { key:'내용불일치', name:'내용불일치', sub:'불일치 여부' },
+        { key:'밑줄의미', name:'밑줄의미', sub:'함축 의미' },
+        { key:'글의순서', name:'글의 순서', sub:'순서 배열' },
+        { key:'요약빈칸', name:'요약빈칸', sub:'(A)(B) 완성' },
+      ],
+      written: [
+        { key:'가정법영작', name:'가정법',  sub:'조건 영작' },
+        { key:'접속사영작', name:'접속사',  sub:'조건 영작' },
+      ]
+    }
+  };
+
+  // Step2
+  window.goStep2 = () => {
+    if (!selectedPassage) return;
+
+    document.getElementById('sn1').classList.remove('active');
+    document.getElementById('sn1').classList.add('done');
+    document.getElementById('sn1').textContent = '✓';
+    document.getElementById('sn2').classList.add('active');
+    document.getElementById('st2').classList.add('active');
+    document.getElementById('page-title').textContent = '유형 선택';
+    document.getElementById('step1').classList.add('hidden');
+    document.getElementById('step2').classList.remove('hidden');
+    document.getElementById('selected-passage-info').textContent =
+      '선택한 지문: ' + selectedPassage.name;
+
+    renderTypes();
+  };
+
+  function renderTypes() {
+    const types = typeData[school] || typeData['매산고'];
+    const gridS = document.getElementById('type-grid-select');
+    const gridW = document.getElementById('type-grid-written');
+
+    gridS.innerHTML = types.select.map(t => `
+      <div class="type-card" onclick="toggleType(this,'${t.key}')">
+        <div class="type-name">${t.name}</div>
+        <div class="type-sub">${t.sub}</div>
+      </div>`).join('');
+
+    gridW.innerHTML = types.written.map(t => `
+      <div class="type-card" onclick="toggleType(this,'${t.key}')">
+        <div class="type-name">${t.name}</div>
+        <div class="type-sub">${t.sub}</div>
+      </div>`).join('');
+  }
+
+  window.toggleType = (card, key) => {
+    card.classList.toggle('on');
+    if (card.classList.contains('on')) selectedTypes.add(key);
+    else selectedTypes.delete(key);
+    document.getElementById('btn-step2').disabled = selectedTypes.size === 0;
+  };
+
+  // Step3
+  window.goStep3 = () => {
+    if (!selectedPassage || selectedTypes.size === 0) return;
+
+    // 선택한 지문 전체 텍스트 저장
+    const passage = allPassages.find(p => p.id === selectedPassage.id);
+    localStorage.setItem('selectedPassage', JSON.stringify({
+      id:       selectedPassage.id,
+      name:     selectedPassage.name,
+      text:     passage?.text || '',
+      footnote: passage?.footnote || '',
+    }));
+    localStorage.setItem('selectedTypes', JSON.stringify([...selectedTypes]));
+    window.location.href = 'quiz.html';
+  };
+
+  window.goBack = () => {
+    const s2 = document.getElementById('step2');
+    if (!s2.classList.contains('hidden')) {
+      s2.classList.add('hidden');
+      document.getElementById('step1').classList.remove('hidden');
+      document.getElementById('sn1').classList.add('active');
+      document.getElementById('sn1').classList.remove('done');
+      document.getElementById('sn1').textContent = '1';
+      document.getElementById('sn2').classList.remove('active');
+      document.getElementById('st2').classList.remove('active');
+      document.getElementById('page-title').textContent = '지문 선택';
+      selectedTypes.clear();
+    } else {
+      window.location.href = 'range.html';
+    }
+  };
+</script>
+
+</body>
+</html>
