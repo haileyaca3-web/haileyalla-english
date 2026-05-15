@@ -54,13 +54,10 @@
       <div id="selected-passage-info"
         style="background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#1A3566;">
       </div>
-
       <div class="section-label">선택형 유형</div>
       <div class="type-grid" id="type-grid-select"></div>
-
       <div class="section-label" style="margin-top:4px">서답형 유형</div>
       <div class="type-grid" id="type-grid-written"></div>
-
       <button class="btn-main" id="btn-step2" disabled onclick="goStep3()" style="margin-top:8px">
         문제 풀기 시작
       </button>
@@ -71,9 +68,7 @@
 <script type="module">
   import { auth, db } from './js/firebase.js';
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import {
-    collection, getDocs, query, where
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const school         = localStorage.getItem('selectedSchool') || '매산고';
   const selectedRanges = JSON.parse(localStorage.getItem('selectedRanges') || '[]');
@@ -95,7 +90,7 @@
     const listEl    = document.getElementById('passage-list');
 
     try {
-      // 선택한 범위에 해당하는 지문만 불러오기
+      // 전체 passages 불러오기
       const snap = await getDocs(
         query(collection(db, 'passages'),
           where('school', 'in', [school, '전체'])
@@ -105,7 +100,7 @@
       allPassages = [];
       snap.forEach(d => {
         const p = d.data();
-        // 선택한 범위에 포함되는지 확인
+        // selectedRanges 와 range 필드 비교
         if (selectedRanges.includes(p.range)) {
           allPassages.push({ id: d.id, ...p });
         }
@@ -122,30 +117,28 @@
         return;
       }
 
-      // 범위별로 그룹핑
+      // 범위별 그룹핑 + 번호순 정렬
       const groups = {};
       allPassages.forEach(p => {
-        const label = rangeLabel(p.range);
+        const label = p.range;
         if (!groups[label]) groups[label] = [];
         groups[label].push(p);
       });
-
-      // 각 그룹 내에서 번호순 정렬
       Object.keys(groups).forEach(g => {
         groups[g].sort((a,b) => a.num.localeCompare(b.num));
       });
 
       let html = '';
-      Object.entries(groups).forEach(([label, items]) => {
-        html += `<div class="section-label">${label}</div>`;
+      Object.entries(groups).forEach(([range, items]) => {
+        html += `<div class="section-label">${rangeLabel(range)}</div>`;
         items.forEach(p => {
-          const preview = p.text.substring(0, 40) + '...';
+          const preview = p.text ? p.text.substring(0,45) + '...' : '';
           html += `
-            <div class="passage-card" onclick="selectPassage(this,'${p.id}','${p.unit} ${p.num}번','${escapeHtml(p.text.substring(0,30))}')">
+            <div class="passage-card" onclick="selectPassage(this,'${p.id}','${p.textbook} ${p.unit} ${p.num}번')">
               <div class="p-num">${p.num}</div>
               <div class="p-info">
                 <div class="p-name">${p.textbook} ${p.unit} — ${p.num}번</div>
-                <div class="p-sub">${escapeHtml(preview)}</div>
+                <div class="p-sub">${preview}</div>
               </div>
             </div>`;
         });
@@ -153,36 +146,38 @@
       listEl.innerHTML = html;
 
     } catch(e) {
-      loadingEl.textContent = '지문을 불러오지 못했어요. 다시 시도해주세요.';
+      loadingEl.textContent = '지문을 불러오지 못했어요.';
       console.error(e);
     }
   }
 
-  function escapeHtml(str) {
-    return str.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
-  }
-
   function rangeLabel(range) {
     const map = {
-      '교과서_Lesson 1':'교과서 · Lesson 1', '교과서_Lesson 2':'교과서 · Lesson 2',
-      '교과서_Lesson 3':'교과서 · Lesson 3', '교과서_Lesson 4':'교과서 · Lesson 4',
-      '리딩마스터_1강':'리딩마스터 · 1강',   '리딩마스터_2강':'리딩마스터 · 2강',
-      '리딩마스터_3강':'리딩마스터 · 3강',   '리딩마스터_11강':'리딩마스터 · 11강',
-      '리딩마스터_15강':'리딩마스터 · 15강', '리딩마스터_16강':'리딩마스터 · 16강',
-      '리뷰_1회':'리뷰 모의고사 · 1회',      '리뷰_5회':'리뷰 모의고사 · 5회',
+      '교과서_Lesson 1':'교과서 · Lesson 1',
+      '교과서_Lesson 2':'교과서 · Lesson 2',
+      '교과서_Lesson 3':'교과서 · Lesson 3',
+      '교과서_Lesson 4':'교과서 · Lesson 4',
+      '리딩마스터_1강':'리딩마스터 · 1강',
+      '리딩마스터_2강':'리딩마스터 · 2강',
+      '리딩마스터_3강':'리딩마스터 · 3강',
+      '리딩마스터_11강':'리딩마스터 · 11강',
+      '리딩마스터_15강':'리딩마스터 · 15강',
+      '리딩마스터_16강':'리딩마스터 · 16강',
+      '리뷰_1회':'리뷰 모의고사 · 1회',
+      '리뷰_5회':'리뷰 모의고사 · 5회',
       '모의고사_3월 고2':'3월 고2 모의고사',
     };
     return map[range] || range;
   }
 
-  window.selectPassage = (card, id, name, preview) => {
+  window.selectPassage = (card, id, name) => {
     document.querySelectorAll('.passage-card').forEach(c => c.classList.remove('on'));
     card.classList.add('on');
     selectedPassage = { id, name };
     document.getElementById('btn-step1').disabled = false;
   };
 
-  // ── 학교별 유형 데이터 ──
+  // ── 학교별 유형 ──
   const typeData = {
     '매산고': {
       select: [
@@ -218,25 +213,23 @@
     },
     '복성고': {
       select: [
-        { key:'빈칸추론', name:'빈칸추론', sub:'논리 추론' },
-        { key:'문장삽입', name:'문장삽입', sub:'삽입 위치' },
-        { key:'낱말쓰임', name:'낱말쓰임', sub:'어색한 낱말' },
+        { key:'빈칸추론',   name:'빈칸추론',   sub:'논리 추론' },
+        { key:'문장삽입',   name:'문장삽입',   sub:'삽입 위치' },
+        { key:'낱말쓰임',   name:'낱말쓰임',   sub:'어색한 낱말' },
         { key:'내용불일치', name:'내용불일치', sub:'불일치 여부' },
-        { key:'밑줄의미', name:'밑줄의미', sub:'함축 의미' },
-        { key:'글의순서', name:'글의 순서', sub:'순서 배열' },
-        { key:'요약빈칸', name:'요약빈칸', sub:'(A)(B) 완성' },
+        { key:'밑줄의미',   name:'밑줄의미',   sub:'함축 의미' },
+        { key:'글의순서',   name:'글의 순서', sub:'순서 배열' },
+        { key:'요약빈칸',   name:'요약빈칸',   sub:'(A)(B) 완성' },
       ],
       written: [
-        { key:'가정법영작', name:'가정법',  sub:'조건 영작' },
-        { key:'접속사영작', name:'접속사',  sub:'조건 영작' },
+        { key:'가정법영작', name:'가정법', sub:'조건 영작' },
+        { key:'접속사영작', name:'접속사', sub:'조건 영작' },
       ]
     }
   };
 
-  // Step2
   window.goStep2 = () => {
     if (!selectedPassage) return;
-
     document.getElementById('sn1').classList.remove('active');
     document.getElementById('sn1').classList.add('done');
     document.getElementById('sn1').textContent = '✓';
@@ -245,24 +238,18 @@
     document.getElementById('page-title').textContent = '유형 선택';
     document.getElementById('step1').classList.add('hidden');
     document.getElementById('step2').classList.remove('hidden');
-    document.getElementById('selected-passage-info').textContent =
-      '선택한 지문: ' + selectedPassage.name;
-
+    document.getElementById('selected-passage-info').textContent = '선택한 지문: ' + selectedPassage.name;
     renderTypes();
   };
 
   function renderTypes() {
     const types = typeData[school] || typeData['매산고'];
-    const gridS = document.getElementById('type-grid-select');
-    const gridW = document.getElementById('type-grid-written');
-
-    gridS.innerHTML = types.select.map(t => `
+    document.getElementById('type-grid-select').innerHTML = types.select.map(t => `
       <div class="type-card" onclick="toggleType(this,'${t.key}')">
         <div class="type-name">${t.name}</div>
         <div class="type-sub">${t.sub}</div>
       </div>`).join('');
-
-    gridW.innerHTML = types.written.map(t => `
+    document.getElementById('type-grid-written').innerHTML = types.written.map(t => `
       <div class="type-card" onclick="toggleType(this,'${t.key}')">
         <div class="type-name">${t.name}</div>
         <div class="type-sub">${t.sub}</div>
@@ -276,16 +263,13 @@
     document.getElementById('btn-step2').disabled = selectedTypes.size === 0;
   };
 
-  // Step3
   window.goStep3 = () => {
     if (!selectedPassage || selectedTypes.size === 0) return;
-
-    // 선택한 지문 전체 텍스트 저장
     const passage = allPassages.find(p => p.id === selectedPassage.id);
     localStorage.setItem('selectedPassage', JSON.stringify({
       id:       selectedPassage.id,
       name:     selectedPassage.name,
-      text:     passage?.text || '',
+      text:     passage?.text     || '',
       footnote: passage?.footnote || '',
     }));
     localStorage.setItem('selectedTypes', JSON.stringify([...selectedTypes]));
