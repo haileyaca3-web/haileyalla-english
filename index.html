@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>헤일리올라 영어학원</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page" id="page-login">
+  <div class="phone">
+    <div class="top-bar">
+      <div class="top-title">내신 영어<br>변형문제 연습</div>
+      <div class="top-sub">학교별 맞춤 문제 풀기</div>
+    </div>
+    <div class="body">
+      <div class="field-wrap">
+        <div class="field-label">아이디</div>
+        <input type="text" id="login-id" placeholder="아이디를 입력하세요">
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">비밀번호</div>
+        <input type="password" id="login-pw" placeholder="비밀번호를 입력하세요">
+      </div>
+      <div class="error-msg" id="login-error"></div>
+      <button class="btn-main" onclick="login()">로그인</button>
+      <div class="divider"></div>
+      <div class="caption">아직 계정이 없으신가요?</div>
+      <button class="btn-sub" onclick="showSignup()">회원가입 신청</button>
+    </div>
+  </div>
+</div>
+
+<div class="page hidden" id="page-signup">
+  <div class="phone">
+    <div class="top-bar">
+      <div class="top-title">회원가입 신청</div>
+      <div class="top-sub">선생님 승인 후 이용 가능해요</div>
+    </div>
+    <div class="body">
+      <div class="field-wrap">
+        <div class="field-label">이름</div>
+        <input type="text" id="signup-name" placeholder="실명을 입력하세요">
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">학교</div>
+        <select id="signup-school">
+          <option value="">학교를 선택하세요</option>
+          <option value="매산고">매산고등학교</option>
+          <option value="효천고">효천고등학교</option>
+          <option value="복성고">복성고등학교</option>
+        </select>
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">학년</div>
+        <select id="signup-grade">
+          <option value="">학년을 선택하세요</option>
+          <option value="고1">고등학교 1학년</option>
+          <option value="고2">고등학교 2학년</option>
+          <option value="고3">고등학교 3학년</option>
+        </select>
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">아이디</div>
+        <input type="text" id="signup-id" placeholder="사용할 아이디 (영문+숫자)">
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">비밀번호</div>
+        <input type="password" id="signup-pw" placeholder="비밀번호 (6자 이상)">
+      </div>
+      <div class="error-msg" id="signup-error"></div>
+      <button class="btn-main" onclick="signup()">신청하기</button>
+      <div class="divider"></div>
+      <button class="btn-sub" onclick="showLogin()">로그인으로 돌아가기</button>
+    </div>
+  </div>
+</div>
+
+<div class="page hidden" id="page-pending">
+  <div class="phone">
+    <div class="top-bar">
+      <div class="top-title">신청 완료!</div>
+      <div class="top-sub">조금만 기다려 주세요</div>
+    </div>
+    <div class="body" style="text-align:center;padding:28px 20px">
+      <div class="pending-icon">⏳</div>
+      <div class="pending-title">승인 대기 중이에요</div>
+      <div class="pending-sub">선생님이 계정을 확인하고<br>승인하면 로그인할 수 있어요</div>
+      <div class="divider"></div>
+      <button class="btn-sub" onclick="showLogin()">로그인 화면으로</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db } from './js/firebase.js';
+  import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    doc, setDoc, getDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // 페이지 전환
+  window.showLogin = () => {
+    document.getElementById('page-login').classList.remove('hidden');
+    document.getElementById('page-signup').classList.add('hidden');
+    document.getElementById('page-pending').classList.add('hidden');
+  };
+
+  window.showSignup = () => {
+    document.getElementById('page-login').classList.add('hidden');
+    document.getElementById('page-signup').classList.remove('hidden');
+    document.getElementById('page-pending').classList.add('hidden');
+  };
+
+  window.showPending = () => {
+    document.getElementById('page-login').classList.add('hidden');
+    document.getElementById('page-signup').classList.add('hidden');
+    document.getElementById('page-pending').classList.remove('hidden');
+  };
+
+  // 로그인
+  window.login = async () => {
+    const id = document.getElementById('login-id').value.trim();
+    const pw = document.getElementById('login-pw').value.trim();
+    const errEl = document.getElementById('login-error');
+    errEl.textContent = '';
+
+    if (!id || !pw) {
+      errEl.textContent = '아이디와 비밀번호를 입력해주세요.';
+      return;
+    }
+
+    try {
+      // 아이디로 이메일 변환 (아이디@haileyalla.com)
+      const email = id + '@haileyalla.com';
+      const userCred = await signInWithEmailAndPassword(auth, email, pw);
+
+      // 승인 여부 확인
+      const userDoc = await getDoc(doc(db, 'users', userCred.user.uid));
+      if (!userDoc.exists()) {
+        errEl.textContent = '계정 정보를 찾을 수 없어요.';
+        await signOut(auth);
+        return;
+      }
+
+      const userData = userDoc.data();
+
+      if (!userData.approved) {
+        showPending();
+        await signOut(auth);
+        return;
+      }
+
+      // 관리자면 관리자 페이지로
+      if (userData.role === 'admin') {
+        window.location.href = 'admin.html';
+        return;
+      }
+
+      // 학생이면 홈으로
+      localStorage.setItem('userId', userCred.user.uid);
+      localStorage.setItem('userName', userData.name);
+      localStorage.setItem('userSchool', userData.school);
+      localStorage.setItem('userGrade', userData.grade);
+      window.location.href = 'home.html';
+
+    } catch (e) {
+      errEl.textContent = '아이디 또는 비밀번호가 틀렸어요.';
+    }
+  };
+
+  // 회원가입
+  window.signup = async () => {
+    const name   = document.getElementById('signup-name').value.trim();
+    const school = document.getElementById('signup-school').value;
+    const grade  = document.getElementById('signup-grade').value;
+    const id     = document.getElementById('signup-id').value.trim();
+    const pw     = document.getElementById('signup-pw').value.trim();
+    const errEl  = document.getElementById('signup-error');
+    errEl.textContent = '';
+
+    if (!name || !school || !grade || !id || !pw) {
+      errEl.textContent = '모든 항목을 입력해주세요.';
+      return;
+    }
+    if (pw.length < 6) {
+      errEl.textContent = '비밀번호는 6자 이상이어야 해요.';
+      return;
+    }
+
+    try {
+      const email = id + '@haileyalla.com';
+      const userCred = await createUserWithEmailAndPassword(auth, email, pw);
+
+      // Firestore에 사용자 정보 저장
+      await setDoc(doc(db, 'users', userCred.user.uid), {
+        name,
+        school,
+        grade,
+        userId: id,
+        email,
+        approved: false,
+        role: 'student',
+        createdAt: new Date().toISOString()
+      });
+
+      await signOut(auth);
+      showPending();
+
+    } catch (e) {
+      if (e.code === 'auth/email-already-in-use') {
+        errEl.textContent = '이미 사용 중인 아이디예요.';
+      } else {
+        errEl.textContent = '오류가 발생했어요. 다시 시도해주세요.';
+      }
+    }
+  };
+</script>
+
+</body>
+</html>
