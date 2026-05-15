@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>관리자 — 헤일리올라</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 관리자 로그인 -->
+<div class="page" id="page-admin-login">
+  <div class="phone">
+    <div class="top-bar">
+      <div class="top-title">선생님 로그인</div>
+      <div class="top-sub">관리자 전용 페이지</div>
+    </div>
+    <div class="body">
+      <div class="field-wrap">
+        <div class="field-label">아이디</div>
+        <input type="text" id="admin-id" placeholder="관리자 아이디">
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">비밀번호</div>
+        <input type="password" id="admin-pw" placeholder="비밀번호">
+      </div>
+      <div class="error-msg" id="admin-error"></div>
+      <button class="btn-main" onclick="adminLogin()">로그인</button>
+      <div class="divider"></div>
+      <button class="btn-sub" onclick="window.location.href='index.html'">학생 로그인으로</button>
+    </div>
+  </div>
+</div>
+
+<!-- 관리자 메인 -->
+<div class="page hidden" id="page-admin-main">
+  <div class="phone">
+    <div class="top-bar with-back" style="justify-content:space-between">
+      <div class="top-info">
+        <div class="top-school">관리자</div>
+        <div class="top-title">헤일리올라 영어학원</div>
+      </div>
+      <button class="btn-logout" onclick="adminLogout()">로그아웃</button>
+    </div>
+
+    <!-- 탭 -->
+    <div style="background:#fff;padding:0 14px">
+      <div class="tab-row" style="margin-bottom:0;border-bottom:0.5px solid #D6E4FF">
+        <div class="tab on" onclick="switchTab('approve')" id="tab-approve">승인 관리</div>
+        <div class="tab" onclick="switchTab('records')" id="tab-records">학생 기록</div>
+      </div>
+    </div>
+
+    <!-- 승인 관리 탭 -->
+    <div class="scroll-body" id="section-approve">
+      <div class="section-label">승인 대기 중</div>
+      <div id="pending-list">
+        <div class="empty-msg">대기 중인 학생이 없어요</div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-label">승인된 학생</div>
+      <div id="approved-list">
+        <div class="empty-msg">승인된 학생이 없어요</div>
+      </div>
+    </div>
+
+    <!-- 학생 기록 탭 -->
+    <div class="scroll-body hidden" id="section-records">
+      <div class="section-label">학생별 주간 기록</div>
+      <div id="records-list">
+        <div class="empty-msg">기록이 없어요</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.btn-logout {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-logout:hover { background: rgba(255,255,255,0.2); }
+.empty-msg {
+  font-size: 12px;
+  color: #888780;
+  text-align: center;
+  padding: 16px 0;
+}
+.approved-row {
+  background: #fff;
+  border: 0.5px solid #D6E4FF;
+  border-radius: 10px;
+  padding: 10px 13px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.approved-row .s-avatar { background: #EAF3DE; color: #27500A; }
+</style>
+
+<script type="module">
+  import { auth, db } from './js/firebase.js';
+  import {
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    collection, getDocs, doc, getDoc,
+    updateDoc, query, where, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // 탭 전환
+  window.switchTab = (tab) => {
+    document.getElementById('section-approve').classList.add('hidden');
+    document.getElementById('section-records').classList.add('hidden');
+    document.getElementById('tab-approve').classList.remove('on');
+    document.getElementById('tab-records').classList.remove('on');
+
+    document.getElementById('section-' + tab).classList.remove('hidden');
+    document.getElementById('tab-' + tab).classList.add('on');
+
+    if (tab === 'records') loadRecords();
+  };
+
+  // 관리자 로그인
+  window.adminLogin = async () => {
+    const id  = document.getElementById('admin-id').value.trim();
+    const pw  = document.getElementById('admin-pw').value.trim();
+    const err = document.getElementById('admin-error');
+    err.textContent = '';
+
+    if (!id || !pw) {
+      err.textContent = '아이디와 비밀번호를 입력해주세요.';
+      return;
+    }
+
+    try {
+      const email = id + '@haileyalla.com';
+      const cred  = await signInWithEmailAndPassword(auth, email, pw);
+
+      const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
+      if (!userDoc.exists() || userDoc.data().role !== 'admin') {
+        err.textContent = '관리자 계정이 아니에요.';
+        await signOut(auth);
+        return;
+      }
+
+      showAdminMain();
+      loadPendingUsers();
+
+    } catch (e) {
+      err.textContent = '아이디 또는 비밀번호가 틀렸어요.';
+    }
+  };
+
+  // 관리자 로그아웃
+  window.adminLogout = async () => {
+    await signOut(auth);
+    document.getElementById('page-admin-login').classList.remove('hidden');
+    document.getElementById('page-admin-main').classList.add('hidden');
+  };
+
+  // 관리자 메인 보여주기
+  function showAdminMain() {
+    document.getElementById('page-admin-login').classList.add('hidden');
+    document.getElementById('page-admin-main').classList.remove('hidden');
+  }
+
+  // 승인 대기 목록 불러오기
+  async function loadPendingUsers() {
+    const pendingEl  = document.getElementById('pending-list');
+    const approvedEl = document.getElementById('approved-list');
+    pendingEl.innerHTML  = '';
+    approvedEl.innerHTML = '';
+
+    const snap = await getDocs(collection(db, 'users'));
+    let pendingCount  = 0;
+    let approvedCount = 0;
+
+    snap.forEach(docSnap => {
+      const u = docSnap.data();
+      if (u.role === 'admin') return;
+
+      if (!u.approved) {
+        pendingCount++;
+        pendingEl.innerHTML += `
+          <div class="pending-card" id="pc-${docSnap.id}">
+            <div class="p-avatar s-avatar">${u.name?.[0] || '?'}</div>
+            <div class="p-info" style="flex:1">
+              <div class="s-name">${u.name || '이름없음'}</div>
+              <div class="s-sub">${u.school || ''} · ${u.grade || ''} · ${u.userId || ''}</div>
+            </div>
+            <button class="approve-btn" onclick="approveUser('${docSnap.id}','${u.name}')">승인</button>
+            <button class="reject-btn" onclick="rejectUser('${docSnap.id}')">거절</button>
+          </div>`;
+      } else {
+        approvedCount++;
+        approvedEl.innerHTML += `
+          <div class="approved-row">
+            <div class="s-avatar">${u.name?.[0] || '?'}</div>
+            <div style="flex:1">
+              <div class="s-name">${u.name || '이름없음'}</div>
+              <div class="s-sub">${u.school || ''} · ${u.grade || ''} · ${u.userId || ''}</div>
+            </div>
+            <button class="reject-btn" onclick="revokeUser('${docSnap.id}')">취소</button>
+          </div>`;
+      }
+    });
+
+    if (pendingCount  === 0) pendingEl.innerHTML  = '<div class="empty-msg">대기 중인 학생이 없어요</div>';
+    if (approvedCount === 0) approvedEl.innerHTML = '<div class="empty-msg">승인된 학생이 없어요</div>';
+  }
+
+  // 승인
+  window.approveUser = async (uid, name) => {
+    await updateDoc(doc(db, 'users', uid), { approved: true });
+    alert(`${name} 학생을 승인했어요!`);
+    loadPendingUsers();
+  };
+
+  // 거절 (계정 삭제 대신 비승인 유지)
+  window.rejectUser = async (uid) => {
+    if (!confirm('정말 거절하시겠어요?')) return;
+    await updateDoc(doc(db, 'users', uid), { approved: false, rejected: true });
+    loadPendingUsers();
+  };
+
+  // 승인 취소
+  window.revokeUser = async (uid) => {
+    if (!confirm('승인을 취소하시겠어요?')) return;
+    await updateDoc(doc(db, 'users', uid), { approved: false });
+    loadPendingUsers();
+  };
+
+  // 학생 기록 불러오기
+  async function loadRecords() {
+    const listEl = document.getElementById('records-list');
+    listEl.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
+
+    const snap = await getDocs(collection(db, 'users'));
+    let html = '';
+    let count = 0;
+
+    snap.forEach(docSnap => {
+      const u = docSnap.data();
+      if (u.role === 'admin' || !u.approved) return;
+      count++;
+      html += buildStudentCard(docSnap.id, u);
+    });
+
+    listEl.innerHTML = count === 0
+      ? '<div class="empty-msg">기록이 없어요</div>'
+      : html;
+  }
+
+  function buildStudentCard(uid, u) {
+    return `
+      <div class="student-card">
+        <div class="student-header" onclick="toggleStudent('${uid}')">
+          <div class="s-avatar">${u.name?.[0] || '?'}</div>
+          <div class="s-info">
+            <div class="s-name">${u.name || ''} <span style="font-size:10px;color:#5A7BAD">${u.userId || ''}</span></div>
+            <div class="s-sub">${u.school || ''} · ${u.grade || ''}</div>
+          </div>
+          <span style="font-size:14px;color:#A8C4F5" id="arr-${uid}">▼</span>
+        </div>
+        <div class="week-body" id="wb-${uid}">
+          <div id="rec-${uid}">
+            <div class="empty-msg">기록 불러오는 중...</div>
+          </div>
+          <div id="toast-${uid}" class="copy-toast">카톡 복사 완료!</div>
+          <button class="kakao-btn" onclick="copyKakao('${uid}','${u.name}','${u.userId}','${u.school}')">
+            카톡으로 복사
+          </button>
+        </div>
+      </div>`;
+  }
+
+  window.toggleStudent = async (uid) => {
+    const wb  = document.getElementById('wb-' + uid);
+    const arr = document.getElementById('arr-' + uid);
+    const isOpen = wb.classList.contains('open');
+
+    wb.classList.toggle('open', !isOpen);
+    arr.textContent = isOpen ? '▼' : '▲';
+
+    if (!isOpen) await loadStudentRecords(uid);
+  };
+
+  // 학생별 기록 불러오기
+  async function loadStudentRecords(uid) {
+    const recEl = document.getElementById('rec-' + uid);
+
+    // 일주일치 날짜 범위
+    const now   = new Date();
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    try {
+      const snap = await getDocs(
+        query(
+          collection(db, 'progress'),
+          where('userId', '==', uid),
+          where('date', '>=', weekAgo.toISOString().split('T')[0])
+        )
+      );
+
+      if (snap.empty) {
+        recEl.innerHTML = '<div class="empty-msg">이번 주 학습 기록이 없어요</div>';
+        return;
+      }
+
+      // 날짜별 그룹핑
+      const byDate = {};
+      snap.forEach(d => {
+        const data = d.data();
+        const date = data.date;
+        if (!byDate[date]) byDate[date] = [];
+        byDate[date].push(data);
+      });
+
+      let html = '';
+      Object.keys(byDate).sort().reverse().forEach(date => {
+        const items = byDate[date];
+        const dayStr = formatDate(date);
+        html += `<div class="day-row">
+          <div class="day-label">
+            <span>${dayStr}</span>
+            <span style="color:#3B6D11">${items.length}문제</span>
+          </div>
+          <div class="day-items">`;
+        items.forEach(item => {
+          const cls = item.correct ? 'di-correct' : 'di-wrong';
+          html += `<span class="day-item ${cls}">${item.typeName} ${item.round}회차 ${item.correct ? '정답' : '오답'}</span>`;
+        });
+        html += `</div></div>`;
+      });
+
+      recEl.innerHTML = html;
+
+    } catch (e) {
+      recEl.innerHTML = '<div class="empty-msg">기록을 불러올 수 없어요</div>';
+    }
+  }
+
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    const days = ['일','월','화','수','목','금','토'];
+    return `${d.getMonth()+1}/${d.getDate()} (${days[d.getDay()]})`;
+  }
+
+  // 카톡 복사
+  window.copyKakao = async (uid, name, userId, school) => {
+    const recEl = document.getElementById('rec-' + uid);
+    const rows  = recEl.querySelectorAll('.day-row');
+
+    let text = `[헤일리올라 영어학원]\n`;
+    text += `━━━━━━━━━━━━━━\n`;
+    text += `학생: ${name} (${userId})\n`;
+    text += `학교: ${school}\n`;
+    text += `━━━━━━━━━━━━━━\n`;
+    text += `이번주 학습 기록\n\n`;
+
+    if (rows.length === 0) {
+      text += `이번 주 학습 기록 없음\n`;
+    } else {
+      rows.forEach(row => {
+        const label = row.querySelector('.day-label span:first-child').textContent;
+        const items = row.querySelectorAll('.day-item');
+        text += `${label}\n`;
+        items.forEach(item => {
+          const ok = item.classList.contains('di-correct');
+          text += `${ok ? '✅' : '❌'} ${item.textContent}\n`;
+        });
+        text += '\n';
+      });
+    }
+
+    text += `━━━━━━━━━━━━━━\n`;
+    text += `헤일리올라영어학원`;
+
+    await navigator.clipboard.writeText(text);
+    const toast = document.getElementById('toast-' + uid);
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  };
+
+  // 페이지 로드시 로그인 상태 확인
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists() && userDoc.data().role === 'admin') {
+        showAdminMain();
+        loadPendingUsers();
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
