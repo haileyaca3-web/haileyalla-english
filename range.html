@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>범위 선택 — 헤일리올라</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page">
+  <div class="phone">
+    <div class="top-bar with-back">
+      <button class="back-btn" onclick="window.location.href='home.html'">←</button>
+      <div class="top-info">
+        <div class="top-school" id="school-label">매산고등학교 · 고2 영어Ⅰ</div>
+        <div class="top-title">시험 범위 선택</div>
+      </div>
+    </div>
+    <div class="scroll-body">
+
+      <div class="selected-bar">
+        <div class="selected-text">선택된 범위</div>
+        <div class="selected-count" id="cnt">0개</div>
+      </div>
+
+      <!-- 교과서 -->
+      <div class="section-label">교과서</div>
+      <div class="cat-card">
+        <div class="cat-header" onclick="toggle('t1')">
+          <div class="cat-icon" style="background:#EBF2FF">📖</div>
+          <div class="cat-info">
+            <div class="cat-name">동아출판 (박용예)</div>
+            <div class="cat-sub">Lesson 3, 4</div>
+          </div>
+          <span class="cat-arrow" id="arr-t1">▼</span>
+        </div>
+        <div class="cat-items" id="t1">
+          <div class="item-row" onclick="toggleItem(this,'교과서_3과')">
+            <div class="item-check">✓</div>
+            <div class="item-name">Lesson 3 — Whales, the Earth's Guardians</div>
+            <span class="item-badge ib-blue">3과</span>
+          </div>
+          <div class="item-row" onclick="toggleItem(this,'교과서_4과')">
+            <div class="item-check">✓</div>
+            <div class="item-name">Lesson 4 — Tips for a Healthier Digital Life</div>
+            <span class="item-badge ib-blue">4과</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 부교재 -->
+      <div class="section-label" style="margin-top:8px">부교재</div>
+      <div class="cat-card">
+        <div class="cat-header" onclick="toggle('t2')">
+          <div class="cat-icon" style="background:#EEEDFE">📔</div>
+          <div class="cat-info">
+            <div class="cat-name">리딩마스터</div>
+            <div class="cat-sub">1·2·3·15·16강 + 리뷰 1·5회</div>
+          </div>
+          <span class="cat-arrow" id="arr-t2">▼</span>
+        </div>
+        <div class="cat-items" id="t2">
+          <div class="sub-label" style="font-size:10px;color:#888780;margin-bottom:4px">강별 지문</div>
+          <div class="item-row" onclick="toggleItem(this,'리딩_1강')">
+            <div class="item-check">✓</div>
+            <div class="item-name">1강 — 글의 요지 및 필자의 주장</div>
+            <span class="item-badge ib-purple">1강</span>
+          </div>
+          <div class="item-row" onclick="toggleItem(this,'리딩_2강')">
+            <div class="item-check">✓</div>
+            <div class="item-name">2강 — 글의 주제</div>
+            <span class="item-badge ib-purple">2강</span>
+          </div>
+          <div class="item-row" onclick="toggleItem(this,'리딩_3강')">
+            <div class="item-check">✓</div>
+            <div class="item-name">3강 — 글의 제목</div>
+            <span class="item-badge ib-purple">3강</span>
+          </div>
+          <div class="item-row" onclick="toggleItem(this,'리딩_11강')">
+            <div class="item-check">✓</div>
+            <div class="item-name">11강 — 흐름과 무관한 문장</div>
+            <span class="item-badge ib-purple">11강</span>
+          </div>
+          <div class="item-row" onclick="toggleItem(this,'리딩_15강')">
+            <div class="item-check">✓</div>
+            <div class="item-name">15강 — 어법</div>
+            <span class="item-badge ib-purple">15강</span>
+          </div>
+          <div class="item-row" onclick="toggleItem(this,'리딩_16강')">
+            <div class="item-check">✓</div>
+            <div class="item-name">16강 — 어휘</div>
+            <span class="item-badge ib-purple">16강</span>
+          </div>
+          <div style="height:0.5px;background:#EEF2FF;margin:6px 0"></div>
+          <div class="sub-label" style="font-size:10px;color:#888780;margin-bottom:4px">리뷰 모의고사</div>
+          <div class="item-row" onclick="toggleItem(this,'리뷰_1회')">
+            <div class="item-check">✓</div>
+            <div class="item-name">리뷰 모의고사 1회</div>
+            <span class="item-badge ib-amber">1회</span>
+          </div>
+          <div class="item-row" onclick="toggleItem(this,'리뷰_5회')">
+            <div class="item-check">✓</div>
+            <div class="item-name">리뷰 모의고사 5회</div>
+            <span class="item-badge ib-amber">5회</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 모의고사 -->
+      <div class="section-label" style="margin-top:8px">모의고사</div>
+      <div class="cat-card">
+        <div class="cat-header" onclick="toggle('t3')">
+          <div class="cat-icon" style="background:#E6F1FB">📄</div>
+          <div class="cat-info">
+            <div class="cat-name">2026년 3월 고2 모의고사</div>
+            <div class="cat-sub">전국연합학력평가</div>
+          </div>
+          <span class="cat-arrow" id="arr-t3">▼</span>
+        </div>
+        <div class="cat-items" id="t3">
+          <div class="item-row" onclick="toggleItem(this,'모의고사_3월')">
+            <div class="item-check">✓</div>
+            <div class="item-name">2026년 3월 고2 전체 지문</div>
+            <span class="item-badge ib-blue">45문항</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-main" id="btn-next" style="margin-top:14px" disabled onclick="goNext()">
+        문제 풀기 시작
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const selected = new Set();
+
+  // 학교 라벨
+  const school = localStorage.getItem('selectedSchool') || '';
+  document.getElementById('school-label').textContent = school + ' · 고2 영어Ⅰ';
+
+  function toggle(id) {
+    const el  = document.getElementById(id);
+    const arr = document.getElementById('arr-' + id);
+    const isOpen = el.classList.contains('open');
+    el.classList.toggle('open', !isOpen);
+    arr.textContent = isOpen ? '▼' : '▲';
+  }
+
+  function toggleItem(row, key) {
+    const check  = row.querySelector('.item-check');
+    const isOn   = check.classList.contains('on');
+    check.classList.toggle('on', !isOn);
+    check.style.color = isOn ? 'transparent' : '#fff';
+    check.style.background = isOn ? '#fff' : '#1A3566';
+    check.style.borderColor = isOn ? '#A8C4F5' : '#1A3566';
+    if (!isOn) selected.add(key);
+    else selected.delete(key);
+    document.getElementById('cnt').textContent = selected.size + '개';
+    document.getElementById('btn-next').disabled = selected.size === 0;
+  }
+
+  function goNext() {
+    if (selected.size === 0) return;
+    localStorage.setItem('selectedRanges', JSON.stringify([...selected]));
+    window.location.href = 'passage.html';
+  }
+
+  // 교과서 기본 열기
+  toggle('t1');
+</script>
+
+</body>
+</html>
