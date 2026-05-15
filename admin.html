@@ -49,6 +49,7 @@
         <div class="tab on" onclick="switchTab('approve')"  id="tab-approve">승인</div>
         <div class="tab"    onclick="switchTab('passages')" id="tab-passages">지문</div>
         <div class="tab"    onclick="switchTab('records')"  id="tab-records">기록</div>
+        <div class="tab"    onclick="switchTab('settings')" id="tab-settings">설정</div>
       </div>
     </div>
 
@@ -80,22 +81,21 @@
         </select>
       </div>
       <div class="field-wrap">
-        <div class="field-label">학교</div>
-        <select id="p-school">
-          <option value="전체">전체 공통</option>
-          <option value="매산고">매산고</option>
-          <option value="효천고">효천고</option>
-          <option value="복성고">복성고</option>
-        </select>
+        <div class="field-label">어느 학교가 사용?</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:4px 0">
+          <label class="school-check"><input type="checkbox" class="p-school-cb" value="매산고"> 매산고</label>
+          <label class="school-check"><input type="checkbox" class="p-school-cb" value="효천고"> 효천고</label>
+          <label class="school-check"><input type="checkbox" class="p-school-cb" value="복성고"> 복성고</label>
+        </div>
       </div>
 
       <div class="section-label" style="margin-top:4px">지문 전체 붙여넣기</div>
       <div style="font-size:11px;color:#5A7BAD;margin-bottom:8px;line-height:1.6">
-        지문 번호(01, 02...)를 기준으로 자동 분리돼요.<br>전체를 한꺼번에 붙여넣으세요.
+        지문 번호(01, 02...)를 기준으로 자동 분리돼요.<br>각주는 *로 시작.
       </div>
       <textarea id="p-text"
         style="width:100%;min-height:200px;padding:10px 12px;border-radius:8px;border:0.5px solid #D6E4FF;font-size:13px;line-height:1.8;resize:vertical;background:#fff;color:#2C2C2A"
-        placeholder="01&#10;It's remarkable that positive fantasies...&#10;&#10;02&#10;Dopamine can be a great motivator..."></textarea>
+        placeholder="01&#10;It's remarkable that positive fantasies...&#10;*morphology: 형태&#10;&#10;02&#10;Dopamine can be..."></textarea>
 
       <div class="error-msg" id="p-error"></div>
       <div id="p-preview" style="display:none;background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#1A3566;line-height:1.6"></div>
@@ -106,16 +106,22 @@
       </div>
 
       <div class="divider"></div>
-      <div class="section-label">저장된 지문 목록</div>
+
+      <div class="section-label">📚 강별 문제 생성</div>
+      <div style="font-size:11px;color:#5A7BAD;margin-bottom:10px;line-height:1.6">
+        강을 선택하면 학교별 [문제 생성] 버튼이 나와요.<br>
+        한 번 클릭으로 그 강 전체 지문의 문제가 만들어져요.
+      </div>
       <div class="field-wrap">
-        <select id="filter-school" onchange="loadPassageList()">
-          <option value="전체">전체</option>
-          <option value="매산고">매산고</option>
-          <option value="효천고">효천고</option>
-          <option value="복성고">복성고</option>
+        <select id="filter-textbook" onchange="loadUnitList()">
+          <option value="">교재 선택</option>
+          <option value="교과서">교과서</option>
+          <option value="리딩마스터">리딩마스터</option>
+          <option value="리뷰">리뷰</option>
+          <option value="모의고사">모의고사</option>
         </select>
       </div>
-      <div id="passage-saved-list"><div class="empty-msg">저장된 지문이 없어요</div></div>
+      <div id="unit-list"><div class="empty-msg">교재를 선택하세요</div></div>
     </div>
 
     <!-- 학생 기록 탭 -->
@@ -123,19 +129,80 @@
       <div class="section-label">학생별 주간 기록</div>
       <div id="records-list"><div class="empty-msg">기록이 없어요</div></div>
     </div>
+
+    <!-- 설정 탭 -->
+    <div class="scroll-body hidden" id="section-settings">
+      <div class="section-label">🔑 Claude API 키</div>
+      <div style="font-size:11px;color:#5A7BAD;margin-bottom:10px;line-height:1.6">
+        문제 자동 생성에 필요해요.<br>
+        <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#2B5EB8">console.anthropic.com</a>에서 발급 → 여기 저장.
+      </div>
+      <div class="field-wrap">
+        <div class="field-label">API 키</div>
+        <input type="password" id="api-key-input" placeholder="sk-ant-api03-...">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sub" style="flex:1" onclick="toggleApiKeyView()">보기/숨김</button>
+        <button class="btn-main" style="flex:1" onclick="saveApiKey()">저장</button>
+      </div>
+      <div id="api-key-status" style="margin-top:10px;font-size:11px;color:#888780"></div>
+
+      <div class="divider"></div>
+      <div class="section-label">⚙️ 시스템 정보</div>
+      <div style="background:#fff;border:0.5px solid #D6E4FF;border-radius:8px;padding:12px;font-size:11px;color:#5A7BAD;line-height:1.8">
+        모델: claude-sonnet-4-5<br>
+        지문당 문제 수: 학교 유형 × 2개<br>
+        매산고 12유형 · 효천고 8유형 · 복성고 9유형
+      </div>
+    </div>
   </div>
 </div>
 
 <style>
 .btn-logout{background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
-.btn-logout:hover{background:rgba(255,255,255,0.2)}
 .empty-msg{font-size:12px;color:#888780;text-align:center;padding:16px 0}
 .approved-row{background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:10px 13px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
-.p-item{background:#fff;border:0.5px solid #D6E4FF;border-radius:8px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
-.p-item-name{font-size:12px;color:#1A3566;font-weight:500}
-.p-item-sub{font-size:11px;color:#888780;margin-top:1px}
-.del-btn{font-size:11px;color:#E24B4A;border:0.5px solid #E24B4A;background:transparent;border-radius:6px;padding:3px 8px;cursor:pointer;flex-shrink:0}
+.school-check{display:flex;align-items:center;gap:5px;font-size:12px;color:#1A3566;cursor:pointer;padding:6px 10px;background:#fff;border:0.5px solid #D6E4FF;border-radius:6px}
+.school-check input{margin:0}
+
+/* 강별 카드 */
+.unit-card{background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:12px;margin-bottom:10px}
+.unit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.unit-title{font-size:13px;font-weight:600;color:#1A3566}
+.unit-count{font-size:11px;color:#5A7BAD}
+.passage-mini{background:#F8FAFE;border:0.5px solid #E6EEFC;border-radius:6px;padding:6px 9px;margin-bottom:4px;font-size:11px;color:#5A7BAD;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.school-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.school-btn{flex:1;min-width:90px;font-size:11px;padding:8px;border-radius:6px;border:0.5px solid #A8C4F5;background:#EBF2FF;color:#1A3566;cursor:pointer;text-align:center;font-weight:500}
+.school-btn.done{background:#EAF3DE;border-color:#A8D472;color:#27500A}
+.school-btn.loading{background:#FFF5E8;border-color:#E5B774;color:#854F0B;cursor:wait}
+.del-tiny{font-size:10px;color:#E24B4A;border:0.5px solid #E24B4A;background:transparent;border-radius:4px;padding:2px 6px;cursor:pointer;flex-shrink:0}
+
+/* 진행 모달 */
+.gen-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center}
+.gen-modal.show{display:flex}
+.gen-modal-inner{background:#fff;border-radius:14px;padding:20px;width:88%;max-width:340px}
+.gen-title-m{font-size:14px;font-weight:600;color:#1A3566;margin-bottom:6px}
+.gen-sub-m{font-size:11px;color:#5A7BAD;margin-bottom:14px}
+.gen-progress-bar{background:#F0F4FB;height:8px;border-radius:4px;overflow:hidden;margin-bottom:8px}
+.gen-progress-fill{background:#2B5EB8;height:100%;transition:width 0.3s;width:0%}
+.gen-log{background:#F8FAFE;border-radius:8px;padding:8px;max-height:160px;overflow-y:auto;font-size:11px;line-height:1.6;color:#2C2C2A;margin-bottom:10px}
+.gen-log-item{margin-bottom:3px}
+.gen-log-ok{color:#3B6D11}
+.gen-log-err{color:#E24B4A}
+.gen-close-btn{width:100%;background:#2B5EB8;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:500;cursor:pointer}
 </style>
+
+<!-- 진행 모달 -->
+<div class="gen-modal" id="gen-modal">
+  <div class="gen-modal-inner">
+    <div class="gen-title-m" id="gen-title">문제 생성 중...</div>
+    <div class="gen-sub-m" id="gen-sub">잠시만 기다려주세요</div>
+    <div class="gen-progress-bar"><div class="gen-progress-fill" id="gen-progress-fill"></div></div>
+    <div style="font-size:11px;color:#5A7BAD;margin-bottom:8px" id="gen-count">0 / 0</div>
+    <div class="gen-log" id="gen-log"></div>
+    <button class="gen-close-btn" id="gen-close-btn" onclick="closeGenModal()" style="display:none">닫기</button>
+  </div>
+</div>
 
 <script type="module">
   import { auth, db } from './js/firebase.js';
@@ -147,19 +214,108 @@
     setDoc, updateDoc, deleteDoc, query, where
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ── 탭 전환 ──
-  window.switchTab = (tab) => {
-    ['approve','passages','records'].forEach(t => {
+  // ════════════════════════════════════════
+  // 학교별 유형 정의
+  // ════════════════════════════════════════
+  const SCHOOL_TYPES = {
+    '매산고': [
+      { name:'흐름무관',   format:'choice', desc:'다음 글의 흐름과 관계 없는 문장은? (선택지 5개, ①~⑤)' },
+      { name:'낱말쓰임',   format:'choice', desc:'밑줄 친 낱말의 쓰임이 적절하지 않은 것은? (선택지 5개)' },
+      { name:'글의제목',   format:'choice', desc:'다음 글의 제목으로 가장 적절한 것은? (선택지 5개, 영어 제목)' },
+      { name:'글의순서',   format:'choice', desc:'주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은? (A)(B)(C) 순서 배열, 선택지 5개' },
+      { name:'요약빈칸',   format:'choice', desc:'다음 글의 요약문의 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은? (선택지 5개)' },
+      { name:'문장삽입',   format:'choice', desc:'주어진 문장이 들어가기에 가장 적절한 곳은? (글 안에 ①~⑤ 위치 표시)' },
+      { name:'밑줄의미',   format:'choice', desc:'밑줄 친 부분이 다음 글에서 의미하는 바로 가장 적절한 것은? (선택지 5개)' },
+      { name:'어법',       format:'choice', desc:'다음 글의 밑줄 친 부분 중 어법상 틀린 것은? (선택지 5개)' },
+      { name:'빈칸추론',   format:'choice', desc:'빈칸에 들어갈 말로 가장 적절한 것은? (선택지 5개)' },
+      { name:'요지빈칸',   format:'short', desc:'다음 글의 요지를 한 문장으로 완성할 때 (A)와 (B)에 들어갈 단어를 영어로 쓰시오.' },
+      { name:'이유서술',   format:'short', desc:'(밑줄 친 부분의 이유 또는 글의 주제 관련 질문)을 한국어로 서술하시오. 한국어 답안.' },
+      { name:'밑줄의미영작', format:'short', desc:'밑줄 친 한국어 문장을 본문의 흐름에 맞게 영작하시오. 영어 답안.' },
+    ],
+    '효천고': [
+      { name:'어법',       format:'choice', desc:'다음 글의 밑줄 친 부분 중 어법상 틀린 것은? (선택지 5개)' },
+      { name:'빈칸추론',   format:'choice', desc:'빈칸에 들어갈 말로 가장 적절한 것은? (선택지 5개)' },
+      { name:'문장삽입',   format:'choice', desc:'주어진 문장이 들어가기에 가장 적절한 곳은?' },
+      { name:'글의순서',   format:'choice', desc:'주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은? (A)(B)(C)' },
+      { name:'내용일치',   format:'choice', desc:'다음 글의 내용과 일치하는 것은? (선택지 5개)' },
+      { name:'낱말쓰임',   format:'choice', desc:'밑줄 친 낱말의 쓰임이 적절하지 않은 것은? (선택지 5개)' },
+      { name:'요약빈칸',   format:'choice', desc:'다음 글의 요약문의 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?' },
+      { name:'단어배열',   format:'short', desc:'주어진 단어들을 본문의 의미에 맞게 올바른 순서로 배열하시오. 영어 답안.' },
+    ],
+    '복성고': [
+      { name:'빈칸추론',   format:'choice', desc:'빈칸에 들어갈 말로 가장 적절한 것은? (선택지 5개)' },
+      { name:'문장삽입',   format:'choice', desc:'주어진 문장이 들어가기에 가장 적절한 곳은?' },
+      { name:'낱말쓰임',   format:'choice', desc:'밑줄 친 낱말의 쓰임이 적절하지 않은 것은?' },
+      { name:'내용불일치', format:'choice', desc:'다음 글의 내용과 일치하지 않는 것은? (선택지 5개)' },
+      { name:'밑줄의미',   format:'choice', desc:'밑줄 친 부분이 의미하는 바로 가장 적절한 것은?' },
+      { name:'글의순서',   format:'choice', desc:'주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은? (A)(B)(C)' },
+      { name:'요약빈칸',   format:'choice', desc:'요약문의 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?' },
+      { name:'가정법영작', format:'short', desc:'한국어 문장을 가정법을 사용해서 영작하시오. 영어 답안.' },
+      { name:'접속사영작', format:'short', desc:'한국어 문장을 적절한 접속사를 사용해서 영작하시오. 영어 답안.' },
+    ],
+  };
+
+  // ════════════════════════════════════════
+  // API 키 (Firestore admin/config 에 저장)
+  // ════════════════════════════════════════
+  let CACHED_API_KEY = '';
+
+  async function loadApiKey() {
+    try {
+      const s = await getDoc(doc(db, 'admin', 'config'));
+      if (s.exists() && s.data().apiKey) {
+        CACHED_API_KEY = s.data().apiKey;
+        return CACHED_API_KEY;
+      }
+    } catch(e) {}
+    return '';
+  }
+
+  window.toggleApiKeyView = () => {
+    const inp = document.getElementById('api-key-input');
+    inp.type = inp.type === 'password' ? 'text' : 'password';
+  };
+
+  window.saveApiKey = async () => {
+    const key = document.getElementById('api-key-input').value.trim();
+    const st  = document.getElementById('api-key-status');
+    if (!key) { st.style.color='#E24B4A'; st.textContent='API 키를 입력해주세요.'; return; }
+    if (!key.startsWith('sk-ant-')) { st.style.color='#E24B4A'; st.textContent='형식이 올바르지 않아요 (sk-ant-... 로 시작).'; return; }
+    try {
+      await setDoc(doc(db,'admin','config'), { apiKey:key, updatedAt:new Date().toISOString() }, { merge:true });
+      CACHED_API_KEY = key;
+      st.style.color='#3B6D11';
+      st.textContent='✅ 저장 완료';
+    } catch(e) {
+      st.style.color='#E24B4A';
+      st.textContent='저장 실패: ' + e.message;
+    }
+  };
+
+  // ════════════════════════════════════════
+  // 탭 전환
+  // ════════════════════════════════════════
+  window.switchTab = async (tab) => {
+    ['approve','passages','records','settings'].forEach(t => {
       document.getElementById('section-'+t).classList.add('hidden');
       document.getElementById('tab-'+t).classList.remove('on');
     });
     document.getElementById('section-'+tab).classList.remove('hidden');
     document.getElementById('tab-'+tab).classList.add('on');
     if (tab === 'records')  loadRecords();
-    if (tab === 'passages') loadPassageList();
+    if (tab === 'settings') {
+      const k = await loadApiKey();
+      if (k) {
+        document.getElementById('api-key-input').value = k;
+        document.getElementById('api-key-status').style.color = '#3B6D11';
+        document.getElementById('api-key-status').textContent = '✅ 저장된 키가 있어요';
+      }
+    }
   };
 
-  // ── 로그인 ──
+  // ════════════════════════════════════════
+  // 로그인
+  // ════════════════════════════════════════
   window.adminLogin = async () => {
     const id  = document.getElementById('admin-id').value.trim();
     const pw  = document.getElementById('admin-pw').value.trim();
@@ -184,9 +340,10 @@
     document.getElementById('page-admin-main').classList.add('hidden');
   };
 
-  function showAdminMain() {
+  async function showAdminMain() {
     document.getElementById('page-admin-login').classList.add('hidden');
     document.getElementById('page-admin-main').classList.remove('hidden');
+    await loadApiKey();
     loadPendingUsers();
   }
 
@@ -197,7 +354,9 @@
     }
   });
 
-  // ── 승인 관리 ──
+  // ════════════════════════════════════════
+  // 승인 관리
+  // ════════════════════════════════════════
   async function loadPendingUsers() {
     const pEl = document.getElementById('pending-list');
     const aEl = document.getElementById('approved-list');
@@ -252,7 +411,9 @@
     loadPendingUsers();
   };
 
-  // ── 지문 관리 ──
+  // ════════════════════════════════════════
+  // 지문 입력
+  // ════════════════════════════════════════
   const unitOptions = {
     '교과서':    ['Lesson 1','Lesson 2','Lesson 3','Lesson 4','Lesson 5','Lesson 6'],
     '리딩마스터':['1강','2강','3강','4강','5강','6강','7강','8강','9강','10강','11강','12강','13강','14강','15강','16강'],
@@ -267,7 +428,6 @@
     (unitOptions[tb]||[]).forEach(u => sel.innerHTML += `<option value="${u}">${u}</option>`);
   };
 
-  // 지문 분리
   function splitPassages(text) {
     const lines    = text.split('\n');
     const passages = [];
@@ -286,30 +446,30 @@
     return passages;
   }
 
-  // 미리보기
   window.previewPassages = () => {
     const text = document.getElementById('p-text').value.trim();
     const tb   = document.getElementById('p-textbook').value;
     const unit = document.getElementById('p-unit').value;
+    const schools = Array.from(document.querySelectorAll('.p-school-cb:checked')).map(cb => cb.value);
     const err  = document.getElementById('p-error');
     const prev = document.getElementById('p-preview');
     err.textContent = '';
-    if (!tb||!unit) { err.textContent='교재와 강/회차를 선택해주세요.'; return; }
+    if (!tb||!unit) { err.textContent='교재와 강을 선택해주세요.'; return; }
+    if (schools.length === 0) { err.textContent='학교를 1개 이상 선택해주세요.'; return; }
     if (!text)      { err.textContent='지문을 붙여넣어 주세요.'; return; }
     const passages = splitPassages(text);
     if (passages.length===0) { err.textContent='지문을 인식하지 못했어요. 번호(01,02...)로 시작하는지 확인해주세요.'; return; }
     prev.style.display = 'block';
-    prev.innerHTML = `<b>${tb} ${unit} — 총 ${passages.length}개 지문 인식됨</b><br><br>`
+    prev.innerHTML = `<b>${tb} ${unit} — 총 ${passages.length}개 지문 (학교: ${schools.join(', ')})</b><br><br>`
       + passages.map((p,i) => `${i+1}. [${p.num}] ${p.text.substring(0,50)}...`).join('<br>');
     document.getElementById('btn-save-passages').disabled = false;
   };
 
-  // Firebase 저장
   window.savePassages = async () => {
     const text   = document.getElementById('p-text').value.trim();
     const tb     = document.getElementById('p-textbook').value;
     const unit   = document.getElementById('p-unit').value;
-    const school = document.getElementById('p-school').value;
+    const schools = Array.from(document.querySelectorAll('.p-school-cb:checked')).map(cb => cb.value);
     const err    = document.getElementById('p-error');
     const btn    = document.getElementById('btn-save-passages');
     btn.disabled = true; btn.textContent = '저장 중...';
@@ -317,53 +477,311 @@
     const passages = splitPassages(text);
     try {
       for (const p of passages) {
-        const docId = `${school}_${tb}_${unit}_${p.num}`.replace(/[\s/]+/g,'_');
+        // 지문 ID: 교재_강_번호 (학교 무관, 학교 정보는 schools 배열로 저장)
+        const docId = `${tb}_${unit}_${p.num}`.replace(/[\s/]+/g,'_');
         await setDoc(doc(db,'passages',docId), {
-          school, textbook:tb, unit,
-          num:p.num, text:p.text, footnote:p.footnote.trim(),
+          textbook: tb,
+          unit,
+          num: p.num,
+          text: p.text,
+          footnote: p.footnote.trim(),
+          schools,                    // ← 이 지문을 어느 학교들이 쓰는지
           range: tb+'_'+unit,
           createdAt: new Date().toISOString()
-        });
+        }, { merge: true });
       }
       alert(`${passages.length}개 지문이 저장됐어요!`);
       document.getElementById('p-text').value = '';
       document.getElementById('p-preview').style.display = 'none';
-      loadPassageList();
+      document.querySelectorAll('.p-school-cb').forEach(cb => cb.checked = false);
     } catch(e) { err.textContent = '저장 오류: '+e.message; }
     btn.disabled = false; btn.textContent = 'Firebase 저장';
   };
 
-  // 저장된 지문 목록
-  async function loadPassageList() {
-    const listEl = document.getElementById('passage-saved-list');
-    const school = document.getElementById('filter-school').value;
-    listEl.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
+  // ════════════════════════════════════════
+  // 강별 목록 + 문제 생성
+  // ════════════════════════════════════════
+  window.loadUnitList = async () => {
+    const tb = document.getElementById('filter-textbook').value;
+    const el = document.getElementById('unit-list');
+    if (!tb) { el.innerHTML = '<div class="empty-msg">교재를 선택하세요</div>'; return; }
+    el.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
+
+    // 지문 전부 가져오기
     const snap = await getDocs(collection(db,'passages'));
-    let html='', count=0;
+    const units = {};       // { unit: [passage,...] }
     snap.forEach(d => {
       const p = d.data();
-      if (school!=='전체' && p.school!==school) return;
-      count++;
-      html += `
-        <div class="p-item">
-          <div style="flex:1;min-width:0">
-            <div class="p-item-name">${p.textbook} ${p.unit} — ${p.num}번</div>
-            <div class="p-item-sub">${p.school} · ${p.text.substring(0,35)}...</div>
-          </div>
-          <button class="del-btn" onclick="deletePassage('${d.id}')">삭제</button>
-        </div>`;
+      if (p.textbook !== tb) return;
+      if (!units[p.unit]) units[p.unit] = [];
+      units[p.unit].push({ id: d.id, ...p });
     });
-    listEl.innerHTML = count===0 ? '<div class="empty-msg">저장된 지문이 없어요</div>' : html;
-  }
-  window.loadPassageList = loadPassageList;
 
-  window.deletePassage = async (id) => {
-    if (!confirm('이 지문을 삭제하시겠어요?')) return;
-    await deleteDoc(doc(db,'passages',id));
-    loadPassageList();
+    if (Object.keys(units).length === 0) {
+      el.innerHTML = '<div class="empty-msg">저장된 지문이 없어요</div>';
+      return;
+    }
+
+    // 문제 컬렉션 조회 (생성 완료 여부 체크용)
+    const qSnap = await getDocs(collection(db,'questions'));
+    const doneSet = new Set();
+    qSnap.forEach(d => {
+      const q = d.data();
+      // unit + school 조합 키
+      doneSet.add(`${q.textbook}_${q.unit}_${q.school}`);
+    });
+
+    const sortedUnits = Object.keys(units).sort((a,b) => {
+      const na = parseInt(a) || 0, nb = parseInt(b) || 0;
+      return na - nb;
+    });
+
+    let html = '';
+    sortedUnits.forEach(unit => {
+      const passages = units[unit].sort((a,b) => a.num.localeCompare(b.num));
+      // 이 강 지문들이 어느 학교에서 쓰이는지
+      const allSchools = new Set();
+      passages.forEach(p => (p.schools||[]).forEach(s => allSchools.add(s)));
+      const schoolList = Array.from(allSchools);
+
+      html += `<div class="unit-card">
+        <div class="unit-header">
+          <div class="unit-title">${tb} ${unit}</div>
+          <div class="unit-count">${passages.length}개 지문</div>
+        </div>`;
+
+      passages.forEach(p => {
+        html += `<div class="passage-mini">
+          <span>${p.num}번 · ${p.text.substring(0,30)}...</span>
+          <button class="del-tiny" onclick="deletePassage('${p.id}','${tb}','${unit}')">삭제</button>
+        </div>`;
+      });
+
+      if (schoolList.length === 0) {
+        html += `<div style="font-size:11px;color:#888780;margin-top:8px">사용 학교가 지정되지 않았어요</div>`;
+      } else {
+        html += `<div class="school-row">`;
+        schoolList.forEach(school => {
+          const done = doneSet.has(`${tb}_${unit}_${school}`);
+          const cls = done ? 'school-btn done' : 'school-btn';
+          const label = done ? `${school} ✅` : `${school} 문제 생성`;
+          html += `<button class="${cls}" id="btn-${tb}_${unit}_${school}".replace(/\s/g,'_') onclick="generateUnitQuestions('${tb}','${unit}','${school}')">${label}</button>`;
+        });
+        html += `</div>`;
+      }
+      html += `</div>`;
+    });
+    el.innerHTML = html;
   };
 
-  // ── 학생 기록 ──
+  window.deletePassage = async (id, tb, unit) => {
+    if (!confirm('이 지문을 삭제하시겠어요? (관련 문제도 함께 삭제됩니다)')) return;
+    await deleteDoc(doc(db,'passages',id));
+    // 관련 문제 삭제
+    const qSnap = await getDocs(collection(db,'questions'));
+    for (const d of qSnap.docs) {
+      if (d.id.startsWith(id + '_')) await deleteDoc(d.ref);
+    }
+    loadUnitList();
+  };
+
+  // ════════════════════════════════════════
+  // 진행 모달
+  // ════════════════════════════════════════
+  function openGenModal(title) {
+    const m = document.getElementById('gen-modal');
+    document.getElementById('gen-title').textContent = title;
+    document.getElementById('gen-sub').textContent = '잠시만 기다려주세요';
+    document.getElementById('gen-progress-fill').style.width = '0%';
+    document.getElementById('gen-count').textContent = '0 / 0';
+    document.getElementById('gen-log').innerHTML = '';
+    document.getElementById('gen-close-btn').style.display = 'none';
+    m.classList.add('show');
+  }
+  function updateGenProgress(cur, total) {
+    document.getElementById('gen-count').textContent = `${cur} / ${total}`;
+    document.getElementById('gen-progress-fill').style.width = `${(cur/total)*100}%`;
+  }
+  function logGen(msg, type='') {
+    const el = document.getElementById('gen-log');
+    const cls = type === 'ok' ? 'gen-log-ok' : (type === 'err' ? 'gen-log-err' : '');
+    el.innerHTML += `<div class="gen-log-item ${cls}">${msg}</div>`;
+    el.scrollTop = el.scrollHeight;
+  }
+  window.closeGenModal = () => {
+    document.getElementById('gen-modal').classList.remove('show');
+    loadUnitList();
+  };
+
+  // ════════════════════════════════════════
+  // ⭐ 핵심: 강 단위 문제 생성
+  // ════════════════════════════════════════
+  window.generateUnitQuestions = async (textbook, unit, school) => {
+    const apiKey = CACHED_API_KEY || await loadApiKey();
+    if (!apiKey) {
+      alert('먼저 [설정] 탭에서 Claude API 키를 저장해주세요.');
+      return;
+    }
+
+    const types = SCHOOL_TYPES[school];
+    if (!types) { alert('이 학교의 유형이 정의되지 않았어요.'); return; }
+
+    // 이 강의 지문 모두 가져오기
+    const snap = await getDocs(collection(db,'passages'));
+    const passages = [];
+    snap.forEach(d => {
+      const p = d.data();
+      if (p.textbook === textbook && p.unit === unit && (p.schools||[]).includes(school)) {
+        passages.push({ id: d.id, ...p });
+      }
+    });
+    passages.sort((a,b) => a.num.localeCompare(b.num));
+
+    if (passages.length === 0) {
+      alert(`${school}용 지문이 없어요.`);
+      return;
+    }
+
+    if (!confirm(`${textbook} ${unit} · ${school} 문제를 생성할게요.\n\n지문 ${passages.length}개 × 유형 ${types.length}개 = 총 ${passages.length * types.length * 2}문제\n(예상 시간: 약 ${Math.ceil(passages.length * types.length * 0.05)}분)\n\n진행하시겠어요?`)) return;
+
+    openGenModal(`${school} · ${textbook} ${unit} 문제 생성`);
+
+    const total = passages.length * types.length;
+    let done = 0, success = 0, failed = 0;
+
+    for (const p of passages) {
+      for (const t of types) {
+        try {
+          logGen(`${p.num}번 · ${t.name} 생성 중...`);
+          const result = await generateQuestionsForType(apiKey, p, t, school);
+
+          // Firestore 저장 (2문제)
+          for (let i = 0; i < result.questions.length; i++) {
+            const q = result.questions[i];
+            const docId = `${p.id}_${school}_${t.name}_${i+1}`.replace(/[\s/]+/g,'_');
+            await setDoc(doc(db,'questions',docId), {
+              passageId: p.id,
+              textbook, unit,
+              num: p.num,
+              school,
+              typeName: t.name,
+              format: t.format,
+              idx: i+1,
+              question: q.question,
+              choices: q.choices || [],
+              answer: q.answer,
+              explanation: q.explanation || '',
+              createdAt: new Date().toISOString()
+            });
+          }
+          success++;
+          logGen(`${p.num}번 · ${t.name} ✅ 완료`, 'ok');
+        } catch(e) {
+          failed++;
+          logGen(`${p.num}번 · ${t.name} ❌ 실패: ${e.message}`, 'err');
+        }
+        done++;
+        updateGenProgress(done, total);
+      }
+    }
+
+    document.getElementById('gen-title').textContent = '✅ 생성 완료';
+    document.getElementById('gen-sub').textContent = `성공 ${success}개 · 실패 ${failed}개`;
+    document.getElementById('gen-close-btn').style.display = 'block';
+  };
+
+  // ════════════════════════════════════════
+  // Claude API 호출 (유형 1개당 문제 2개 생성)
+  // ════════════════════════════════════════
+  async function generateQuestionsForType(apiKey, passage, type, school) {
+    const isChoice = type.format === 'choice';
+
+    const prompt = `당신은 고등학교 영어 변형문제를 만드는 전문가입니다.
+
+다음 지문을 읽고, "${type.name}" 유형의 문제를 **2개** 만들어주세요.
+
+[지문]
+${passage.text}
+
+${passage.footnote ? '[각주]\n' + passage.footnote + '\n' : ''}
+[유형 설명]
+${type.desc}
+
+[규칙]
+- 정확히 2개의 문제를 만드세요.
+- 두 문제는 같은 유형이지만 서로 다른 포인트를 묻도록 만드세요.
+- 한국 고등학교 ${school} 수준에 맞게 만드세요.
+- 변형 문제이므로 같은 지문에서 매번 새롭게 출제될 수 있는 형태여야 합니다.
+${isChoice 
+  ? '- 선택형: 선택지 5개 (①②③④⑤ 또는 1~5), 정답은 1~5 중 숫자로 표시.' 
+  : '- 서답형: 학생이 텍스트로 답을 입력. 정답은 모범답안 문자열. 의미가 맞으면 정답으로 인정될 수 있도록 explanation에 채점 기준을 명시.'}
+
+[출력 형식 — JSON만, 다른 텍스트 없이]
+{
+  "questions": [
+    {
+      "question": "문제 본문 (지문의 어떤 부분을 묻는지 명확하게)",
+      ${isChoice ? `"choices": ["선택지1", "선택지2", "선택지3", "선택지4", "선택지5"],
+      "answer": 3,` : `"choices": [],
+      "answer": "모범답안 텍스트",`}
+      "explanation": "${isChoice ? '정답 해설' : '채점 기준 및 정답 해설'}"
+    },
+    {
+      "question": "...",
+      ${isChoice ? `"choices": [...],
+      "answer": ...,` : `"choices": [],
+      "answer": "...",`}
+      "explanation": "..."
+    }
+  ]
+}`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API 오류 ${res.status}: ${err.substring(0,100)}`);
+    }
+
+    const data = await res.json();
+    let txt = data.content[0].text.trim();
+
+    // ```json 블록 제거
+    txt = txt.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(txt);
+    } catch(e) {
+      // JSON 추출 시도
+      const match = txt.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+      else throw new Error('JSON 파싱 실패');
+    }
+
+    if (!parsed.questions || parsed.questions.length < 2) {
+      throw new Error('문제 2개 미만 생성됨');
+    }
+
+    return parsed;
+  }
+
+  // ════════════════════════════════════════
+  // 학생 기록
+  // ════════════════════════════════════════
   async function loadRecords() {
     const listEl = document.getElementById('records-list');
     listEl.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
