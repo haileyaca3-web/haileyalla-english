@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>문제 풀기 — 헤일리올라</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="page">
+  <div class="phone">
+    <div class="top-bar with-back" style="justify-content:space-between">
+      <button class="back-btn" onclick="window.location.href='passage.html'">←</button>
+      <div class="top-info">
+        <div class="top-school" id="quiz-school">매산고</div>
+        <div class="top-title" id="quiz-passage">지문 로딩 중...</div>
+      </div>
+      <div class="round-badge" id="round-badge"></div>
+    </div>
+
+    <div class="scroll-body" id="quiz-body">
+      <div id="loading-screen" style="text-align:center;padding:40px 20px">
+        <div style="font-size:13px;color:#1A3566;font-weight:500;margin-bottom:8px">문제 생성 중...</div>
+        <div style="font-size:12px;color:#888780;line-height:1.7">
+          AI가 매산고 출제 패턴으로<br>문제를 만들고 있어요
+        </div>
+        <div style="margin-top:16px;font-size:20px">⏳</div>
+      </div>
+
+      <!-- 문제 영역 -->
+      <div id="quiz-content" style="display:none">
+        <div class="q-meta">
+          <span class="q-type" id="q-type-label">유형</span>
+          <span class="q-pts" id="q-pts-label">3.1점 수준</span>
+        </div>
+        <div class="q-text" id="q-text"></div>
+        <div class="passage" id="q-passage"></div>
+        <div class="options" id="q-options"></div>
+
+        <div class="result-box result-correct" id="res-correct"></div>
+        <div class="result-box result-wrong1" id="res-wrong1"></div>
+        <div class="result-box result-wrong2" id="res-wrong2"></div>
+        <div class="explanation" id="q-explanation"></div>
+
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <button class="btn-main" id="btn-check" onclick="checkAnswer()">정답 확인</button>
+        </div>
+      </div>
+
+      <!-- 오류 -->
+      <div id="error-screen" style="display:none;text-align:center;padding:30px 20px">
+        <div style="font-size:13px;color:#E24B4A;margin-bottom:8px">문제 생성에 실패했어요</div>
+        <div style="font-size:12px;color:#888780;margin-bottom:16px">다시 시도해주세요</div>
+        <button class="btn-main" onclick="generateQuestion()">다시 시도</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db } from './js/firebase.js';
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ── 데이터 로드 ──
+  const school   = localStorage.getItem('selectedSchool') || '매산고';
+  const passage  = JSON.parse(localStorage.getItem('selectedPassage') || '{}');
+  const types    = JSON.parse(localStorage.getItem('selectedTypes')  || '[]');
+  const userId   = localStorage.getItem('userId');
+
+  let currentTypeIndex = 0;
+  let currentRound     = 1;
+  let wrongCount       = 0;
+  let selectedOpt      = null;
+  let correctAnswer    = null;
+  let currentQuestion  = null;
+  let progressData     = {};
+
+  document.getElementById('quiz-school').textContent   = school;
+  document.getElementById('quiz-passage').textContent  = passage.name || '지문';
+
+  // 배점 매핑
+  const ptsMap = {
+    '흐름무관':'3.1점', '낱말쓰임':'3.1점', '글의제목':'3.1점',
+    '글의순서':'2.9점', '요약빈칸':'3.1점', '문장삽입':'3.2점',
+    '밑줄의미':'3.2점', '어법':'3.2점',     '빈칸추론':'3.1점',
+    '요지빈칸':'4.0점', '이유서술':'6.0점', '밑줄영작':'6.0점',
+    '단어배열':'4.0점', '가정법영작':'4.0점', '접속사영작':'4.0점',
+    '내용일치':'2.9점', '내용불일치':'2.9점',
+  };
+
+  // 로그인 확인
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) { window.location.href = 'index.html'; return; }
+    await loadProgress();
+    renderRoundBadge();
+    await generateQuestion();
+  });
+
+  // ── 진도 불러오기 ──
+  async function loadProgress() {
+    if (!userId || !passage.id) return;
+    try {
+      const snap = await getDoc(doc(db, 'progress_summary', `${userId}_${passage.id}`));
+      if (snap.exists()) progressData = snap.data();
+    } catch(e) {}
+  }
+
+  // ── 회차 뱃지 ──
+  function renderRoundBadge() {
+    const badge = document.getElementById('round-badge');
+    badge.innerHTML = '';
+    types.forEach((t, i) => {
+      const round = (progressData[t]?.round || 0) + 1;
+      const done  = i < currentTypeIndex;
+      const active = i === currentTypeIndex;
+      const div = document.createElement('div');
+      div.className = `rb ${done ? 'done' : active ? 'active' : 'inactive'}`;
+      div.textContent = done ? '✓' : (i + 1);
+      badge.appendChild(div);
+    });
+  }
+
+  // ── Claude API로 문제 생성 ──
+  window.generateQuestion = async () => {
+    showLoading(true);
+
+    const type       = types[currentTypeIndex];
+    const prevRound  = progressData[type]?.round || 0;
+    currentRound     = prevRound + 1;
+    wrongCount       = 0;
+    selectedOpt      = null;
+    correctAnswer    = null;
+
+    document.getElementById('q-type-label').textContent = type;
+    document.getElementById('q-pts-label').textContent  = ptsMap[type] || '3.0점';
+
+    // 정답 위치 랜덤 (①~⑤)
+    const answerPos = Math.floor(Math.random() * 5) + 1;
+
+    const prompt = buildPrompt(type, passage, school, currentRound, answerPos);
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': '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',
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+      const text = data.content?.[0]?.text || '';
+      currentQuestion = parseQuestion(text, type);
+
+      if (!currentQuestion) throw new Error('파싱 실패');
+
+      renderQuestion(currentQuestion, type);
+      showLoading(false);
+
+    } catch(e) {
+      console.error(e);
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('error-screen').style.display   = 'block';
+    }
+  };
+
+  // ── 프롬프트 생성 ──
+  function buildPrompt(type, passage, school, round, answerPos) {
+    const numMap = {1:'①', 2:'②', 3:'③', 4:'④', 5:'⑤'};
+    const answerNum = numMap[answerPos];
+
+    const baseInstruction = `
+당신은 ${school} 영어 시험 출제 전문가입니다.
+아래 지문으로 ${type} 유형 문제를 만드세요.
+이번은 ${round}회차 변형 문제입니다 (이전 회차와 다른 문제여야 함).
+정답은 반드시 ${answerNum}번이 되도록 만드세요.
+
+지문:
+${passage.text}
+${passage.footnote ? '\n각주: ' + passage.footnote : ''}
+
+반드시 아래 JSON 형식으로만 응답하세요 (다른 텍스트 없이):
+`;
+
+    const formats = {
+      '낱말쓰임': `${baseInstruction}
+{
+  "question": "다음 글의 밑줄 친 부분 중, 문맥상 낱말의 쓰임이 적절하지 않은 것은?",
+  "passage": "밑줄 친 단어 5개가 포함된 지문 (①②③④⑤ 표시)",
+  "options": ["①단어1", "②단어2", "③단어3", "④단어4", "⑤단어5"],
+  "answer": "${answerNum}",
+  "explanation": "정답 해설"
+}`,
+      '흐름무관': `${baseInstruction}
+{
+  "question": "다음 글에서 전체 흐름과 관계 없는 문장은?",
+  "passage": "①②③④⑤ 번호 붙인 지문",
+  "options": ["①", "②", "③", "④", "⑤"],
+  "answer": "${answerNum}",
+  "explanation": "정답 해설"
+}`,
+      '빈칸추론': `${baseInstruction}
+{
+  "question": "다음 빈칸에 들어갈 말로 가장 적절한 것은?",
+  "passage": "빈칸(______)이 포함된 지문",
+  "options": ["①선택지1", "②선택지2", "③선택지3", "④선택지4", "⑤선택지5"],
+  "answer": "${answerNum}",
+  "explanation": "정답 해설"
+}`,
+      '글의제목': `${baseInstruction}
+{
+  "question": "다음 글의 제목으로 가장 적절한 것은?",
+  "passage": "${passage.text.substring(0,200)}...",
+  "options": ["①제목1", "②제목2", "③제목3", "④제목4", "⑤제목5"],
+  "answer": "${answerNum}",
+  "explanation": "정답 해설"
+}`,
+      '문장삽입': `${baseInstruction}
+{
+  "question": "글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+  "insert_sentence": "삽입할 문장",
+  "passage": "( ① )...( ② )...( ③ )...( ④ )...( ⑤ ) 형식의 지문",
+  "options": ["①", "②", "③", "④", "⑤"],
+  "answer": "${answerNum}",
+  "explanation": "정답 해설"
+}`,
+      '글의순서': `${baseInstruction}
+{
+  "question": "주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은?",
+  "passage": "주어진 첫 문장",
+  "paragraphs": {"A": "단락A", "B": "단락B", "C": "단락C"},
+  "options": ["①(A)-(C)-(B)", "②(B)-(A)-(C)", "③(B)-(C)-(A)", "④(C)-(A)-(B)", "⑤(C)-(B)-(A)"],
+  "answer": "${answerNum}",
+  "explanation": "정답 해설"
+}`,
+      '밑줄의미': `${baseInstruction}
+{
+  "question": "밑줄 친 부분이 의미하는 바로 가장 적절한 것은?",
+  "underline": "밑줄 친 표현",
+  "passage": "밑줄 포함 지문",
+  "options": ["①의미1", "②의미2", "③의미3", "④의미4", "⑤의미5"],
+  "answer": "${answerNum}",
+  "explanation": "정답 해설"
+}`,
+      '어법': `${baseInstruction}
+{
+  "question": "다음 글의 밑줄 친 부분 중, 어법상 틀린 것은?",
+  "passage": "밑줄 친 표현 5개가 포함된 지문 (①②③④⑤ 표시)",
+  "options": ["①표현1", "②표현2", "③표현3", "④표현4", "⑤표현5"],
+  "answer": "${answerNum}",
+  "explanation": "정답 해설"
+}`,
+      '요약빈칸': `${baseInstruction}
+{
+  "question": "다음 글의 내용을 한 문장으로 요약하고자 한다. 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?",
+  "passage": "${passage.text.substring(0,200)}...",
+  "summary": "Since ______(A)______, it is important to ______(B)______.",
+  "options": ["①A1-B1", "②A2-B2", "③A3-B3", "④A4-B4", "⑤A5-B5"],
+  "answer": "${answerNum}",
+  "explanation": "정답 해설"
+}`,
+      '요지빈칸': `${baseInstruction}
+{
+  "question": "다음 글의 요지를 아래와 같이 쓸 때, 빈칸 (A), (B)에 들어갈 말을 지문에서 찾아 각각 2단어로 쓰시오.",
+  "passage": "${passage.text.substring(0,200)}...",
+  "summary_template": "Since (A)_______ _______, the actions we take depend on (B)_______ _______.",
+  "answer_A": "2단어 정답A",
+  "answer_B": "2단어 정답B",
+  "explanation": "정답 해설"
+}`,
+      '이유서술': `${baseInstruction}
+{
+  "question": "다음 글을 읽고, 핵심 내용의 근본적인 이유 두 가지를 지문에서 찾아 우리말로 서술하시오. (각 3점)",
+  "passage": "${passage.text.substring(0,300)}...",
+  "answer_1": "첫 번째 이유 (우리말)",
+  "answer_2": "두 번째 이유 (우리말)",
+  "explanation": "정답 해설"
+}`,
+      '밑줄영작': `${baseInstruction}
+{
+  "question": "다음 글의 밑줄 친 부분이 의미하는 바를 보기의 단어를 활용하여 조건에 맞게 영작하시오.",
+  "underline": "밑줄 친 표현",
+  "passage": "${passage.text.substring(0,200)}...",
+  "word_bank": ["단어1", "단어2", "단어3", "단어4", "단어5"],
+  "conditions": ["보기 단어를 모두 사용할 것", "It으로 시작할 것", "완성된 한 문장으로 쓸 것"],
+  "answer": "모범 답안",
+  "explanation": "정답 해설"
+}`,
+    };
+
+    return formats[type] || formats['빈칸추론'];
+  }
+
+  // ── JSON 파싱 ──
+  function parseQuestion(text, type) {
+    try {
+      const clean = text.replace(/```json|```/g, '').trim();
+      return JSON.parse(clean);
+    } catch(e) {
+      console.error('파싱 오류:', e, text);
+      return null;
+    }
+  }
+
+  // ── 문제 렌더링 ──
+  function renderQuestion(q, type) {
+    const isWritten = ['요지빈칸','이유서술','밑줄영작','단어배열','가정법영작','접속사영작'].includes(type);
+
+    document.getElementById('q-text').textContent     = q.question || '';
+    document.getElementById('q-passage').innerHTML    = formatPassage(q.passage || '');
+    document.getElementById('res-correct').classList.remove('show');
+    document.getElementById('res-wrong1').classList.remove('show');
+    document.getElementById('res-wrong2').classList.remove('show');
+    document.getElementById('q-explanation').classList.remove('show');
+
+    const optsEl = document.getElementById('q-options');
+    optsEl.innerHTML = '';
+
+    if (isWritten) {
+      // 서답형
+      renderWrittenQuestion(q, type, optsEl);
+      correctAnswer = null;
+    } else {
+      // 선택형
+      if (q.insert_sentence) {
+        const insertDiv = document.createElement('div');
+        insertDiv.style.cssText = 'background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#1A3566;line-height:1.7';
+        insertDiv.textContent = q.insert_sentence;
+        optsEl.before(insertDiv);
+      }
+
+      if (q.paragraphs) {
+        const pDiv = document.createElement('div');
+        pDiv.style.cssText = 'margin-bottom:10px';
+        Object.entries(q.paragraphs).forEach(([k,v]) => {
+          pDiv.innerHTML += `<div style="margin-bottom:6px"><b>(${k})</b> <span style="font-size:12px;color:#2C2C2A">${v}</span></div>`;
+        });
+        document.getElementById('q-passage').after(pDiv);
+      }
+
+      if (q.summary) {
+        const sDiv = document.createElement('div');
+        sDiv.style.cssText = 'background:#F5F8FF;border:0.5px solid #D6E4FF;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#2C2C2A;line-height:1.7';
+        sDiv.textContent = q.summary || q.summary_template || '';
+        optsEl.before(sDiv);
+      }
+
+      correctAnswer = q.answer;
+      (q.options || []).forEach((opt, i) => {
+        const div = document.createElement('div');
+        div.className = 'opt';
+        div.innerHTML = `<div class="opt-num">${['①','②','③','④','⑤'][i]}</div><span>${opt.replace(/^[①②③④⑤]/,'')}</span>`;
+        div.onclick = () => selectOption(div, i);
+        optsEl.appendChild(div);
+      });
+    }
+
+    document.getElementById('btn-check').textContent = isWritten ? '정답 보기' : '정답 확인';
+    document.getElementById('quiz-content').style.display = 'block';
+  }
+
+  function renderWrittenQuestion(q, type, container) {
+    if (type === '요지빈칸') {
+      container.innerHTML = `
+        <div style="background:#F5F8FF;border:0.5px solid #D6E4FF;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#2C2C2A;line-height:1.8">
+          ${q.summary_template || ''}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-size:11px;color:#888780;margin-bottom:4px">(A)</div>
+            <input type="text" id="ans-a" placeholder="2단어 입력" style="width:100%;padding:8px;border-radius:6px;border:0.5px solid #D6E4FF;font-size:13px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:#888780;margin-bottom:4px">(B)</div>
+            <input type="text" id="ans-b" placeholder="2단어 입력" style="width:100%;padding:8px;border-radius:6px;border:0.5px solid #D6E4FF;font-size:13px">
+          </div>
+        </div>`;
+    } else if (type === '이유서술') {
+      container.innerHTML = `
+        <div style="font-size:11px;color:#888780;margin-bottom:4px">이유 1</div>
+        <textarea id="ans-1" placeholder="우리말로 서술하세요" style="width:100%;padding:8px;border-radius:6px;border:0.5px solid #D6E4FF;font-size:13px;min-height:60px;resize:vertical;margin-bottom:8px"></textarea>
+        <div style="font-size:11px;color:#888780;margin-bottom:4px">이유 2</div>
+        <textarea id="ans-2" placeholder="우리말로 서술하세요" style="width:100%;padding:8px;border-radius:6px;border:0.5px solid #D6E4FF;font-size:13px;min-height:60px;resize:vertical"></textarea>`;
+    } else {
+      // 밑줄영작 등
+      if (q.word_bank) {
+        container.innerHTML = `
+          <div style="background:#EEEDFE;border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#3C3489">
+            <b>보기:</b> ${q.word_bank.join(' / ')}
+          </div>`;
+        if (q.conditions) {
+          container.innerHTML += `<div style="font-size:11px;color:#888780;margin-bottom:8px">${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
+        }
+      }
+      container.innerHTML += `<textarea id="ans-write" placeholder="영어로 작성하세요" style="width:100%;padding:10px;border-radius:6px;border:0.5px solid #D6E4FF;font-size:13px;min-height:80px;resize:vertical"></textarea>`;
+    }
+  }
+
+  function formatPassage(text) {
+    return text.replace(/([①②③④⑤])/g, '<u>$1</u>');
+  }
+
+  // ── 선택지 선택 ──
+  function selectOption(div, index) {
+    if (div.classList.contains('disabled')) return;
+    document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+    div.classList.add('selected');
+    selectedOpt = { el: div, index };
+  }
+
+  // ── 정답 확인 ──
+  window.checkAnswer = async () => {
+    const type      = types[currentTypeIndex];
+    const isWritten = ['요지빈칸','이유서술','밑줄영작','단어배열','가정법영작','접속사영작'].includes(type);
+    const btn       = document.getElementById('btn-check');
+
+    if (isWritten) {
+      // 서답형 — 정답 바로 보여주기
+      showExplanation(currentQuestion, type);
+      btn.textContent = '다음 유형으로 →';
+      btn.onclick     = goNextType;
+      await saveProgress(type, true);
+      return;
+    }
+
+    // 선택형
+    if (!selectedOpt) return;
+
+    const nums    = ['①','②','③','④','⑤'];
+    const isRight = nums[selectedOpt.index] === correctAnswer;
+
+    document.querySelectorAll('.opt').forEach(o => o.classList.add('disabled'));
+
+    if (isRight) {
+      selectedOpt.el.classList.remove('selected');
+      selectedOpt.el.classList.add('correct');
+      document.getElementById('res-correct').textContent = '정답이에요! ' + (currentQuestion.explanation || '');
+      document.getElementById('res-correct').classList.add('show');
+      showExplanation(currentQuestion, type);
+      btn.textContent = '다음 유형으로 →';
+      btn.onclick     = goNextType;
+      await saveProgress(type, true);
+
+    } else {
+      selectedOpt.el.classList.remove('selected');
+      selectedOpt.el.classList.add('wrong');
+      wrongCount++;
+
+      if (wrongCount === 1) {
+        document.getElementById('res-wrong1').textContent = '아쉬워요! 한 번 더 생각해보세요.';
+        document.getElementById('res-wrong1').classList.add('show');
+        btn.textContent = '다시 선택하기';
+        btn.onclick     = retryAnswer;
+      } else {
+        // 두 번 틀림
+        document.getElementById('res-wrong1').classList.remove('show');
+        document.getElementById('res-wrong2').textContent = `정답은 ${correctAnswer}번이에요. 오답 처리됩니다.`;
+        document.getElementById('res-wrong2').classList.add('show');
+        // 정답 강조
+        document.querySelectorAll('.opt').forEach((o, i) => {
+          if (nums[i] === correctAnswer) o.classList.add('correct');
+        });
+        showExplanation(currentQuestion, type);
+        btn.textContent = '다음 유형으로 →';
+        btn.onclick     = goNextType;
+        await saveProgress(type, false);
+      }
+    }
+  };
+
+  function retryAnswer() {
+    document.getElementById('res-wrong1').classList.remove('show');
+    document.querySelectorAll('.opt').forEach(o => {
+      if (!o.classList.contains('wrong')) o.classList.remove('disabled');
+    });
+    const btn   = document.getElementById('btn-check');
+    btn.textContent = '정답 확인';
+    btn.onclick     = checkAnswer;
+    selectedOpt     = null;
+  }
+
+  function showExplanation(q, type) {
+    const expEl = document.getElementById('q-explanation');
+    let html    = '<div class="exp-title">해설</div>';
+
+    if (type === '요지빈칸' || type === '이유서술' || type === '밑줄영작') {
+      if (q.answer_A) html += `<b>(A)</b> ${q.answer_A}<br><b>(B)</b> ${q.answer_B}<br><br>`;
+      if (q.answer_1) html += `<b>이유 1:</b> ${q.answer_1}<br><b>이유 2:</b> ${q.answer_2}<br><br>`;
+      if (q.answer)   html += `<b>모범 답안:</b> ${q.answer}<br><br>`;
+    }
+    html += q.explanation || '';
+    expEl.innerHTML = html;
+    expEl.classList.add('show');
+  }
+
+  // ── 진도 저장 ──
+  async function saveProgress(type, correct) {
+    if (!userId || !passage.id) return;
+    const today   = new Date().toISOString().split('T')[0];
+    const docId   = `${userId}_${passage.id}_${type}_${currentRound}_${today}`;
+    try {
+      await setDoc(doc(db, 'progress', docId), {
+        userId,
+        passageId: passage.id,
+        typeName:  type,
+        round:     currentRound,
+        correct,
+        date:      today,
+        createdAt: new Date().toISOString()
+      });
+
+      // 요약 저장
+      const summaryId = `${userId}_${passage.id}`;
+      const summarySnap = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js")
+        .then(m => m.getDoc(doc(db, 'progress_summary', summaryId)));
+
+      const existing = summarySnap.exists() ? summarySnap.data() : {};
+      existing[type] = { round: currentRound, correct, date: today };
+      await setDoc(doc(db, 'progress_summary', summaryId), existing);
+
+    } catch(e) { console.error('진도 저장 오류:', e); }
+  }
+
+  // ── 다음 유형으로 ──
+  window.goNextType = async () => {
+    currentTypeIndex++;
+    if (currentTypeIndex >= types.length) {
+      // 모든 유형 완료 → 결과 화면
+      localStorage.setItem('sessionTypes',   JSON.stringify(types));
+      localStorage.setItem('sessionPassage', JSON.stringify(passage));
+      window.location.href = 'result.html';
+      return;
+    }
+    // 다음 유형 문제 생성
+    document.getElementById('quiz-content').style.display = 'none';
+    renderRoundBadge();
+    selectedOpt   = null;
+    correctAnswer = null;
+    // 이전 삽입 문장/단락 제거
+    document.querySelectorAll('.insert-div,.para-div,.summary-div').forEach(el => el.remove());
+    // 버튼 초기화
+    const btn   = document.getElementById('btn-check');
+    btn.textContent = '정답 확인';
+    btn.onclick     = checkAnswer;
+    await generateQuestion();
+  };
+
+  function showLoading(show) {
+    document.getElementById('loading-screen').style.display = show ? 'block' : 'none';
+    document.getElementById('quiz-content').style.display   = show ? 'none'  : 'block';
+    document.getElementById('error-screen').style.display   = 'none';
+  }
+</script>
+
+</body>
+</html>
