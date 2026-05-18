@@ -8,7 +8,6 @@
 </head>
 <body>
 
-<!-- 관리자 로그인 -->
 <div class="page" id="page-admin-login">
   <div class="phone">
     <div class="top-bar">
@@ -32,7 +31,6 @@
   </div>
 </div>
 
-<!-- 관리자 메인 -->
 <div class="page hidden" id="page-admin-main">
   <div class="phone">
     <div class="top-bar with-back" style="justify-content:space-between">
@@ -43,7 +41,6 @@
       <button class="btn-logout" onclick="adminLogout()">로그아웃</button>
     </div>
 
-    <!-- 탭 -->
     <div style="background:#fff;padding:0 14px">
       <div class="tab-row" style="margin-bottom:0;border-bottom:0.5px solid #D6E4FF">
         <div class="tab on" onclick="switchTab('approve')"  id="tab-approve">승인</div>
@@ -53,7 +50,6 @@
       </div>
     </div>
 
-    <!-- 승인 탭 -->
     <div class="scroll-body" id="section-approve">
       <div class="section-label">승인 대기 중</div>
       <div id="pending-list"><div class="empty-msg">대기 중인 학생이 없어요</div></div>
@@ -62,7 +58,6 @@
       <div id="approved-list"><div class="empty-msg">승인된 학생이 없어요</div></div>
     </div>
 
-    <!-- 지문 관리 탭 -->
     <div class="scroll-body hidden" id="section-passages">
       <div class="section-label">교재 선택</div>
       <div class="field-wrap">
@@ -76,9 +71,7 @@
       </div>
       <div class="field-wrap">
         <div class="field-label">강/회차/과</div>
-        <select id="p-unit">
-          <option value="">교재를 먼저 선택하세요</option>
-        </select>
+        <select id="p-unit"><option value="">교재를 먼저 선택하세요</option></select>
       </div>
       <div class="field-wrap">
         <div class="field-label">어느 학교가 사용?</div>
@@ -91,11 +84,11 @@
 
       <div class="section-label" style="margin-top:4px">지문 전체 붙여넣기</div>
       <div style="font-size:11px;color:#5A7BAD;margin-bottom:8px;line-height:1.6">
-        지문 번호(01, 02...)를 기준으로 자동 분리돼요.<br>각주는 *로 시작.
+        지문 번호(01, 02...)를 기준으로 자동 분리돼요. 각주는 *로 시작.
       </div>
       <textarea id="p-text"
         style="width:100%;min-height:200px;padding:10px 12px;border-radius:8px;border:0.5px solid #D6E4FF;font-size:13px;line-height:1.8;resize:vertical;background:#fff;color:#2C2C2A"
-        placeholder="01&#10;It's remarkable that positive fantasies...&#10;*morphology: 형태&#10;&#10;02&#10;Dopamine can be..."></textarea>
+        placeholder="01&#10;It's remarkable that..."></textarea>
 
       <div class="error-msg" id="p-error"></div>
       <div id="p-preview" style="display:none;background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#1A3566;line-height:1.6"></div>
@@ -108,10 +101,6 @@
       <div class="divider"></div>
 
       <div class="section-label">📚 강별 문제 생성</div>
-      <div style="font-size:11px;color:#5A7BAD;margin-bottom:10px;line-height:1.6">
-        강을 선택하면 학교별 [문제 생성] 버튼이 나와요.<br>
-        한 번 클릭으로 그 강 전체 지문의 문제가 만들어져요.
-      </div>
       <div class="field-wrap">
         <select id="filter-textbook" onchange="loadUnitList()">
           <option value="">교재 선택</option>
@@ -124,19 +113,13 @@
       <div id="unit-list"><div class="empty-msg">교재를 선택하세요</div></div>
     </div>
 
-    <!-- 학생 기록 탭 -->
     <div class="scroll-body hidden" id="section-records">
       <div class="section-label">학생별 주간 기록</div>
       <div id="records-list"><div class="empty-msg">기록이 없어요</div></div>
     </div>
 
-    <!-- 설정 탭 -->
     <div class="scroll-body hidden" id="section-settings">
       <div class="section-label">🔑 Claude API 키</div>
-      <div style="font-size:11px;color:#5A7BAD;margin-bottom:10px;line-height:1.6">
-        문제 자동 생성에 필요해요.<br>
-        <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:#2B5EB8">console.anthropic.com</a>에서 발급 → 여기 저장.
-      </div>
       <div class="field-wrap">
         <div class="field-label">API 키</div>
         <input type="password" id="api-key-input" placeholder="sk-ant-api03-...">
@@ -146,14 +129,9 @@
         <button class="btn-main" style="flex:1" onclick="saveApiKey()">저장</button>
       </div>
       <div id="api-key-status" style="margin-top:10px;font-size:11px;color:#888780"></div>
-
       <div class="divider"></div>
-      <div class="section-label">⚙️ 시스템 정보</div>
-      <div style="background:#fff;border:0.5px solid #D6E4FF;border-radius:8px;padding:12px;font-size:11px;color:#5A7BAD;line-height:1.8">
-        모델: claude-sonnet-4-5<br>
-        지문당 문제 수: 학교 유형 × 2개<br>
-        매산고 12유형 · 효천고 8유형 · 복성고 9유형
-      </div>
+      <div class="section-label">🗑️ 위험 작업</div>
+      <button class="btn-sub" style="background:#FFE4E4;color:#E24B4A;border-color:#E24B4A" onclick="deleteAllQuestions()">모든 문제 삭제</button>
     </div>
   </div>
 </div>
@@ -164,8 +142,6 @@
 .approved-row{background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:10px 13px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
 .school-check{display:flex;align-items:center;gap:5px;font-size:12px;color:#1A3566;cursor:pointer;padding:6px 10px;background:#fff;border:0.5px solid #D6E4FF;border-radius:6px}
 .school-check input{margin:0}
-
-/* 강별 카드 */
 .unit-card{background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:12px;margin-bottom:10px}
 .unit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .unit-title{font-size:13px;font-weight:600;color:#1A3566}
@@ -174,10 +150,7 @@
 .school-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .school-btn{flex:1;min-width:90px;font-size:11px;padding:8px;border-radius:6px;border:0.5px solid #A8C4F5;background:#EBF2FF;color:#1A3566;cursor:pointer;text-align:center;font-weight:500}
 .school-btn.done{background:#EAF3DE;border-color:#A8D472;color:#27500A}
-.school-btn.loading{background:#FFF5E8;border-color:#E5B774;color:#854F0B;cursor:wait}
 .del-tiny{font-size:10px;color:#E24B4A;border:0.5px solid #E24B4A;background:transparent;border-radius:4px;padding:2px 6px;cursor:pointer;flex-shrink:0}
-
-/* 진행 모달 */
 .gen-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center}
 .gen-modal.show{display:flex}
 .gen-modal-inner{background:#fff;border-radius:14px;padding:20px;width:88%;max-width:340px}
@@ -192,7 +165,6 @@
 .gen-close-btn{width:100%;background:#2B5EB8;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:500;cursor:pointer}
 </style>
 
-<!-- 진행 모달 -->
 <div class="gen-modal" id="gen-modal">
   <div class="gen-modal-inner">
     <div class="gen-title-m" id="gen-title">문제 생성 중...</div>
@@ -206,67 +178,23 @@
 
 <script type="module">
   import { auth, db } from './js/firebase.js';
-  import {
-    signInWithEmailAndPassword, signOut, onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import {
-    collection, getDocs, doc, getDoc,
-    setDoc, updateDoc, deleteDoc, query, where
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ════════════════════════════════════════
-  // 학교별 유형 정의
-  // ════════════════════════════════════════
+  const COMMON_TYPES = ['내용일치_한국어', '내용일치_영어'];
+
   const SCHOOL_TYPES = {
-    '매산고': [
-      { name:'흐름무관',   format:'choice', desc:'다음 글의 흐름과 관계 없는 문장은? (선택지 5개, ①~⑤)' },
-      { name:'낱말쓰임',   format:'choice', desc:'밑줄 친 낱말의 쓰임이 적절하지 않은 것은? (선택지 5개)' },
-      { name:'글의제목',   format:'choice', desc:'다음 글의 제목으로 가장 적절한 것은? (선택지 5개, 영어 제목)' },
-      { name:'글의순서',   format:'choice', desc:'주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은? (A)(B)(C) 순서 배열, 선택지 5개' },
-      { name:'요약빈칸',   format:'choice', desc:'다음 글의 요약문의 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은? (선택지 5개)' },
-      { name:'문장삽입',   format:'choice', desc:'주어진 문장이 들어가기에 가장 적절한 곳은? (글 안에 ①~⑤ 위치 표시)' },
-      { name:'밑줄의미',   format:'choice', desc:'밑줄 친 부분이 다음 글에서 의미하는 바로 가장 적절한 것은? (선택지 5개)' },
-      { name:'어법',       format:'choice', desc:'다음 글의 밑줄 친 부분 중 어법상 틀린 것은? (선택지 5개)' },
-      { name:'빈칸추론',   format:'choice', desc:'빈칸에 들어갈 말로 가장 적절한 것은? (선택지 5개)' },
-      { name:'요지빈칸',   format:'short', desc:'다음 글의 요지를 한 문장으로 완성할 때 (A)와 (B)에 들어갈 단어를 영어로 쓰시오.' },
-      { name:'이유서술',   format:'short', desc:'(밑줄 친 부분의 이유 또는 글의 주제 관련 질문)을 한국어로 서술하시오. 한국어 답안.' },
-      { name:'밑줄의미영작', format:'short', desc:'밑줄 친 한국어 문장을 본문의 흐름에 맞게 영작하시오. 영어 답안.' },
-    ],
-    '효천고': [
-      { name:'어법',       format:'choice', desc:'다음 글의 밑줄 친 부분 중 어법상 틀린 것은? (선택지 5개)' },
-      { name:'빈칸추론',   format:'choice', desc:'빈칸에 들어갈 말로 가장 적절한 것은? (선택지 5개)' },
-      { name:'문장삽입',   format:'choice', desc:'주어진 문장이 들어가기에 가장 적절한 곳은?' },
-      { name:'글의순서',   format:'choice', desc:'주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은? (A)(B)(C)' },
-      { name:'내용일치',   format:'choice', desc:'다음 글의 내용과 일치하는 것은? (선택지 5개)' },
-      { name:'낱말쓰임',   format:'choice', desc:'밑줄 친 낱말의 쓰임이 적절하지 않은 것은? (선택지 5개)' },
-      { name:'요약빈칸',   format:'choice', desc:'다음 글의 요약문의 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?' },
-      { name:'단어배열',   format:'short', desc:'주어진 단어들을 본문의 의미에 맞게 올바른 순서로 배열하시오. 영어 답안.' },
-    ],
-    '복성고': [
-      { name:'빈칸추론',   format:'choice', desc:'빈칸에 들어갈 말로 가장 적절한 것은? (선택지 5개)' },
-      { name:'문장삽입',   format:'choice', desc:'주어진 문장이 들어가기에 가장 적절한 곳은?' },
-      { name:'낱말쓰임',   format:'choice', desc:'밑줄 친 낱말의 쓰임이 적절하지 않은 것은?' },
-      { name:'내용불일치', format:'choice', desc:'다음 글의 내용과 일치하지 않는 것은? (선택지 5개)' },
-      { name:'밑줄의미',   format:'choice', desc:'밑줄 친 부분이 의미하는 바로 가장 적절한 것은?' },
-      { name:'글의순서',   format:'choice', desc:'주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은? (A)(B)(C)' },
-      { name:'요약빈칸',   format:'choice', desc:'요약문의 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?' },
-      { name:'가정법영작', format:'short', desc:'한국어 문장을 가정법을 사용해서 영작하시오. 영어 답안.' },
-      { name:'접속사영작', format:'short', desc:'한국어 문장을 적절한 접속사를 사용해서 영작하시오. 영어 답안.' },
-    ],
+    '매산고': ['흐름무관', '낱말쓰임', '글의제목', '글의순서', '요약빈칸', '문장삽입', '밑줄의미', '어법', '빈칸추론', '요지빈칸', '이유서술', '밑줄의미영작', ...COMMON_TYPES],
+    '효천고': ['어법', '빈칸추론', '문장삽입', '글의순서', '낱말쓰임', '요약빈칸', '단어배열', ...COMMON_TYPES],
+    '복성고': ['빈칸추론', '문장삽입', '낱말쓰임', '밑줄의미', '글의순서', '요약빈칸', '가정법영작', '접속사영작', ...COMMON_TYPES],
   };
 
-  // ════════════════════════════════════════
-  // API 키 (Firestore admin/config 에 저장)
-  // ════════════════════════════════════════
   let CACHED_API_KEY = '';
 
   async function loadApiKey() {
     try {
       const s = await getDoc(doc(db, 'admin', 'config'));
-      if (s.exists() && s.data().apiKey) {
-        CACHED_API_KEY = s.data().apiKey;
-        return CACHED_API_KEY;
-      }
+      if (s.exists() && s.data().apiKey) { CACHED_API_KEY = s.data().apiKey; return CACHED_API_KEY; }
     } catch(e) {}
     return '';
   }
@@ -280,21 +208,24 @@
     const key = document.getElementById('api-key-input').value.trim();
     const st  = document.getElementById('api-key-status');
     if (!key) { st.style.color='#E24B4A'; st.textContent='API 키를 입력해주세요.'; return; }
-    if (!key.startsWith('sk-ant-')) { st.style.color='#E24B4A'; st.textContent='형식이 올바르지 않아요 (sk-ant-... 로 시작).'; return; }
+    if (!key.startsWith('sk-ant-')) { st.style.color='#E24B4A'; st.textContent='형식 오류'; return; }
     try {
       await setDoc(doc(db,'admin','config'), { apiKey:key, updatedAt:new Date().toISOString() }, { merge:true });
       CACHED_API_KEY = key;
       st.style.color='#3B6D11';
       st.textContent='✅ 저장 완료';
-    } catch(e) {
-      st.style.color='#E24B4A';
-      st.textContent='저장 실패: ' + e.message;
-    }
+    } catch(e) { st.style.color='#E24B4A'; st.textContent='저장 실패: ' + e.message; }
   };
 
-  // ════════════════════════════════════════
-  // 탭 전환
-  // ════════════════════════════════════════
+  window.deleteAllQuestions = async () => {
+    if (!confirm('모든 문제를 삭제할까요?')) return;
+    if (!confirm('정말로요?')) return;
+    const snap = await getDocs(collection(db,'questions'));
+    let n = 0;
+    for (const d of snap.docs) { await deleteDoc(d.ref); n++; }
+    alert(`${n}개 문제를 삭제했어요.`);
+  };
+
   window.switchTab = async (tab) => {
     ['approve','passages','records','settings'].forEach(t => {
       document.getElementById('section-'+t).classList.add('hidden');
@@ -313,15 +244,12 @@
     }
   };
 
-  // ════════════════════════════════════════
-  // 로그인
-  // ════════════════════════════════════════
   window.adminLogin = async () => {
     const id  = document.getElementById('admin-id').value.trim();
     const pw  = document.getElementById('admin-pw').value.trim();
     const err = document.getElementById('admin-error');
     err.textContent = '';
-    if (!id || !pw) { err.textContent = '이메일과 비밀번호를 입력해주세요.'; return; }
+    if (!id || !pw) { err.textContent = '입력해주세요.'; return; }
     try {
       const email = id.includes('@') ? id : id + '@haileyalla.com';
       const cred  = await signInWithEmailAndPassword(auth, email, pw);
@@ -331,7 +259,7 @@
         await signOut(auth); return;
       }
       showAdminMain();
-    } catch(e) { err.textContent = '이메일 또는 비밀번호가 틀렸어요.'; }
+    } catch(e) { err.textContent = '로그인 실패'; }
   };
 
   window.adminLogout = async () => {
@@ -354,9 +282,6 @@
     }
   });
 
-  // ════════════════════════════════════════
-  // 승인 관리
-  // ════════════════════════════════════════
   async function loadPendingUsers() {
     const pEl = document.getElementById('pending-list');
     const aEl = document.getElementById('approved-list');
@@ -368,27 +293,19 @@
       if (u.role === 'admin') return;
       if (!u.approved) {
         pc++;
-        pEl.innerHTML += `
-          <div class="pending-card">
-            <div style="width:32px;height:32px;border-radius:50%;background:#FFF5E8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#854F0B;flex-shrink:0">${u.name?.[0]||'?'}</div>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:500;color:#2C2C2A">${u.name||''}</div>
-              <div style="font-size:11px;color:#888780">${u.school||''} · ${u.grade||''} · ${u.userId||''}</div>
-            </div>
-            <button class="approve-btn" onclick="approveUser('${d.id}','${u.name}')">승인</button>
-            <button class="reject-btn"  onclick="rejectUser('${d.id}')">거절</button>
-          </div>`;
+        pEl.innerHTML += `<div class="pending-card">
+          <div style="width:32px;height:32px;border-radius:50%;background:#FFF5E8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#854F0B;flex-shrink:0">${u.name?.[0]||'?'}</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500;color:#2C2C2A">${u.name||''}</div><div style="font-size:11px;color:#888780">${u.school||''} · ${u.grade||''} · ${u.userId||''}</div></div>
+          <button class="approve-btn" onclick="approveUser('${d.id}','${u.name}')">승인</button>
+          <button class="reject-btn"  onclick="rejectUser('${d.id}')">거절</button>
+        </div>`;
       } else {
         ac++;
-        aEl.innerHTML += `
-          <div class="approved-row">
-            <div style="width:32px;height:32px;border-radius:50%;background:#EAF3DE;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#27500A;flex-shrink:0">${u.name?.[0]||'?'}</div>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:500;color:#1A3566">${u.name||''}</div>
-              <div style="font-size:11px;color:#888780">${u.school||''} · ${u.grade||''} · ${u.userId||''}</div>
-            </div>
-            <button class="reject-btn" onclick="revokeUser('${d.id}')">취소</button>
-          </div>`;
+        aEl.innerHTML += `<div class="approved-row">
+          <div style="width:32px;height:32px;border-radius:50%;background:#EAF3DE;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#27500A;flex-shrink:0">${u.name?.[0]||'?'}</div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500;color:#1A3566">${u.name||''}</div><div style="font-size:11px;color:#888780">${u.school||''} · ${u.grade||''} · ${u.userId||''}</div></div>
+          <button class="reject-btn" onclick="revokeUser('${d.id}')">취소</button>
+        </div>`;
       }
     });
     if (pc===0) pEl.innerHTML = '<div class="empty-msg">대기 중인 학생이 없어요</div>';
@@ -411,9 +328,6 @@
     loadPendingUsers();
   };
 
-  // ════════════════════════════════════════
-  // 지문 입력
-  // ════════════════════════════════════════
   const unitOptions = {
     '교과서':    ['Lesson 1','Lesson 2','Lesson 3','Lesson 4','Lesson 5','Lesson 6'],
     '리딩마스터':['1강','2강','3강','4강','5강','6강','7강','8강','9강','10강','11강','12강','13강','14강','15강','16강'],
@@ -429,9 +343,9 @@
   };
 
   function splitPassages(text) {
-    const lines    = text.split('\n');
+    const lines = text.split('\n');
     const passages = [];
-    let current    = null;
+    let current = null;
     lines.forEach(line => {
       const t = line.trim();
       if (/^(\d{1,2})$/.test(t)) {
@@ -456,9 +370,9 @@
     err.textContent = '';
     if (!tb||!unit) { err.textContent='교재와 강을 선택해주세요.'; return; }
     if (schools.length === 0) { err.textContent='학교를 1개 이상 선택해주세요.'; return; }
-    if (!text)      { err.textContent='지문을 붙여넣어 주세요.'; return; }
+    if (!text) { err.textContent='지문을 붙여넣어 주세요.'; return; }
     const passages = splitPassages(text);
-    if (passages.length===0) { err.textContent='지문을 인식하지 못했어요. 번호(01,02...)로 시작하는지 확인해주세요.'; return; }
+    if (passages.length===0) { err.textContent='지문을 인식하지 못했어요.'; return; }
     prev.style.display = 'block';
     prev.innerHTML = `<b>${tb} ${unit} — 총 ${passages.length}개 지문 (학교: ${schools.join(', ')})</b><br><br>`
       + passages.map((p,i) => `${i+1}. [${p.num}] ${p.text.substring(0,50)}...`).join('<br>');
@@ -477,16 +391,11 @@
     const passages = splitPassages(text);
     try {
       for (const p of passages) {
-        // 지문 ID: 교재_강_번호 (학교 무관, 학교 정보는 schools 배열로 저장)
         const docId = `${tb}_${unit}_${p.num}`.replace(/[\s/]+/g,'_');
         await setDoc(doc(db,'passages',docId), {
-          textbook: tb,
-          unit,
-          num: p.num,
-          text: p.text,
+          textbook: tb, unit, num: p.num, text: p.text,
           footnote: p.footnote.trim(),
-          schools,                    // ← 이 지문을 어느 학교들이 쓰는지
-          range: tb+'_'+unit,
+          schools, range: tb+'_'+unit,
           createdAt: new Date().toISOString()
         }, { merge: true });
       }
@@ -498,18 +407,14 @@
     btn.disabled = false; btn.textContent = 'Firebase 저장';
   };
 
-  // ════════════════════════════════════════
-  // 강별 목록 + 문제 생성
-  // ════════════════════════════════════════
   window.loadUnitList = async () => {
     const tb = document.getElementById('filter-textbook').value;
     const el = document.getElementById('unit-list');
     if (!tb) { el.innerHTML = '<div class="empty-msg">교재를 선택하세요</div>'; return; }
     el.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
 
-    // 지문 전부 가져오기
     const snap = await getDocs(collection(db,'passages'));
-    const units = {};       // { unit: [passage,...] }
+    const units = {};
     snap.forEach(d => {
       const p = d.data();
       if (p.textbook !== tb) return;
@@ -522,24 +427,18 @@
       return;
     }
 
-    // 문제 컬렉션 조회 (생성 완료 여부 체크용)
     const qSnap = await getDocs(collection(db,'questions'));
     const doneSet = new Set();
     qSnap.forEach(d => {
       const q = d.data();
-      // unit + school 조합 키
       doneSet.add(`${q.textbook}_${q.unit}_${q.school}`);
     });
 
-    const sortedUnits = Object.keys(units).sort((a,b) => {
-      const na = parseInt(a) || 0, nb = parseInt(b) || 0;
-      return na - nb;
-    });
+    const sortedUnits = Object.keys(units).sort((a,b) => (parseInt(a)||0) - (parseInt(b)||0));
 
     let html = '';
     sortedUnits.forEach(unit => {
       const passages = units[unit].sort((a,b) => a.num.localeCompare(b.num));
-      // 이 강 지문들이 어느 학교에서 쓰이는지
       const allSchools = new Set();
       passages.forEach(p => (p.schools||[]).forEach(s => allSchools.add(s)));
       const schoolList = Array.from(allSchools);
@@ -553,7 +452,7 @@
       passages.forEach(p => {
         html += `<div class="passage-mini">
           <span>${p.num}번 · ${p.text.substring(0,30)}...</span>
-          <button class="del-tiny" onclick="deletePassage('${p.id}','${tb}','${unit}')">삭제</button>
+          <button class="del-tiny" onclick="deletePassage('${p.id}')">삭제</button>
         </div>`;
       });
 
@@ -565,7 +464,7 @@
           const done = doneSet.has(`${tb}_${unit}_${school}`);
           const cls = done ? 'school-btn done' : 'school-btn';
           const label = done ? `${school} ✅` : `${school} 문제 생성`;
-          html += `<button class="${cls}" id="btn-${tb}_${unit}_${school}".replace(/\s/g,'_') onclick="generateUnitQuestions('${tb}','${unit}','${school}')">${label}</button>`;
+          html += `<button class="${cls}" onclick="generateUnitQuestions('${tb}','${unit}','${school}')">${label}</button>`;
         });
         html += `</div>`;
       }
@@ -574,10 +473,9 @@
     el.innerHTML = html;
   };
 
-  window.deletePassage = async (id, tb, unit) => {
+  window.deletePassage = async (id) => {
     if (!confirm('이 지문을 삭제하시겠어요? (관련 문제도 함께 삭제됩니다)')) return;
     await deleteDoc(doc(db,'passages',id));
-    // 관련 문제 삭제
     const qSnap = await getDocs(collection(db,'questions'));
     for (const d of qSnap.docs) {
       if (d.id.startsWith(id + '_')) await deleteDoc(d.ref);
@@ -585,9 +483,6 @@
     loadUnitList();
   };
 
-  // ════════════════════════════════════════
-  // 진행 모달
-  // ════════════════════════════════════════
   function openGenModal(title) {
     const m = document.getElementById('gen-modal');
     document.getElementById('gen-title').textContent = title;
@@ -613,20 +508,13 @@
     loadUnitList();
   };
 
-  // ════════════════════════════════════════
-  // ⭐ 핵심: 강 단위 문제 생성
-  // ════════════════════════════════════════
   window.generateUnitQuestions = async (textbook, unit, school) => {
     const apiKey = CACHED_API_KEY || await loadApiKey();
-    if (!apiKey) {
-      alert('먼저 [설정] 탭에서 Claude API 키를 저장해주세요.');
-      return;
-    }
+    if (!apiKey) { alert('먼저 [설정] 탭에서 Claude API 키를 저장해주세요.'); return; }
 
     const types = SCHOOL_TYPES[school];
     if (!types) { alert('이 학교의 유형이 정의되지 않았어요.'); return; }
 
-    // 이 강의 지문 모두 가져오기
     const snap = await getDocs(collection(db,'passages'));
     const passages = [];
     snap.forEach(d => {
@@ -637,12 +525,9 @@
     });
     passages.sort((a,b) => a.num.localeCompare(b.num));
 
-    if (passages.length === 0) {
-      alert(`${school}용 지문이 없어요.`);
-      return;
-    }
+    if (passages.length === 0) { alert(`${school}용 지문이 없어요.`); return; }
 
-    if (!confirm(`${textbook} ${unit} · ${school} 문제를 생성할게요.\n\n지문 ${passages.length}개 × 유형 ${types.length}개 = 총 ${passages.length * types.length * 2}문제\n(예상 시간: 약 ${Math.ceil(passages.length * types.length * 0.05)}분)\n\n진행하시겠어요?`)) return;
+    if (!confirm(`${textbook} ${unit} · ${school} 문제 생성\n\n지문 ${passages.length}개 × 유형 ${types.length}개 × 2문제 = 총 ${passages.length * types.length * 2}문제\n예상 시간: 약 ${Math.ceil(passages.length * types.length * 0.1)}분\n\n진행할까요?`)) return;
 
     openGenModal(`${school} · ${textbook} ${unit} 문제 생성`);
 
@@ -652,33 +537,26 @@
     for (const p of passages) {
       for (const t of types) {
         try {
-          logGen(`${p.num}번 · ${t.name} 생성 중...`);
-          const result = await generateQuestionsForType(apiKey, p, t, school);
+          logGen(`${p.num}번 · ${t} 생성 중...`);
+          const result = await generateForType(apiKey, p, t, school);
 
-          // Firestore 저장 (2문제)
           for (let i = 0; i < result.questions.length; i++) {
             const q = result.questions[i];
-            const docId = `${p.id}_${school}_${t.name}_${i+1}`.replace(/[\s/]+/g,'_');
+            const docId = `${p.id}_${school}_${t}_${i+1}`.replace(/[\s/]+/g,'_');
             await setDoc(doc(db,'questions',docId), {
               passageId: p.id,
               textbook, unit,
-              num: p.num,
-              school,
-              typeName: t.name,
-              format: t.format,
+              num: p.num, school, typeName: t,
               idx: i+1,
-              question: q.question,
-              choices: q.choices || [],
-              answer: q.answer,
-              explanation: q.explanation || '',
+              ...q,
               createdAt: new Date().toISOString()
             });
           }
           success++;
-          logGen(`${p.num}번 · ${t.name} ✅ 완료`, 'ok');
+          logGen(`${p.num}번 · ${t} ✅`, 'ok');
         } catch(e) {
           failed++;
-          logGen(`${p.num}번 · ${t.name} ❌ 실패: ${e.message}`, 'err');
+          logGen(`${p.num}번 · ${t} ❌ ${e.message.substring(0,60)}`, 'err');
         }
         done++;
         updateGenProgress(done, total);
@@ -690,51 +568,303 @@
     document.getElementById('gen-close-btn').style.display = 'block';
   };
 
-  // ════════════════════════════════════════
-  // Claude API 호출 (유형 1개당 문제 2개 생성)
-  // ════════════════════════════════════════
-  async function generateQuestionsForType(apiKey, passage, type, school) {
-    const isChoice = type.format === 'choice';
+  function getPrompt(type, passage, school) {
+    const baseRules = `당신은 한국 고등학교 영어 변형 문제 출제 전문가입니다.
+${school} 1등급 학생을 위한 변형 문제 2개를 만들어주세요.
+두 문제는 같은 유형이지만 서로 다른 포인트/위치를 묻도록.
 
-    const prompt = `당신은 고등학교 영어 변형문제를 만드는 전문가입니다.
-
-다음 지문을 읽고, "${type.name}" 유형의 문제를 **2개** 만들어주세요.
-
-[지문]
+[원본 지문]
 ${passage.text}
+${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 
-${passage.footnote ? '[각주]\n' + passage.footnote + '\n' : ''}
-[유형 설명]
-${type.desc}
+[필수 규칙]
+- JSON으로만 응답. 다른 텍스트 절대 금지.
+- 형식: {"questions":[문제1, 문제2]}
+- explanation은 1줄로 짧게.
+- 1등급 난이도 (어휘 어렵게, 함정 포함).
+`;
 
-[규칙]
-- 정확히 2개의 문제를 만드세요.
-- 두 문제는 같은 유형이지만 서로 다른 포인트를 묻도록 만드세요.
-- 한국 고등학교 ${school} 수준에 맞게 만드세요.
-- 변형 문제이므로 같은 지문에서 매번 새롭게 출제될 수 있는 형태여야 합니다.
-${isChoice 
-  ? '- 선택형: 선택지 5개 (①②③④⑤ 또는 1~5), 정답은 1~5 중 숫자로 표시.' 
-  : '- 서답형: 학생이 텍스트로 답을 입력. 정답은 모범답안 문자열. 의미가 맞으면 정답으로 인정될 수 있도록 explanation에 채점 기준을 명시.'}
+    const prompts = {
 
-[출력 형식 — JSON만, 다른 텍스트 없이]
+      '흐름무관': `${baseRules}
+[유형: 흐름무관]
+지문을 5문장으로 재구성. 각 문장 앞에 ①②③④⑤. 그 중 1개는 흐름과 무관한 가짜 문장(주제 비슷하지만 논리적으로 어색).
+두 문제는 정답 위치가 달라야 함.
+
+각 문제 형식:
 {
-  "questions": [
-    {
-      "question": "문제 본문 (지문의 어떤 부분을 묻는지 명확하게)",
-      ${isChoice ? `"choices": ["선택지1", "선택지2", "선택지3", "선택지4", "선택지5"],
-      "answer": 3,` : `"choices": [],
-      "answer": "모범답안 텍스트",`}
-      "explanation": "${isChoice ? '정답 해설' : '채점 기준 및 정답 해설'}"
-    },
-    {
-      "question": "...",
-      ${isChoice ? `"choices": [...],
-      "answer": ...,` : `"choices": [],
-      "answer": "...",`}
-      "explanation": "..."
-    }
-  ]
-}`;
+  "format": "irrelevant",
+  "question": "다음 글에서 전체 흐름과 관계 없는 문장은?",
+  "passage_marked": "① 첫 문장. ② 둘째 문장. ③ 셋째 문장. ④ 넷째 문장. ⑤ 다섯째 문장.",
+  "choices": ["①", "②", "③", "④", "⑤"],
+  "answer": 3,
+  "explanation": "③번은 주제에서 벗어남"
+}`,
+
+      '글의순서': `${baseRules}
+[유형: 글의순서]
+지문 첫 1~2문장을 "주어진 글"로 두고, 나머지를 (A)(B)(C) 3단락으로 나눔.
+선택지 5개는 순서 조합.
+두 문제는 정답 순서가 달라야 함.
+
+각 문제 형식:
+{
+  "format": "order",
+  "question": "주어진 글 다음에 이어질 글의 순서로 가장 적절한 것은?",
+  "given_text": "주어진 첫 부분",
+  "para_a": "(A) 내용",
+  "para_b": "(B) 내용",
+  "para_c": "(C) 내용",
+  "choices": ["(A)-(C)-(B)", "(B)-(A)-(C)", "(B)-(C)-(A)", "(C)-(A)-(B)", "(C)-(B)-(A)"],
+  "answer": 3,
+  "explanation": "(B)에서 ~ 후 (C)"
+}`,
+
+      '요약빈칸': `${baseRules}
+[유형: 요약빈칸]
+지문 원본 그대로 + 한 문장 요약문에 (A)(B) 빈칸.
+선택지 5개는 (A)단어-(B)단어 영어 조합.
+두 문제는 다른 핵심을 묻도록.
+
+각 문제 형식:
+{
+  "format": "summary_blank",
+  "question": "다음 글의 요약문의 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?",
+  "passage_text": "원본 지문 그대로",
+  "summary_template": "Speaking quickly _____(A)_____ communication because the brain needs time to _____(B)_____.",
+  "choices": ["(A) increases  (B) consider", "(A) reduces  (B) ignore", "(A) ~  (B) ~", "(A) ~  (B) ~", "(A) ~  (B) ~"],
+  "answer": 1,
+  "explanation": "핵심은 ~"
+}`,
+
+      '문장삽입': `${baseRules}
+[유형: 문장삽입]
+지문에서 논리 흐름에 중요한 한 문장을 빼내 "주어진 문장"으로. 나머지 지문에 ①②③④⑤ 위치 표시.
+빠진 문장이 들어갈 자리가 정답.
+두 문제는 빼내는 문장이 달라야 함.
+
+각 문제 형식:
+{
+  "format": "insert",
+  "question": "글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
+  "given_sentence": "빼낸 문장",
+  "passage_marked": "첫부분. ① 다음. ② 다음. ③ 다음. ④ 다음. ⑤ 다음.",
+  "choices": ["①", "②", "③", "④", "⑤"],
+  "answer": 3,
+  "explanation": "주어진 문장은 ~ 다음에 와야 함"
+}`,
+
+      '낱말쓰임': `${baseRules}
+[유형: 낱말쓰임]
+지문 안에 단어 5개에 밑줄. ①②③④⑤. 그 중 1개는 문맥상 어색(반의어 등).
+선택지는 밑줄 친 단어 그대로.
+두 문제는 다른 단어를 틀리게.
+
+각 문제 형식:
+{
+  "format": "word",
+  "question": "다음 글의 밑줄 친 부분 중, 문맥상 낱말의 쓰임이 적절하지 않은 것은?",
+  "passage_marked": "지문에서 ①[word1] ②[word2] ③[word3] ④[word4] ⑤[word5] 처럼 표시. 대괄호로 밑줄 표시.",
+  "choices": ["word1", "word2", "word3", "word4", "word5"],
+  "answer": 3,
+  "explanation": "③은 반대 의미"
+}`,
+
+      '어법': `${baseRules}
+[유형: 어법]
+지문 안에 표현 5개(동사 형태, 분사, 관계사, 수일치 등)에 밑줄. ①②③④⑤. 그 중 1개는 어법 오류.
+선택지는 밑줄 친 표현.
+두 문제는 다른 어법 포인트.
+
+각 문제 형식:
+{
+  "format": "grammar",
+  "question": "다음 글의 밑줄 친 부분 중, 어법상 틀린 것은?",
+  "passage_marked": "지문에 ①[phrase1] ②[phrase2] ③[phrase3] ④[phrase4] ⑤[phrase5] 표시",
+  "choices": ["phrase1", "phrase2", "phrase3", "phrase4", "phrase5"],
+  "answer": 3,
+  "explanation": "③은 ~가 와야 함"
+}`,
+
+      '빈칸추론': `${baseRules}
+[유형: 빈칸추론]
+지문 핵심 부분 한 곳을 빈칸으로. 선택지 5개(영어, 비슷한 길이).
+오답은 어휘 비슷하지만 논리 안 맞도록.
+두 문제는 다른 위치.
+
+각 문제 형식:
+{
+  "format": "blank",
+  "question": "빈칸에 들어갈 말로 가장 적절한 것은?",
+  "passage_with_blank": "지문에 _______ 빈칸 표시",
+  "choices": ["choice1", "choice2", "choice3", "choice4", "choice5"],
+  "answer": 3,
+  "explanation": "핵심은 ~"
+}`,
+
+      '글의제목': `${baseRules}
+[유형: 글의제목]
+지문 원본 그대로. 선택지 5개 영어 제목.
+중요: 2개는 명백한 오답(주제 반대), 나머지 3개 중 어휘를 어렵게 해서 헷갈리도록. 정답은 그 3개 중 하나.
+두 문제는 다른 정답.
+
+각 문제 형식:
+{
+  "format": "title",
+  "question": "다음 글의 제목으로 가장 적절한 것은?",
+  "passage_text": "원본 지문 그대로",
+  "choices": ["Title 1", "Title 2", "Title 3", "Title 4", "Title 5"],
+  "answer": 3,
+  "explanation": "주제는 ~"
+}`,
+
+      '밑줄의미': `${baseRules}
+[유형: 밑줄의미]
+지문에서 비유적/관용적/함축적 표현 한 곳을 골라 밑줄(대괄호로 표시).
+선택지 5개 영어로 의미 해석.
+두 문제는 다른 밑줄.
+
+각 문제 형식:
+{
+  "format": "underline",
+  "question": "밑줄 친 부분이 다음 글에서 의미하는 바로 가장 적절한 것은?",
+  "passage_with_underline": "지문에서 밑줄을 [밑줄부분] 으로 표시",
+  "underlined_phrase": "밑줄 친 표현 자체",
+  "choices": ["meaning1", "meaning2", "meaning3", "meaning4", "meaning5"],
+  "answer": 3,
+  "explanation": "이 표현은 ~를 비유"
+}`,
+
+      '요지빈칸': `${baseRules}
+[유형: 요지빈칸 (서답형, 영어 2단어)]
+지문 + 한 문장 요약문에 (A)(B) 빈칸. 각각 영어 2단어로 채움.
+정답은 지문에서 직접 찾을 수 있어야.
+
+각 문제 형식:
+{
+  "format": "short_summary",
+  "question": "다음 글의 요지를 한 문장으로 쓸 때, 빈칸 (A), (B)에 들어갈 말을 영어 2단어로 쓰시오.",
+  "passage_text": "원본 지문",
+  "summary_template": "Since (A)_____ _____, the brain needs (B)_____ _____.",
+  "answer_a": "정답 2단어",
+  "answer_b": "정답 2단어",
+  "answer": "(A) 정답 / (B) 정답",
+  "explanation": "지문 ~에서"
+}`,
+
+      '이유서술': `${baseRules}
+[유형: 이유서술 (서답형, 한국어)]
+지문의 핵심 주장 또는 현상의 이유 2가지를 묻기. 학생은 한국어로 서술.
+
+각 문제 형식:
+{
+  "format": "short_korean",
+  "question": "필자가 ~ 라고 말한 이유 2가지를 우리말로 서술하시오.",
+  "passage_text": "원본 지문",
+  "answer_1": "첫 번째 이유 (한국어)",
+  "answer_2": "두 번째 이유 (한국어)",
+  "answer": "1) ~  2) ~",
+  "explanation": "지문 ~ 에서"
+}`,
+
+      '밑줄의미영작': `${baseRules}
+[유형: 밑줄의미영작 (서답형, 영어)]
+지문 어딘가에 한국어 문장 삽입 → 밑줄 (의미를 영어로 영작).
+보기 단어 5~7개 + 조건 2~3개 제공.
+
+각 문제 형식:
+{
+  "format": "short_translate",
+  "question": "밑줄 친 우리말 부분을 보기 단어를 활용하여 조건에 맞게 영작하시오.",
+  "passage_with_korean": "지문 안에 [한국어 문장] 형태로 표시",
+  "korean_part": "영작할 한국어 문장",
+  "word_bank": ["word1", "word2", "word3", "word4", "word5"],
+  "conditions": ["보기 단어를 모두 사용할 것", "현재완료 사용", "한 문장으로"],
+  "answer": "모범 영어 답안",
+  "explanation": "핵심 문법은 ~"
+}`,
+
+      '내용일치_한국어': `${baseRules}
+[유형: 내용일치 (한국어 선택지)]
+지문의 세부 정보 5개를 한국어 선택지로. 그 중 1개는 일치(또는 불일치).
+첫 문제는 일치 묻기, 둘째 문제는 불일치 묻기.
+
+각 문제 형식:
+{
+  "format": "match_kor",
+  "question": "다음 글의 내용과 일치하는 것은? 또는 일치하지 않는 것은?",
+  "match_direction": "match",
+  "passage_text": "원본 지문",
+  "choices": ["한국어 선택지1", "한국어 선택지2", "한국어 선택지3", "한국어 선택지4", "한국어 선택지5"],
+  "answer": 3,
+  "explanation": "지문에 ~ 명시"
+}`,
+
+      '내용일치_영어': `${baseRules}
+[유형: 내용일치 (영어 선택지, 어려운 어휘)]
+지문의 세부 정보 5개를 영어 선택지로. 어휘는 의도적으로 어렵게(paraphrase, 동의어 활용). 그 중 1개는 일치(또는 불일치).
+첫 문제는 일치 묻기, 둘째 문제는 불일치 묻기.
+
+각 문제 형식:
+{
+  "format": "match_eng",
+  "question": "Which of the following is consistent (또는 NOT consistent) with the passage?",
+  "match_direction": "match",
+  "passage_text": "원본 지문",
+  "choices": ["English option 1 (어려운 어휘)", "..." , "...", "...", "..."],
+  "answer": 3,
+  "explanation": "지문 ~ 와 일치/불일치"
+}`,
+
+      '단어배열': `${baseRules}
+[유형: 단어배열 (서답형)]
+지문의 핵심 문장 하나를 선택. 단어들을 섞어서 제공.
+학생이 올바른 순서로 영작.
+
+각 문제 형식:
+{
+  "format": "short_arrange",
+  "question": "다음 단어들을 본문의 의미에 맞게 올바른 순서로 배열하시오.",
+  "passage_text": "원본 지문",
+  "scrambled_words": ["word1", "word2", "word3", "word4", "word5"],
+  "answer": "올바른 문장",
+  "explanation": "정답 구조는 ~"
+}`,
+
+      '가정법영작': `${baseRules}
+[유형: 가정법 영작 (서답형)]
+지문 내용을 바탕으로 가정법이 필요한 한국어 문장 제시. 학생이 가정법으로 영작.
+
+각 문제 형식:
+{
+  "format": "short_subjunctive",
+  "question": "다음 한국어 문장을 가정법을 사용하여 영작하시오.",
+  "passage_text": "원본 지문",
+  "korean_sentence": "한국어 문장",
+  "answer": "모범 영작",
+  "explanation": "가정법 ~"
+}`,
+
+      '접속사영작': `${baseRules}
+[유형: 접속사 영작 (서답형)]
+지문 내용 기반 한국어 문장 제시. 학생이 적절한 접속사로 영작.
+
+각 문제 형식:
+{
+  "format": "short_conjunction",
+  "question": "다음 한국어 문장을 적절한 접속사를 사용하여 영작하시오.",
+  "passage_text": "원본 지문",
+  "korean_sentence": "한국어 문장",
+  "answer": "모범 영작",
+  "explanation": "접속사 ~ 용법"
+}`,
+    };
+
+    return prompts[type] || prompts['빈칸추론'];
+  }
+
+  async function generateForType(apiKey, passage, type, school) {
+    const prompt = getPrompt(type, passage, school);
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -746,42 +876,36 @@ ${isChoice
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 3000,
+        max_tokens: 4000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
 
     if (!res.ok) {
       const err = await res.text();
-      throw new Error(`API 오류 ${res.status}: ${err.substring(0,100)}`);
+      throw new Error(`API ${res.status}: ${err.substring(0,80)}`);
     }
 
     const data = await res.json();
     let txt = data.content[0].text.trim();
-
-    // ```json 블록 제거
     txt = txt.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
 
     let parsed;
     try {
       parsed = JSON.parse(txt);
     } catch(e) {
-      // JSON 추출 시도
       const match = txt.match(/\{[\s\S]*\}/);
       if (match) parsed = JSON.parse(match[0]);
       else throw new Error('JSON 파싱 실패');
     }
 
     if (!parsed.questions || parsed.questions.length < 2) {
-      throw new Error('문제 2개 미만 생성됨');
+      throw new Error('문제 2개 미만');
     }
 
     return parsed;
   }
 
-  // ════════════════════════════════════════
-  // 학생 기록
-  // ════════════════════════════════════════
   async function loadRecords() {
     const listEl = document.getElementById('records-list');
     listEl.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
@@ -797,22 +921,21 @@ ${isChoice
   }
 
   function buildStudentCard(uid,u) {
-    return `
-      <div class="student-card">
-        <div class="student-header" onclick="toggleStudent('${uid}','${u.name}','${u.userId}','${u.school}')">
-          <div style="width:32px;height:32px;border-radius:50%;background:#EBF2FF;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#1A3566;flex-shrink:0">${u.name?.[0]||'?'}</div>
-          <div class="s-info">
-            <div style="font-size:13px;font-weight:500;color:#1A3566">${u.name||''} <span style="font-size:10px;color:#5A7BAD">${u.userId||''}</span></div>
-            <div style="font-size:11px;color:#5A7BAD;margin-top:1px">${u.school||''} · ${u.grade||''}</div>
-          </div>
-          <span style="font-size:14px;color:#A8C4F5" id="arr-${uid}">▼</span>
+    return `<div class="student-card">
+      <div class="student-header" onclick="toggleStudent('${uid}','${u.name}','${u.userId}','${u.school}')">
+        <div style="width:32px;height:32px;border-radius:50%;background:#EBF2FF;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#1A3566;flex-shrink:0">${u.name?.[0]||'?'}</div>
+        <div class="s-info">
+          <div style="font-size:13px;font-weight:500;color:#1A3566">${u.name||''} <span style="font-size:10px;color:#5A7BAD">${u.userId||''}</span></div>
+          <div style="font-size:11px;color:#5A7BAD;margin-top:1px">${u.school||''} · ${u.grade||''}</div>
         </div>
-        <div class="week-body" id="wb-${uid}">
-          <div id="rec-${uid}"><div class="empty-msg">불러오는 중...</div></div>
-          <div id="toast-${uid}" class="copy-toast">카톡 복사 완료!</div>
-          <button class="kakao-btn" onclick="copyKakao('${uid}','${u.name}','${u.userId}','${u.school}')">카톡으로 복사</button>
-        </div>
-      </div>`;
+        <span style="font-size:14px;color:#A8C4F5" id="arr-${uid}">▼</span>
+      </div>
+      <div class="week-body" id="wb-${uid}">
+        <div id="rec-${uid}"><div class="empty-msg">불러오는 중...</div></div>
+        <div id="toast-${uid}" class="copy-toast">카톡 복사 완료!</div>
+        <button class="kakao-btn" onclick="copyKakao('${uid}','${u.name}','${u.userId}','${u.school}')">카톡으로 복사</button>
+      </div>
+    </div>`;
   }
 
   window.toggleStudent = async (uid) => {
@@ -826,8 +949,7 @@ ${isChoice
 
   async function loadStudentRecords(uid) {
     const recEl   = document.getElementById('rec-'+uid);
-    const now     = new Date();
-    const weekAgo = new Date(now);
+    const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate()-7);
     try {
       const snap = await getDocs(query(collection(db,'progress'),
@@ -844,15 +966,14 @@ ${isChoice
       let html='';
       Object.keys(byDate).sort().reverse().forEach(date => {
         const items  = byDate[date];
-        const dayStr = formatDate(date);
         html += `<div class="day-row" style="margin-bottom:8px">
           <div style="font-size:10px;color:#888780;margin-bottom:4px;display:flex;justify-content:space-between">
-            <span>${dayStr}</span><span style="color:#3B6D11">${items.length}문제</span>
+            <span>${formatDate(date)}</span><span style="color:#3B6D11">${items.length}건</span>
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:4px">`;
         items.forEach(item => {
-          const cls = item.correct?'di-correct':'di-wrong';
-          html += `<span class="day-item ${cls}" style="font-size:10px;padding:3px 7px;border-radius:6px;font-weight:500">${item.typeName} ${item.round}회차 ${item.correct?'정답':'오답'}</span>`;
+          const cls = (item.correctCount === 2 || item.correct) ? 'di-correct' : 'di-wrong';
+          html += `<span class="day-item ${cls}" style="font-size:10px;padding:3px 7px;border-radius:6px;font-weight:500">${item.typeName} ${item.round}회 ${item.correctCount ?? (item.correct?2:0)}/2</span>`;
         });
         html += `</div></div>`;
       });
@@ -870,19 +991,14 @@ ${isChoice
     const recEl = document.getElementById('rec-'+uid);
     const rows  = recEl.querySelectorAll('.day-row');
     let text = `[헤일리올라 영어학원]\n━━━━━━━━━━━━━━\n학생: ${name} (${userId})\n학교: ${school}\n━━━━━━━━━━━━━━\n이번주 학습 기록\n\n`;
-    if (rows.length===0) {
-      text += '이번 주 학습 기록 없음\n';
-    } else {
-      rows.forEach(row => {
-        const label = row.querySelector('span:first-child').textContent;
-        const items = row.querySelectorAll('.day-item');
-        text += `${label}\n`;
-        items.forEach(item => {
-          text += `${item.classList.contains('di-correct')?'✅':'❌'} ${item.textContent}\n`;
-        });
-        text += '\n';
-      });
-    }
+    if (rows.length===0) text += '이번 주 학습 기록 없음\n';
+    else rows.forEach(row => {
+      const label = row.querySelector('span:first-child').textContent;
+      const items = row.querySelectorAll('.day-item');
+      text += `${label}\n`;
+      items.forEach(item => text += `${item.classList.contains('di-correct')?'✅':'❌'} ${item.textContent}\n`);
+      text += '\n';
+    });
     text += `━━━━━━━━━━━━━━\n헤일리올라영어학원`;
     await navigator.clipboard.writeText(text);
     const toast = document.getElementById('toast-'+uid);
