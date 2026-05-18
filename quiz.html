@@ -84,24 +84,16 @@
   font-size:14px; font-weight:500; color:#2B5EB8;
   width:36px; height:36px;
 }
-.passage-marked .num-mark {
-  color:#2B5EB8; font-weight:600; font-size:15px;
-}
+.passage-marked .num-mark { color:#2B5EB8; font-weight:600; font-size:15px; }
 .passage-marked .underline-text {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1.5px;
-  font-weight: 500;
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px; font-weight: 500;
 }
 .blank-mark {
-  display: inline-block;
-  min-width: 110px;
-  border-bottom: 2px solid #2B5EB8;
-  margin: 0 2px;
+  display: inline-block; min-width: 110px;
+  border-bottom: 2px solid #2B5EB8; margin: 0 2px;
 }
-.self-check-row {
-  display:flex; gap:8px; margin-bottom:8px;
-}
+.self-check-row { display:flex; gap:8px; margin-bottom:8px; }
 .self-check-row button {
   flex:1; padding:10px; border-radius:8px; font-size:13px;
   font-weight:500; cursor:pointer; border:0.5px solid;
@@ -173,6 +165,13 @@
     document.getElementById('round-badge').innerHTML = `<span style="font-size:10px;color:#fff">${currentRound}회차</span>`;
   }
 
+  // ⭐ 헬퍼: 시작에 (A)(B)(C) 있으면 제거
+  function stripParaPrefix(text, label) {
+    if (!text) return '';
+    const regex = new RegExp(`^\\s*\\(?${label}\\)?[\\s\\.:\\-]*`, 'i');
+    return text.replace(regex, '').trim();
+  }
+
   function renderCurrentQuestion() {
     const q = questions[currentQIdx];
     if (!q) { showError('문제 데이터가 없어요.'); return; }
@@ -204,14 +203,18 @@
       renderNumberChoices(inputEl);
     }
     else if (fmt === 'order') {
+      // ⭐ (A)(B)(C) 중복 제거
+      const a = stripParaPrefix(q.para_a, 'A');
+      const b = stripParaPrefix(q.para_b, 'B');
+      const c = stripParaPrefix(q.para_c, 'C');
       displayEl.innerHTML = `
         <div class="given-box">
           <div class="given-box-title">주어진 글</div>
           ${q.given_text || ''}
         </div>
-        <div class="para-box"><span class="para-label">(A)</span>${q.para_a || ''}</div>
-        <div class="para-box"><span class="para-label">(B)</span>${q.para_b || ''}</div>
-        <div class="para-box"><span class="para-label">(C)</span>${q.para_c || ''}</div>
+        <div class="para-box"><span class="para-label">(A)</span>${a}</div>
+        <div class="para-box"><span class="para-label">(B)</span>${b}</div>
+        <div class="para-box"><span class="para-label">(C)</span>${c}</div>
       `;
       renderTextChoices(inputEl, q.choices);
     }
@@ -310,7 +313,6 @@
       else inputEl.innerHTML = `<div class="short-input-wrap"><label>답안</label><textarea id="ans-write"></textarea></div>`;
     }
 
-    // 버튼 재설정
     const isChoice = isChoiceFormat(fmt);
     setupCheckButton(isChoice);
   }
@@ -325,9 +327,6 @@
     return ['irrelevant','order','summary_blank','insert','word','grammar','blank','title','underline','match_kor','match_eng'].includes(fmt);
   }
 
-  // ════════════════════════════════════════
-  // 선택지 렌더링
-  // ════════════════════════════════════════
   function renderNumberChoices(container) {
     const nums = ['①','②','③','④','⑤'];
     let html = '<div class="options">';
@@ -356,17 +355,11 @@
     container.innerHTML = html;
   }
 
-  // ════════════════════════════════════════
-  // 텍스트 포맷팅 (밑줄 등)
-  // ════════════════════════════════════════
-
-  // ①②③④⑤ 번호만 강조
   function formatCircled(text) {
     if (!text) return '';
     return text.replace(/([①②③④⑤])/g, '<span class="num-mark">$1</span>');
   }
 
-  // ①[표현] 형태를 번호+밑줄로 변환
   function formatCircledWithUnderline(text) {
     if (!text) return '';
     return text
@@ -374,24 +367,22 @@
       .replace(/([①②③④⑤])/g, '<span class="num-mark">$1</span>');
   }
 
-  // [표현] 형태를 밑줄로 변환 (번호 없이)
   function formatBracketUnderline(text) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]/g, '<span class="underline-text">$1</span>');
   }
 
-  // 빈칸 _______ 시각화
   function formatBlank(text) {
     if (!text) return '';
     return text.replace(/_{3,}/g, '<span class="blank-mark"></span>');
   }
 
   // ════════════════════════════════════════
-  // 선택형 정답 확인 (다시선택 버그 수정)
+  // ⭐ 선택형 (다시 선택 시 빨간색 깨끗하게)
   // ════════════════════════════════════════
   window.selectOption = (div, idx) => {
     if (div.classList.contains('disabled')) return;
-    // ⭐ 이전 선택 모두 제거 (selected, wrong, correct 클래스 다 정리)
+    // 다른 선택지 selected 제거 (wrong은 그대로 두려고 했지만, 다시 선택할 때 깨끗하게)
     document.querySelectorAll('.opt').forEach(o => {
       if (!o.classList.contains('disabled')) {
         o.classList.remove('selected');
@@ -410,7 +401,6 @@
     const opts = document.querySelectorAll('.opt');
 
     if (userAns === correctAns) {
-      // 정답
       opts.forEach(o => o.classList.add('disabled'));
       opts[selectedOptIdx].classList.remove('selected');
       opts[selectedOptIdx].classList.add('correct');
@@ -421,7 +411,6 @@
       proceedToNext();
     } else {
       wrongAttempts++;
-      // ⭐ 틀린 선택지에 wrong 표시하고 disabled, 나머지는 그대로
       opts[selectedOptIdx].classList.remove('selected');
       opts[selectedOptIdx].classList.add('wrong');
       opts[selectedOptIdx].classList.add('disabled');
@@ -430,9 +419,7 @@
         document.getElementById('res-wrong1').textContent = '아쉬워요! 다시 한 번 생각해보세요.';
         document.getElementById('res-wrong1').classList.add('show');
         selectedOptIdx = null;
-        // 버튼 그대로 (정답 확인 → 다시 클릭하면 새 선택지로 체크)
       } else {
-        // 2번 틀림 — 오답 확정
         opts.forEach(o => o.classList.add('disabled'));
         opts[correctAns - 1]?.classList.add('correct');
         document.getElementById('res-wrong1').classList.remove('show');
@@ -481,7 +468,6 @@
     document.getElementById('res-wrong2').classList.add('show');
     showExplanation(q);
 
-    // ✅ / ❌ 자가체크 버튼
     const area = document.getElementById('btn-area');
     area.innerHTML = `
       <div class="self-check-row">
