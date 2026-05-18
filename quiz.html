@@ -53,38 +53,38 @@
 <style>
 .given-box {
   background:#FFF5E8; border:0.5px solid #E5B774; border-radius:8px;
-  padding:10px 12px; margin-bottom:12px; font-size:13px; color:#854F0B; line-height:1.7;
+  padding:10px 12px; margin-bottom:12px; font-size:14px; color:#854F0B; line-height:1.7;
 }
-.given-box-title { font-size:10px; color:#A07020; font-weight:600; margin-bottom:4px; }
+.given-box-title { font-size:11px; color:#A07020; font-weight:600; margin-bottom:4px; }
 .passage-box {
   background:#fff; border:0.5px solid #D6E4FF; border-radius:8px;
-  padding:12px; margin-bottom:12px; font-size:13px; color:#2C2C2A; line-height:1.9;
+  padding:12px; margin-bottom:12px; font-size:14px; color:#2C2C2A; line-height:1.9;
 }
 .summary-box {
   background:#F5F8FF; border:0.5px solid #A8C4F5; border-radius:8px;
-  padding:10px 12px; margin-bottom:12px; font-size:13px; color:#1A3566; line-height:1.7;
+  padding:10px 12px; margin-bottom:12px; font-size:14px; color:#1A3566; line-height:1.7;
   font-style: italic;
 }
 .para-box {
   background:#fff; border:0.5px solid #D6E4FF; border-radius:8px;
-  padding:10px 12px; margin-bottom:6px; font-size:13px; color:#2C2C2A; line-height:1.8;
+  padding:10px 12px; margin-bottom:6px; font-size:14px; color:#2C2C2A; line-height:1.8;
 }
 .para-label { font-weight:600; color:#2B5EB8; margin-right:4px; }
-.word-bank { background:#EEEDFE; border-radius:8px; padding:8px 12px; margin-bottom:8px; font-size:12px; color:#3C3489; }
-.conditions-list { font-size:11px; color:#5A7BAD; margin-bottom:8px; line-height:1.7; }
+.word-bank { background:#EEEDFE; border-radius:8px; padding:8px 12px; margin-bottom:8px; font-size:13px; color:#3C3489; }
+.conditions-list { font-size:12px; color:#5A7BAD; margin-bottom:8px; line-height:1.7; }
 .short-input-wrap { margin-bottom:8px; }
-.short-input-wrap label { font-size:11px; color:#5A7BAD; display:block; margin-bottom:4px; }
+.short-input-wrap label { font-size:12px; color:#5A7BAD; display:block; margin-bottom:4px; }
 .short-input-wrap input, .short-input-wrap textarea {
-  width:100%; padding:8px 10px; border:0.5px solid #D6E4FF; border-radius:6px;
-  font-size:13px; color:#2C2C2A; background:#fff; box-sizing:border-box;
+  width:100%; padding:9px 11px; border:0.5px solid #D6E4FF; border-radius:6px;
+  font-size:14px; color:#2C2C2A; background:#fff; box-sizing:border-box;
 }
 .short-input-wrap textarea { min-height:60px; resize:vertical; font-family:inherit; }
 .opt-num-only {
   display:flex; align-items:center; justify-content:center;
-  font-size:14px; font-weight:500; color:#2B5EB8;
-  width:36px; height:36px;
+  font-size:15px; font-weight:500; color:#2B5EB8;
+  width:38px; height:38px;
 }
-.passage-marked .num-mark { color:#2B5EB8; font-weight:600; font-size:15px; }
+.passage-marked .num-mark { color:#2B5EB8; font-weight:600; font-size:16px; }
 .passage-marked .underline-text {
   text-decoration: underline; text-underline-offset: 3px;
   text-decoration-thickness: 1.5px; font-weight: 500;
@@ -95,7 +95,7 @@
 }
 .self-check-row { display:flex; gap:8px; margin-bottom:8px; }
 .self-check-row button {
-  flex:1; padding:10px; border-radius:8px; font-size:13px;
+  flex:1; padding:11px; border-radius:8px; font-size:14px;
   font-weight:500; cursor:pointer; border:0.5px solid;
 }
 .self-check-row .sc-correct { background:#EAF3DE; border-color:#A8D472; color:#27500A; }
@@ -162,10 +162,9 @@
   }
 
   function renderRoundBadge() {
-    document.getElementById('round-badge').innerHTML = `<span style="font-size:10px;color:#fff">${currentRound}회차</span>`;
+    document.getElementById('round-badge').innerHTML = `<span style="font-size:11px;color:#fff">${currentRound}회차</span>`;
   }
 
-  // ⭐ 헬퍼: 시작에 (A)(B)(C) 있으면 제거
   function stripParaPrefix(text, label) {
     if (!text) return '';
     const regex = new RegExp(`^\\s*\\(?${label}\\)?[\\s\\.:\\-]*`, 'i');
@@ -203,7 +202,6 @@
       renderNumberChoices(inputEl);
     }
     else if (fmt === 'order') {
-      // ⭐ (A)(B)(C) 중복 제거
       const a = stripParaPrefix(q.para_a, 'A');
       const b = stripParaPrefix(q.para_b, 'B');
       const c = stripParaPrefix(q.para_c, 'C');
@@ -339,7 +337,7 @@
 
   function renderTextChoices(container, choices) {
     if (!choices || !choices.length) {
-      container.innerHTML = '<div style="font-size:12px;color:#E24B4A">선택지가 없어요</div>';
+      container.innerHTML = '<div style="font-size:13px;color:#E24B4A">선택지가 없어요</div>';
       return;
     }
     const nums = ['①','②','③','④','⑤'];
@@ -377,12 +375,8 @@
     return text.replace(/_{3,}/g, '<span class="blank-mark"></span>');
   }
 
-  // ════════════════════════════════════════
-  // ⭐ 선택형 (다시 선택 시 빨간색 깨끗하게)
-  // ════════════════════════════════════════
   window.selectOption = (div, idx) => {
     if (div.classList.contains('disabled')) return;
-    // 다른 선택지 selected 제거 (wrong은 그대로 두려고 했지만, 다시 선택할 때 깨끗하게)
     document.querySelectorAll('.opt').forEach(o => {
       if (!o.classList.contains('disabled')) {
         o.classList.remove('selected');
@@ -431,9 +425,6 @@
     }
   };
 
-  // ════════════════════════════════════════
-  // 서답형
-  // ════════════════════════════════════════
   window.checkShortAnswer = () => {
     const q = questions[currentQIdx];
     const fmt = q.format;
@@ -462,8 +453,8 @@
 
     document.getElementById('res-wrong2').innerHTML = `
       <div style="font-weight:500;margin-bottom:6px">✏️ 모범답안과 비교해보세요.</div>
-      <div style="font-size:11px;color:#5A7BAD;margin-top:6px;white-space:pre-line"><b>내 답:</b><br>${userAns}</div>
-      <div style="font-size:11px;color:#3B6D11;margin-top:6px;white-space:pre-line"><b>모범답안:</b><br>${modelAns}</div>
+      <div style="font-size:12px;color:#5A7BAD;margin-top:6px;white-space:pre-line"><b>내 답:</b><br>${userAns}</div>
+      <div style="font-size:12px;color:#3B6D11;margin-top:6px;white-space:pre-line"><b>모범답안:</b><br>${modelAns}</div>
     `;
     document.getElementById('res-wrong2').classList.add('show');
     showExplanation(q);
