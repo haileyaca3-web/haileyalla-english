@@ -54,6 +54,10 @@
       <div id="selected-passage-info"
         style="background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#1A3566;">
       </div>
+      <div style="font-size:11px;color:#5A7BAD;margin-bottom:10px;line-height:1.6">
+        💡 유형을 하나 선택하면 2문제를 풀어요.<br>
+        ⭐는 이미 다 맞힌 유형, 회차는 도전한 횟수예요.
+      </div>
       <div class="section-label">선택형 유형</div>
       <div class="type-grid" id="type-grid-select"></div>
       <div class="section-label" style="margin-top:4px">서답형 유형</div>
@@ -65,6 +69,15 @@
   </div>
 </div>
 
+<style>
+.type-card{position:relative}
+.type-progress{font-size:10px;color:#5A7BAD;margin-top:3px}
+.type-progress.done{color:#3B6D11;font-weight:500}
+.type-card.has-questions::after{content:'';position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:#3B6D11}
+.type-card.no-questions{opacity:0.45;cursor:not-allowed}
+.type-card.no-questions .type-name::after{content:' (없음)';font-size:10px;color:#E24B4A;font-weight:normal}
+</style>
+
 <script type="module">
   import { auth, db } from './js/firebase.js';
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -72,38 +85,39 @@
 
   const school         = localStorage.getItem('selectedSchool') || '매산고';
   const selectedRanges = JSON.parse(localStorage.getItem('selectedRanges') || '[]');
+  const userId         = localStorage.getItem('userId');
   let selectedPassage  = null;
-  let selectedTypes    = new Set();
+  let selectedType     = null;
   let allPassages      = [];
+  let progressMap      = {};   // passageId → { typeName: {round, correct} }
+  let questionMap      = {};   // passageId_typeName → 개수
 
   document.getElementById('school-label').textContent = school + '등학교';
 
-  // 로그인 확인
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = 'index.html'; return; }
     await loadPassages();
   });
 
-  // ── Firebase에서 지문 불러오기 ──
+  // ──────────────────────────────────────
+  // 지문 불러오기 (새/옛 ID 구조 모두 호환)
+  // ──────────────────────────────────────
   async function loadPassages() {
     const loadingEl = document.getElementById('loading');
     const listEl    = document.getElementById('passage-list');
 
     try {
-      // 전체 passages 불러오기
-      const snap = await getDocs(
-        query(collection(db, 'passages'),
-          where('school', 'in', [school, '전체'])
-        )
-      );
+      const snap = await getDocs(collection(db, 'passages'));
 
       allPassages = [];
       snap.forEach(d => {
         const p = d.data();
-        // selectedRanges 와 range 필드 비교
-        if (selectedRanges.includes(p.range)) {
-          allPassages.push({ id: d.id, ...p });
-        }
+        // 새 구조(schools 배열) 또는 옛 구조(school 단일) 모두 처리
+        const schools = p.schools || (p.school ? [p.school] : []);
+        const matchSchool = schools.includes(school) || schools.includes('전체');
+        if (!matchSchool) return;
+        if (selectedRanges.length > 0 && !selectedRanges.includes(p.range)) return;
+        allPassages.push({ id: d.id, ...p });
       });
 
       loadingEl.style.display = 'none';
@@ -120,12 +134,12 @@
       // 범위별 그룹핑 + 번호순 정렬
       const groups = {};
       allPassages.forEach(p => {
-        const label = p.range;
+        const label = p.range || `${p.textbook}_${p.unit}`;
         if (!groups[label]) groups[label] = [];
         groups[label].push(p);
       });
       Object.keys(groups).forEach(g => {
-        groups[g].sort((a,b) => a.num.localeCompare(b.num));
+        groups[g].sort((a,b) => (a.num || '').localeCompare(b.num || ''));
       });
 
       let html = '';
@@ -152,22 +166,8 @@
   }
 
   function rangeLabel(range) {
-    const map = {
-      '교과서_Lesson 1':'교과서 · Lesson 1',
-      '교과서_Lesson 2':'교과서 · Lesson 2',
-      '교과서_Lesson 3':'교과서 · Lesson 3',
-      '교과서_Lesson 4':'교과서 · Lesson 4',
-      '리딩마스터_1강':'리딩마스터 · 1강',
-      '리딩마스터_2강':'리딩마스터 · 2강',
-      '리딩마스터_3강':'리딩마스터 · 3강',
-      '리딩마스터_11강':'리딩마스터 · 11강',
-      '리딩마스터_15강':'리딩마스터 · 15강',
-      '리딩마스터_16강':'리딩마스터 · 16강',
-      '리뷰_1회':'리뷰 모의고사 · 1회',
-      '리뷰_5회':'리뷰 모의고사 · 5회',
-      '모의고사_3월 고2':'3월 고2 모의고사',
-    };
-    return map[range] || range;
+    if (!range) return '기타';
+    return range.replace(/_/g, ' · ');
   }
 
   window.selectPassage = (card, id, name) => {
@@ -177,7 +177,9 @@
     document.getElementById('btn-step1').disabled = false;
   };
 
-  // ── 학교별 유형 ──
+  // ──────────────────────────────────────
+  // 학교별 유형 정의
+  // ──────────────────────────────────────
   const typeData = {
     '매산고': {
       select: [
@@ -194,7 +196,7 @@
       written: [
         { key:'요지빈칸', name:'요지빈칸', sub:'(A)(B) 서술' },
         { key:'이유서술', name:'이유서술', sub:'국문 서술' },
-        { key:'밑줄영작', name:'밑줄영작', sub:'조건 영작' },
+        { key:'밑줄의미영작', name:'밑줄영작', sub:'조건 영작' },
       ]
     },
     '효천고': {
@@ -228,7 +230,7 @@
     }
   };
 
-  window.goStep2 = () => {
+  window.goStep2 = async () => {
     if (!selectedPassage) return;
     document.getElementById('sn1').classList.remove('active');
     document.getElementById('sn1').classList.add('done');
@@ -239,32 +241,92 @@
     document.getElementById('step1').classList.add('hidden');
     document.getElementById('step2').classList.remove('hidden');
     document.getElementById('selected-passage-info').textContent = '선택한 지문: ' + selectedPassage.name;
+
+    // 진도 + 문제 존재 여부 로드
+    await loadProgressAndQuestions();
     renderTypes();
   };
 
-  function renderTypes() {
-    const types = typeData[school] || typeData['매산고'];
-    document.getElementById('type-grid-select').innerHTML = types.select.map(t => `
-      <div class="type-card" onclick="toggleType(this,'${t.key}')">
-        <div class="type-name">${t.name}</div>
-        <div class="type-sub">${t.sub}</div>
-      </div>`).join('');
-    document.getElementById('type-grid-written').innerHTML = types.written.map(t => `
-      <div class="type-card" onclick="toggleType(this,'${t.key}')">
-        <div class="type-name">${t.name}</div>
-        <div class="type-sub">${t.sub}</div>
-      </div>`).join('');
+  async function loadProgressAndQuestions() {
+    // 진도
+    progressMap = {};
+    try {
+      if (userId) {
+        const psnap = await getDocs(
+          query(collection(db, 'progress_summary'), where('userId', '==', userId))
+        );
+        psnap.forEach(d => {
+          const data = d.data();
+          progressMap[data.passageId || d.id.replace(userId + '_', '')] = data;
+        });
+        // 옛 구조 호환
+        const oldSnap = await getDocs(collection(db, 'progress_summary'));
+        oldSnap.forEach(d => {
+          if (!d.id.startsWith(userId + '_')) return;
+          const pid = d.id.replace(userId + '_', '');
+          if (!progressMap[pid]) progressMap[pid] = d.data();
+        });
+      }
+    } catch(e) { console.warn(e); }
+
+    // 문제 존재 여부
+    questionMap = {};
+    try {
+      const qsnap = await getDocs(
+        query(collection(db, 'questions'),
+          where('passageId', '==', selectedPassage.id),
+          where('school',    '==', school)
+        )
+      );
+      qsnap.forEach(d => {
+        const q = d.data();
+        const key = q.typeName;
+        questionMap[key] = (questionMap[key] || 0) + 1;
+      });
+    } catch(e) { console.warn(e); }
   }
 
-  window.toggleType = (card, key) => {
-    card.classList.toggle('on');
-    if (card.classList.contains('on')) selectedTypes.add(key);
-    else selectedTypes.delete(key);
-    document.getElementById('btn-step2').disabled = selectedTypes.size === 0;
+  function renderTypes() {
+    const types     = typeData[school] || typeData['매산고'];
+    const passageProg = progressMap[selectedPassage.id] || {};
+
+    const renderCard = (t) => {
+      const hasQ      = (questionMap[t.key] || 0) >= 1;
+      const prog      = passageProg[t.key];
+      const round     = prog?.round || 0;
+      const correct   = prog?.correct;
+      const isPerfect = correct === 2;
+
+      let progressText = '';
+      if (round > 0) {
+        const star = isPerfect ? ' ⭐' : '';
+        progressText = `<div class="type-progress ${isPerfect ? 'done' : ''}">${round}회차${correct !== undefined ? ' · ' + correct + '/2' : ''}${star}</div>`;
+      }
+
+      const clickable = hasQ ? `onclick="selectType(this,'${t.key}')"` : '';
+      const cls       = hasQ ? 'type-card has-questions' : 'type-card no-questions';
+
+      return `<div class="${cls}" ${clickable}>
+        <div class="type-name">${t.name}</div>
+        <div class="type-sub">${t.sub}</div>
+        ${progressText}
+      </div>`;
+    };
+
+    document.getElementById('type-grid-select').innerHTML  = types.select.map(renderCard).join('');
+    document.getElementById('type-grid-written').innerHTML = types.written.map(renderCard).join('');
+  }
+
+  window.selectType = (card, key) => {
+    if (!card.classList.contains('has-questions')) return;
+    document.querySelectorAll('.type-card').forEach(c => c.classList.remove('on'));
+    card.classList.add('on');
+    selectedType = key;
+    document.getElementById('btn-step2').disabled = false;
   };
 
   window.goStep3 = () => {
-    if (!selectedPassage || selectedTypes.size === 0) return;
+    if (!selectedPassage || !selectedType) return;
     const passage = allPassages.find(p => p.id === selectedPassage.id);
     localStorage.setItem('selectedPassage', JSON.stringify({
       id:       selectedPassage.id,
@@ -272,7 +334,7 @@
       text:     passage?.text     || '',
       footnote: passage?.footnote || '',
     }));
-    localStorage.setItem('selectedTypes', JSON.stringify([...selectedTypes]));
+    localStorage.setItem('selectedType', selectedType);
     window.location.href = 'quiz.html';
   };
 
@@ -287,7 +349,7 @@
       document.getElementById('sn2').classList.remove('active');
       document.getElementById('st2').classList.remove('active');
       document.getElementById('page-title').textContent = '지문 선택';
-      selectedTypes.clear();
+      selectedType = null;
     } else {
       window.location.href = 'range.html';
     }
