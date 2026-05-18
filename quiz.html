@@ -30,28 +30,20 @@
           <span class="q-type" id="q-type-label">유형</span>
           <span class="q-pts" id="q-pts-label">문제 1/2</span>
         </div>
-
-        <!-- 문제 본문 -->
         <div class="q-text" id="q-text"></div>
-
-        <!-- 유형별 디스플레이 영역 -->
         <div id="q-display"></div>
-
-        <!-- 답안 입력 영역 -->
         <div id="q-input"></div>
-
-        <!-- 결과 박스 -->
         <div class="result-box result-correct" id="res-correct"></div>
         <div class="result-box result-wrong1" id="res-wrong1"></div>
         <div class="result-box result-wrong2" id="res-wrong2"></div>
         <div class="explanation" id="q-explanation"></div>
-
-        <button class="btn-main" id="btn-check" onclick="checkAnswer()">정답 확인</button>
+        <div id="btn-area">
+          <button class="btn-main" id="btn-check" onclick="checkAnswer()">정답 확인</button>
+        </div>
       </div>
 
       <div id="error-screen" style="display:none;text-align:center;padding:30px 20px">
         <div style="font-size:13px;color:#E24B4A;margin-bottom:8px" id="error-msg">문제를 불러올 수 없어요</div>
-        <div style="font-size:12px;color:#888780;margin-bottom:16px">관리자에게 문의해주세요</div>
         <button class="btn-main" onclick="window.location.href='passage.html'">지문 선택으로</button>
       </div>
     </div>
@@ -78,13 +70,8 @@
   padding:10px 12px; margin-bottom:6px; font-size:13px; color:#2C2C2A; line-height:1.8;
 }
 .para-label { font-weight:600; color:#2B5EB8; margin-right:4px; }
-.word-bank {
-  background:#EEEDFE; border-radius:8px; padding:8px 12px; margin-bottom:8px;
-  font-size:12px; color:#3C3489;
-}
-.conditions-list {
-  font-size:11px; color:#5A7BAD; margin-bottom:8px; line-height:1.7;
-}
+.word-bank { background:#EEEDFE; border-radius:8px; padding:8px 12px; margin-bottom:8px; font-size:12px; color:#3C3489; }
+.conditions-list { font-size:11px; color:#5A7BAD; margin-bottom:8px; line-height:1.7; }
 .short-input-wrap { margin-bottom:8px; }
 .short-input-wrap label { font-size:11px; color:#5A7BAD; display:block; margin-bottom:4px; }
 .short-input-wrap input, .short-input-wrap textarea {
@@ -92,22 +79,35 @@
   font-size:13px; color:#2C2C2A; background:#fff; box-sizing:border-box;
 }
 .short-input-wrap textarea { min-height:60px; resize:vertical; font-family:inherit; }
-.opt-num-only { 
+.opt-num-only {
   display:flex; align-items:center; justify-content:center;
   font-size:14px; font-weight:500; color:#2B5EB8;
   width:36px; height:36px;
 }
-.passage-marked u {
+.passage-marked .num-mark {
+  color:#2B5EB8; font-weight:600; font-size:15px;
+}
+.passage-marked .underline-text {
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1.5px;
+  font-weight: 500;
 }
-.passage-marked .blank-mark {
+.blank-mark {
   display: inline-block;
-  min-width: 100px;
+  min-width: 110px;
   border-bottom: 2px solid #2B5EB8;
   margin: 0 2px;
 }
+.self-check-row {
+  display:flex; gap:8px; margin-bottom:8px;
+}
+.self-check-row button {
+  flex:1; padding:10px; border-radius:8px; font-size:13px;
+  font-weight:500; cursor:pointer; border:0.5px solid;
+}
+.self-check-row .sc-correct { background:#EAF3DE; border-color:#A8D472; color:#27500A; }
+.self-check-row .sc-wrong { background:#FFE4E4; border-color:#E5B774; color:#854F0B; }
 </style>
 
 <script type="module">
@@ -158,33 +158,21 @@
           where('typeName',  '==', typeName)
         )
       );
-
       questions = [];
       snap.forEach(d => questions.push({ id: d.id, ...d.data() }));
       questions.sort((a, b) => (a.idx || 0) - (b.idx || 0));
-
-      if (questions.length === 0) {
-        showError('이 유형의 문제가 아직 생성되지 않았어요.');
-        return;
-      }
-
+      if (questions.length === 0) { showError('이 유형의 문제가 아직 없어요.'); return; }
       currentQIdx = 0;
       correctCount = 0;
       renderRoundBadge();
       renderCurrentQuestion();
-    } catch(e) {
-      console.error(e);
-      showError('문제 로딩 실패: ' + e.message);
-    }
+    } catch(e) { showError('문제 로딩 실패: ' + e.message); }
   }
 
   function renderRoundBadge() {
     document.getElementById('round-badge').innerHTML = `<span style="font-size:10px;color:#fff">${currentRound}회차</span>`;
   }
 
-  // ════════════════════════════════════════
-  // 유형별 렌더링
-  // ════════════════════════════════════════
   function renderCurrentQuestion() {
     const q = questions[currentQIdx];
     if (!q) { showError('문제 데이터가 없어요.'); return; }
@@ -196,7 +184,6 @@
     document.getElementById('q-pts-label').textContent = `문제 ${currentQIdx + 1}/2`;
     document.getElementById('q-text').textContent      = q.question || '';
 
-    // 결과 초기화
     document.getElementById('res-correct').classList.remove('show');
     document.getElementById('res-wrong1').classList.remove('show');
     document.getElementById('res-wrong2').classList.remove('show');
@@ -212,12 +199,10 @@
 
     const fmt = q.format;
 
-    // ── 1. 흐름무관 ──
     if (fmt === 'irrelevant') {
-      displayEl.innerHTML = `<div class="passage-box passage-marked">${markCircled(q.passage_marked)}</div>`;
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatCircled(q.passage_marked)}</div>`;
       renderNumberChoices(inputEl);
     }
-    // ── 2. 글의순서 ──
     else if (fmt === 'order') {
       displayEl.innerHTML = `
         <div class="given-box">
@@ -228,9 +213,8 @@
         <div class="para-box"><span class="para-label">(B)</span>${q.para_b || ''}</div>
         <div class="para-box"><span class="para-label">(C)</span>${q.para_c || ''}</div>
       `;
-      renderOrderChoices(inputEl, q.choices);
+      renderTextChoices(inputEl, q.choices);
     }
-    // ── 3. 요약빈칸 ──
     else if (fmt === 'summary_blank') {
       displayEl.innerHTML = `
         <div class="passage-box">${q.passage_text || ''}</div>
@@ -238,43 +222,32 @@
       `;
       renderTextChoices(inputEl, q.choices);
     }
-    // ── 4. 문장삽입 ──
     else if (fmt === 'insert') {
       displayEl.innerHTML = `
         <div class="given-box">
           <div class="given-box-title">주어진 문장</div>
           ${q.given_sentence || ''}
         </div>
-        <div class="passage-box passage-marked">${markCircled(q.passage_marked)}</div>
+        <div class="passage-box passage-marked">${formatCircled(q.passage_marked)}</div>
       `;
       renderNumberChoices(inputEl);
     }
-    // ── 5. 낱말쓰임 ──
-    else if (fmt === 'word') {
-      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatMarkedWithUnderline(q.passage_marked)}</div>`;
-      renderTextChoicesAsWords(inputEl, q.choices);
+    else if (fmt === 'word' || fmt === 'grammar') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatCircledWithUnderline(q.passage_marked)}</div>`;
+      renderTextChoices(inputEl, q.choices);
     }
-    // ── 6. 어법 ──
-    else if (fmt === 'grammar') {
-      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatMarkedWithUnderline(q.passage_marked)}</div>`;
-      renderTextChoicesAsWords(inputEl, q.choices);
-    }
-    // ── 7. 빈칸추론 ──
     else if (fmt === 'blank') {
       displayEl.innerHTML = `<div class="passage-box passage-marked">${formatBlank(q.passage_with_blank)}</div>`;
       renderTextChoices(inputEl, q.choices);
     }
-    // ── 8. 글의제목 ──
     else if (fmt === 'title') {
       displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
       renderTextChoices(inputEl, q.choices);
     }
-    // ── 9. 밑줄의미 ──
     else if (fmt === 'underline') {
-      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatMarkedWithUnderline(q.passage_with_underline)}</div>`;
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatBracketUnderline(q.passage_with_underline)}</div>`;
       renderTextChoices(inputEl, q.choices);
     }
-    // ── 10. 요지빈칸 (서답형) ──
     else if (fmt === 'short_summary') {
       displayEl.innerHTML = `
         <div class="passage-box">${q.passage_text || ''}</div>
@@ -282,16 +255,15 @@
       `;
       inputEl.innerHTML = `
         <div class="short-input-wrap">
-          <label>(A) — 2단어</label>
+          <label>(A) — 영어 2단어</label>
           <input type="text" id="ans-a" placeholder="예: positive thinking">
         </div>
         <div class="short-input-wrap">
-          <label>(B) — 2단어</label>
+          <label>(B) — 영어 2단어</label>
           <input type="text" id="ans-b" placeholder="예: ignore obstacles">
         </div>
       `;
     }
-    // ── 11. 이유서술 (서답형) ──
     else if (fmt === 'short_korean') {
       displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
       inputEl.innerHTML = `
@@ -305,48 +277,23 @@
         </div>
       `;
     }
-    // ── 12. 밑줄의미영작 (서답형) ──
     else if (fmt === 'short_translate') {
-      let html = `<div class="passage-box passage-marked">${formatMarkedWithUnderline(q.passage_with_korean)}</div>`;
-      if (q.word_bank && q.word_bank.length) {
-        html += `<div class="word-bank"><b>보기:</b> ${q.word_bank.join(' / ')}</div>`;
-      }
-      if (q.conditions && q.conditions.length) {
-        html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
-      }
+      let html = `<div class="passage-box passage-marked">${formatBracketUnderline(q.passage_with_korean)}</div>`;
+      if (q.word_bank && q.word_bank.length) html += `<div class="word-bank"><b>보기:</b> ${q.word_bank.join(' / ')}</div>`;
+      if (q.conditions && q.conditions.length) html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
       displayEl.innerHTML = html;
-      inputEl.innerHTML = `
-        <div class="short-input-wrap">
-          <label>영작</label>
-          <textarea id="ans-write" placeholder="영어로 작성하세요"></textarea>
-        </div>
-      `;
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>영작</label><textarea id="ans-write" placeholder="영어로 작성하세요"></textarea></div>`;
     }
-    // ── 13. 내용일치 (한국어) ──
-    else if (fmt === 'match_kor') {
+    else if (fmt === 'match_kor' || fmt === 'match_eng') {
       displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
       renderTextChoices(inputEl, q.choices);
     }
-    // ── 14. 내용일치 (영어) ──
-    else if (fmt === 'match_eng') {
-      displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
-      renderTextChoices(inputEl, q.choices);
-    }
-    // ── 서답형: 단어배열 ──
     else if (fmt === 'short_arrange') {
       let html = `<div class="passage-box">${q.passage_text || ''}</div>`;
-      if (q.scrambled_words && q.scrambled_words.length) {
-        html += `<div class="word-bank"><b>단어:</b> ${q.scrambled_words.join(' / ')}</div>`;
-      }
+      if (q.scrambled_words && q.scrambled_words.length) html += `<div class="word-bank"><b>단어:</b> ${q.scrambled_words.join(' / ')}</div>`;
       displayEl.innerHTML = html;
-      inputEl.innerHTML = `
-        <div class="short-input-wrap">
-          <label>배열한 문장</label>
-          <textarea id="ans-write" placeholder="단어들을 올바른 순서로 배열하세요"></textarea>
-        </div>
-      `;
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>배열한 문장</label><textarea id="ans-write" placeholder="단어들을 올바른 순서로 배열하세요"></textarea></div>`;
     }
-    // ── 서답형: 가정법/접속사 영작 ──
     else if (fmt === 'short_subjunctive' || fmt === 'short_conjunction') {
       displayEl.innerHTML = `
         <div class="passage-box">${q.passage_text || ''}</div>
@@ -355,28 +302,23 @@
           ${q.korean_sentence || ''}
         </div>
       `;
-      inputEl.innerHTML = `
-        <div class="short-input-wrap">
-          <label>영작</label>
-          <textarea id="ans-write" placeholder="영어로 작성하세요"></textarea>
-        </div>
-      `;
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>영작</label><textarea id="ans-write" placeholder="영어로 작성하세요"></textarea></div>`;
     }
-    // ── 기본 (fallback) ──
     else {
       displayEl.innerHTML = `<div class="passage-box">${passage.text || ''}</div>`;
-      if (q.choices && q.choices.length) {
-        renderTextChoices(inputEl, q.choices);
-      } else {
-        inputEl.innerHTML = `<div class="short-input-wrap"><label>답안</label><textarea id="ans-write"></textarea></div>`;
-      }
+      if (q.choices && q.choices.length) renderTextChoices(inputEl, q.choices);
+      else inputEl.innerHTML = `<div class="short-input-wrap"><label>답안</label><textarea id="ans-write"></textarea></div>`;
     }
 
-    // 버튼 설정
+    // 버튼 재설정
     const isChoice = isChoiceFormat(fmt);
-    const btn = document.getElementById('btn-check');
-    btn.textContent = isChoice ? '정답 확인' : '제출';
-    btn.onclick = isChoice ? checkAnswer : checkShortAnswer;
+    setupCheckButton(isChoice);
+  }
+
+  function setupCheckButton(isChoice) {
+    const area = document.getElementById('btn-area');
+    area.innerHTML = `<button class="btn-main" id="btn-check">${isChoice ? '정답 확인' : '제출'}</button>`;
+    document.getElementById('btn-check').onclick = isChoice ? checkAnswer : checkShortAnswer;
   }
 
   function isChoiceFormat(fmt) {
@@ -384,15 +326,13 @@
   }
 
   // ════════════════════════════════════════
-  // 헬퍼: 선택지 렌더링
+  // 선택지 렌더링
   // ════════════════════════════════════════
   function renderNumberChoices(container) {
     const nums = ['①','②','③','④','⑤'];
     let html = '<div class="options">';
     nums.forEach((n, i) => {
-      html += `<div class="opt" onclick="selectOption(this,${i})">
-        <div class="opt-num-only">${n}</div>
-      </div>`;
+      html += `<div class="opt" onclick="selectOption(this,${i})"><div class="opt-num-only">${n}</div></div>`;
     });
     html += '</div>';
     container.innerHTML = html;
@@ -416,42 +356,47 @@
     container.innerHTML = html;
   }
 
-  function renderTextChoicesAsWords(container, choices) {
-    renderTextChoices(container, choices);
-  }
-
-  function renderOrderChoices(container, choices) {
-    renderTextChoices(container, choices);
-  }
-
   // ════════════════════════════════════════
-  // 헬퍼: 텍스트 포맷팅
+  // 텍스트 포맷팅 (밑줄 등)
   // ════════════════════════════════════════
-  function markCircled(text) {
+
+  // ①②③④⑤ 번호만 강조
+  function formatCircled(text) {
     if (!text) return '';
-    // ①②③④⑤ 를 강조해서 보여줌
-    return text.replace(/([①②③④⑤])/g, '<b style="color:#2B5EB8;font-size:15px"> $1</b>');
+    return text.replace(/([①②③④⑤])/g, '<span class="num-mark">$1</span>');
   }
 
-  function formatMarkedWithUnderline(text) {
+  // ①[표현] 형태를 번호+밑줄로 변환
+  function formatCircledWithUnderline(text) {
     if (!text) return '';
-    // [단어/표현] 형태를 밑줄로 표시
-    return text.replace(/([①②③④⑤])\s*\[([^\]]+)\]/g,
-      '<b style="color:#2B5EB8;font-size:15px"> $1</b><u> $2</u>');
+    return text
+      .replace(/([①②③④⑤])\s*\[([^\]]+)\]/g, '<span class="num-mark">$1</span><span class="underline-text">$2</span>')
+      .replace(/([①②③④⑤])/g, '<span class="num-mark">$1</span>');
   }
 
+  // [표현] 형태를 밑줄로 변환 (번호 없이)
+  function formatBracketUnderline(text) {
+    if (!text) return '';
+    return text.replace(/\[([^\]]+)\]/g, '<span class="underline-text">$1</span>');
+  }
+
+  // 빈칸 _______ 시각화
   function formatBlank(text) {
     if (!text) return '';
-    // _______ 빈칸을 시각화
     return text.replace(/_{3,}/g, '<span class="blank-mark"></span>');
   }
 
   // ════════════════════════════════════════
-  // 선택형 정답 확인
+  // 선택형 정답 확인 (다시선택 버그 수정)
   // ════════════════════════════════════════
   window.selectOption = (div, idx) => {
     if (div.classList.contains('disabled')) return;
-    document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
+    // ⭐ 이전 선택 모두 제거 (selected, wrong, correct 클래스 다 정리)
+    document.querySelectorAll('.opt').forEach(o => {
+      if (!o.classList.contains('disabled')) {
+        o.classList.remove('selected');
+      }
+    });
     div.classList.add('selected');
     selectedOptIdx = idx;
   };
@@ -462,10 +407,11 @@
     const userAns = selectedOptIdx + 1;
     const correctAns = parseInt(q.answer);
 
-    document.querySelectorAll('.opt').forEach(o => o.classList.add('disabled'));
+    const opts = document.querySelectorAll('.opt');
 
     if (userAns === correctAns) {
-      const opts = document.querySelectorAll('.opt');
+      // 정답
+      opts.forEach(o => o.classList.add('disabled'));
       opts[selectedOptIdx].classList.remove('selected');
       opts[selectedOptIdx].classList.add('correct');
       document.getElementById('res-correct').textContent = '✅ 정답이에요!';
@@ -474,38 +420,32 @@
       correctCount++;
       proceedToNext();
     } else {
-      const opts = document.querySelectorAll('.opt');
+      wrongAttempts++;
+      // ⭐ 틀린 선택지에 wrong 표시하고 disabled, 나머지는 그대로
       opts[selectedOptIdx].classList.remove('selected');
       opts[selectedOptIdx].classList.add('wrong');
-      wrongAttempts++;
+      opts[selectedOptIdx].classList.add('disabled');
 
       if (wrongAttempts === 1) {
         document.getElementById('res-wrong1').textContent = '아쉬워요! 다시 한 번 생각해보세요.';
         document.getElementById('res-wrong1').classList.add('show');
-        document.getElementById('btn-check').textContent = '다시 선택';
-        document.getElementById('btn-check').onclick = retryChoice;
+        selectedOptIdx = null;
+        // 버튼 그대로 (정답 확인 → 다시 클릭하면 새 선택지로 체크)
       } else {
+        // 2번 틀림 — 오답 확정
+        opts.forEach(o => o.classList.add('disabled'));
+        opts[correctAns - 1]?.classList.add('correct');
+        document.getElementById('res-wrong1').classList.remove('show');
         document.getElementById('res-wrong2').textContent = `정답은 ${correctAns}번이에요.`;
         document.getElementById('res-wrong2').classList.add('show');
-        opts[correctAns - 1]?.classList.add('correct');
         showExplanation(q);
         proceedToNext();
       }
     }
   };
 
-  function retryChoice() {
-    document.getElementById('res-wrong1').classList.remove('show');
-    document.querySelectorAll('.opt').forEach(o => {
-      if (!o.classList.contains('wrong')) o.classList.remove('disabled');
-    });
-    selectedOptIdx = null;
-    document.getElementById('btn-check').textContent = '정답 확인';
-    document.getElementById('btn-check').onclick = checkAnswer;
-  }
-
   // ════════════════════════════════════════
-  // 서답형 정답 확인
+  // 서답형
   // ════════════════════════════════════════
   window.checkShortAnswer = () => {
     const q = questions[currentQIdx];
@@ -518,61 +458,42 @@
       const b = document.getElementById('ans-b')?.value.trim() || '';
       if (!a || !b) { alert('A, B 모두 입력해주세요.'); return; }
       userAns = `(A) ${a} / (B) ${b}`;
-      modelAns = `(A) ${q.answer_a} / (B) ${q.answer_b}`;
+      modelAns = `(A) ${q.answer_a || ''} / (B) ${q.answer_b || ''}`;
     } else if (fmt === 'short_korean') {
       const a1 = document.getElementById('ans-1')?.value.trim() || '';
       const a2 = document.getElementById('ans-2')?.value.trim() || '';
       if (!a1 || !a2) { alert('이유 2가지 모두 입력해주세요.'); return; }
       userAns = `1) ${a1}\n2) ${a2}`;
-      modelAns = `1) ${q.answer_1}\n2) ${q.answer_2}`;
+      modelAns = `1) ${q.answer_1 || ''}\n2) ${q.answer_2 || ''}`;
     } else {
       userAns = document.getElementById('ans-write')?.value.trim() || '';
       if (!userAns) { alert('답을 입력해주세요.'); return; }
       modelAns = q.answer || '';
     }
 
-    // 입력창 비활성화
     document.querySelectorAll('#q-input input, #q-input textarea').forEach(el => el.disabled = true);
 
-    // 서답형 — 모범답안 보여주기 (학생이 비교)
     document.getElementById('res-wrong2').innerHTML = `
       <div style="font-weight:500;margin-bottom:6px">✏️ 모범답안과 비교해보세요.</div>
-      <div style="font-size:11px;color:#5A7BAD;margin-top:6px;white-space:pre-line">내 답:<br>${userAns}</div>
+      <div style="font-size:11px;color:#5A7BAD;margin-top:6px;white-space:pre-line"><b>내 답:</b><br>${userAns}</div>
       <div style="font-size:11px;color:#3B6D11;margin-top:6px;white-space:pre-line"><b>모범답안:</b><br>${modelAns}</div>
     `;
     document.getElementById('res-wrong2').classList.add('show');
+    showExplanation(q);
 
-    // 학생이 스스로 맞췄다고 표시할지 묻기
-    const btn = document.getElementById('btn-check');
-    btn.textContent = '✅ 맞춤 / ❌ 틀림 선택';
-    btn.onclick = () => askSelfCheck();
-  };
-
-  function askSelfCheck() {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
-    wrap.innerHTML = `
-      <button class="btn-sub" style="flex:1;background:#EAF3DE;border-color:#A8D472;color:#27500A" onclick="selfCheckResult(true)">✅ 맞췄어요</button>
-      <button class="btn-sub" style="flex:1;background:#FFE4E4;border-color:#E5B774;color:#854F0B" onclick="selfCheckResult(false)">❌ 틀렸어요</button>
+    // ✅ / ❌ 자가체크 버튼
+    const area = document.getElementById('btn-area');
+    area.innerHTML = `
+      <div class="self-check-row">
+        <button class="sc-correct" onclick="selfCheckResult(true)">✅ 맞췄어요</button>
+        <button class="sc-wrong" onclick="selfCheckResult(false)">❌ 틀렸어요</button>
+      </div>
     `;
-    document.getElementById('btn-check').replaceWith(wrap);
-  }
+  };
 
   window.selfCheckResult = (correct) => {
     if (correct) correctCount++;
-    showExplanation(questions[currentQIdx]);
-    const newBtn = document.createElement('button');
-    newBtn.className = 'btn-main';
-    newBtn.id = 'btn-check';
-    newBtn.textContent = currentQIdx === 0 ? '다음 문제 →' : '결과 보기 →';
-    newBtn.onclick = () => {
-      if (currentQIdx === 0) { currentQIdx = 1; renderCurrentQuestion(); }
-      else finishRound();
-    };
-    document.querySelector('.scroll-body').appendChild(newBtn);
-    document.querySelectorAll('.scroll-body > div:nth-last-child(2)').forEach(el => {
-      if (el.tagName === 'DIV' && !el.id) el.remove();
-    });
+    proceedToNext();
   };
 
   function showExplanation(q) {
@@ -582,9 +503,10 @@
   }
 
   function proceedToNext() {
-    const btn = document.getElementById('btn-check');
-    btn.textContent = currentQIdx === 0 ? '다음 문제 →' : '결과 보기 →';
-    btn.onclick = () => {
+    const area = document.getElementById('btn-area');
+    const isLast = currentQIdx === 1;
+    area.innerHTML = `<button class="btn-main" id="btn-next">${isLast ? '결과 보기 →' : '다음 문제 →'}</button>`;
+    document.getElementById('btn-next').onclick = () => {
       if (currentQIdx === 0) { currentQIdx = 1; renderCurrentQuestion(); }
       else finishRound();
     };
@@ -598,10 +520,8 @@
         userId, passageId: passage.id, typeName,
         round: currentRound,
         correct: correctCount === 2,
-        correctCount,
-        totalQuestions: 2,
-        date: today,
-        createdAt: new Date().toISOString()
+        correctCount, totalQuestions: 2,
+        date: today, createdAt: new Date().toISOString()
       });
 
       const summaryId = `${userId}_${passage.id}`;
@@ -614,13 +534,9 @@
     } catch(e) { console.error(e); }
 
     localStorage.setItem('lastResult', JSON.stringify({
-      passageName: passage.name,
-      typeName,
-      round: currentRound,
-      correctCount,
-      totalQuestions: 2,
+      passageName: passage.name, typeName,
+      round: currentRound, correctCount, totalQuestions: 2,
     }));
-
     window.location.href = 'result.html';
   }
 
