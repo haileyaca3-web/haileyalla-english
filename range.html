@@ -40,7 +40,7 @@
 <script type="module">
   import { auth, db } from './js/firebase.js';
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const school  = localStorage.getItem('selectedSchool') || '매산고';
   const selected = new Set();
@@ -56,18 +56,20 @@
     const listEl = document.getElementById('range-list');
 
     try {
-      // Firebase에서 해당 학교 지문 불러와서 범위 자동 추출
-      const snap = await getDocs(
-        query(collection(db, 'passages'),
-          where('school', 'in', [school, '전체'])
-        )
-      );
+      // 전체 passages 가져와서 학교별 필터링 (새 구조 schools 배열 + 옛 구조 school 단일 모두 처리)
+      const snap = await getDocs(collection(db, 'passages'));
 
-      // 범위별로 그룹핑
       const rangeMap = {}; // { '리딩마스터_11강': { textbook, unit, count } }
       snap.forEach(d => {
         const p = d.data();
-        const key = p.range; // 예: '리딩마스터_11강'
+        // 학교 매칭: 새 구조(schools 배열) + 옛 구조(school 단일) 둘 다 처리
+        const schools = p.schools || (p.school ? [p.school] : []);
+        const matchSchool = schools.includes(school) || schools.includes('전체');
+        if (!matchSchool) return;
+
+        const key = p.range || (p.textbook && p.unit ? `${p.textbook}_${p.unit}` : null);
+        if (!key) return;
+
         if (!rangeMap[key]) {
           rangeMap[key] = { textbook: p.textbook, unit: p.unit, count: 0 };
         }
@@ -83,14 +85,13 @@
         return;
       }
 
-      // 교재별로 그룹핑
+      // 교재별 그룹핑
       const byTextbook = {};
       Object.entries(rangeMap).forEach(([key, val]) => {
         if (!byTextbook[val.textbook]) byTextbook[val.textbook] = [];
         byTextbook[val.textbook].push({ key, ...val });
       });
 
-      // 교재 순서 정렬
       const order = ['교과서', '리딩마스터', '리뷰', '모의고사'];
       const sorted = Object.entries(byTextbook).sort(
         ([a], [b]) => order.indexOf(a) - order.indexOf(b)
@@ -124,7 +125,7 @@
             </div>
             <div class="cat-items" id="${catId}">`;
 
-        ranges.sort((a,b) => a.unit.localeCompare(b.unit, 'ko')).forEach(r => {
+        ranges.sort((a,b) => (a.unit||'').localeCompare(b.unit||'', 'ko')).forEach(r => {
           html += `
               <div class="item-row" onclick="toggleItem(this,'${r.key}')">
                 <div class="item-check">✓</div>
@@ -139,8 +140,10 @@
       listEl.innerHTML = html;
 
       // 첫 번째 카드 자동 열기
-      const firstKey = 'cat-' + sorted[0][0];
-      toggle(firstKey);
+      if (sorted.length > 0) {
+        const firstKey = 'cat-' + sorted[0][0];
+        toggle(firstKey);
+      }
 
     } catch(e) {
       listEl.innerHTML = '<div style="text-align:center;padding:20px;font-size:12px;color:#E24B4A">범위를 불러오지 못했어요</div>';
