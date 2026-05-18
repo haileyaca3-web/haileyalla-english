@@ -14,39 +14,41 @@
       <button class="back-btn" onclick="window.location.href='passage.html'">←</button>
       <div class="top-info">
         <div class="top-school" id="quiz-school">매산고</div>
-        <div class="top-title" id="quiz-passage">지문 로딩 중...</div>
+        <div class="top-title" id="quiz-passage">지문</div>
       </div>
       <div class="round-badge" id="round-badge"></div>
     </div>
 
     <div class="scroll-body" id="quiz-body">
-      <!-- 로딩 -->
       <div id="loading-screen" style="text-align:center;padding:40px 20px">
-        <div style="font-size:13px;color:#1A3566;font-weight:500;margin-bottom:8px">문제 불러오는 중...</div>
+        <div style="font-size:13px;color:#1A3566;font-weight:500">문제 불러오는 중...</div>
         <div style="margin-top:16px;font-size:20px">⏳</div>
       </div>
 
-      <!-- 문제 -->
       <div id="quiz-content" style="display:none">
         <div class="q-meta">
           <span class="q-type" id="q-type-label">유형</span>
           <span class="q-pts" id="q-pts-label">문제 1/2</span>
         </div>
-        <div class="q-text" id="q-text"></div>
-        <div class="passage" id="q-passage"></div>
-        <div class="options" id="q-options"></div>
 
+        <!-- 문제 본문 -->
+        <div class="q-text" id="q-text"></div>
+
+        <!-- 유형별 디스플레이 영역 -->
+        <div id="q-display"></div>
+
+        <!-- 답안 입력 영역 -->
+        <div id="q-input"></div>
+
+        <!-- 결과 박스 -->
         <div class="result-box result-correct" id="res-correct"></div>
         <div class="result-box result-wrong1" id="res-wrong1"></div>
         <div class="result-box result-wrong2" id="res-wrong2"></div>
         <div class="explanation" id="q-explanation"></div>
 
-        <div style="display:flex;flex-direction:column;gap:7px">
-          <button class="btn-main" id="btn-check" onclick="checkAnswer()">정답 확인</button>
-        </div>
+        <button class="btn-main" id="btn-check" onclick="checkAnswer()">정답 확인</button>
       </div>
 
-      <!-- 오류 -->
       <div id="error-screen" style="display:none;text-align:center;padding:30px 20px">
         <div style="font-size:13px;color:#E24B4A;margin-bottom:8px" id="error-msg">문제를 불러올 수 없어요</div>
         <div style="font-size:12px;color:#888780;margin-bottom:16px">관리자에게 문의해주세요</div>
@@ -57,19 +59,55 @@
 </div>
 
 <style>
-.opt input[type=text], .opt textarea {
+.given-box {
+  background:#FFF5E8; border:0.5px solid #E5B774; border-radius:8px;
+  padding:10px 12px; margin-bottom:12px; font-size:13px; color:#854F0B; line-height:1.7;
+}
+.given-box-title { font-size:10px; color:#A07020; font-weight:600; margin-bottom:4px; }
+.passage-box {
+  background:#fff; border:0.5px solid #D6E4FF; border-radius:8px;
+  padding:12px; margin-bottom:12px; font-size:13px; color:#2C2C2A; line-height:1.9;
+}
+.summary-box {
+  background:#F5F8FF; border:0.5px solid #A8C4F5; border-radius:8px;
+  padding:10px 12px; margin-bottom:12px; font-size:13px; color:#1A3566; line-height:1.7;
+  font-style: italic;
+}
+.para-box {
+  background:#fff; border:0.5px solid #D6E4FF; border-radius:8px;
+  padding:10px 12px; margin-bottom:6px; font-size:13px; color:#2C2C2A; line-height:1.8;
+}
+.para-label { font-weight:600; color:#2B5EB8; margin-right:4px; }
+.word-bank {
+  background:#EEEDFE; border-radius:8px; padding:8px 12px; margin-bottom:8px;
+  font-size:12px; color:#3C3489;
+}
+.conditions-list {
+  font-size:11px; color:#5A7BAD; margin-bottom:8px; line-height:1.7;
+}
+.short-input-wrap { margin-bottom:8px; }
+.short-input-wrap label { font-size:11px; color:#5A7BAD; display:block; margin-bottom:4px; }
+.short-input-wrap input, .short-input-wrap textarea {
   width:100%; padding:8px 10px; border:0.5px solid #D6E4FF; border-radius:6px;
   font-size:13px; color:#2C2C2A; background:#fff; box-sizing:border-box;
 }
-.opt textarea { min-height:60px; resize:vertical; font-family:inherit; }
-.short-input-wrap { background:#F5F8FF; border:0.5px solid #D6E4FF; border-radius:8px;
-  padding:10px 12px; margin-bottom:8px; }
-.short-input-wrap label { font-size:11px; color:#5A7BAD; display:block; margin-bottom:4px; }
-.rb { display:inline-block; width:18px; height:18px; border-radius:50%; font-size:10px;
-  text-align:center; line-height:18px; margin-left:3px; font-weight:500; }
-.rb.active { background:#fff; color:#1A3566; }
-.rb.inactive { background:rgba(255,255,255,0.2); color:rgba(255,255,255,0.6); }
-.rb.done { background:#A8D472; color:#fff; }
+.short-input-wrap textarea { min-height:60px; resize:vertical; font-family:inherit; }
+.opt-num-only { 
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:500; color:#2B5EB8;
+  width:36px; height:36px;
+}
+.passage-marked u {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+.passage-marked .blank-mark {
+  display: inline-block;
+  min-width: 100px;
+  border-bottom: 2px solid #2B5EB8;
+  margin: 0 2px;
+}
 </style>
 
 <script type="module">
@@ -77,52 +115,40 @@
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { collection, getDocs, query, where, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ── 데이터 로드 ──
   const school   = localStorage.getItem('selectedSchool') || '매산고';
   const passage  = JSON.parse(localStorage.getItem('selectedPassage') || '{}');
   const typeName = localStorage.getItem('selectedType') || '';
   const userId   = localStorage.getItem('userId');
 
-  let questions       = [];     // 이 유형의 문제 2개
-  let currentQIdx     = 0;      // 현재 푸는 문제 index (0 또는 1)
-  let currentRound    = 1;      // 이번 도전 회차
-  let correctCount    = 0;      // 이번 회차에 맞춘 개수
-  let wrongAttempts   = 0;      // 현재 문제에서 틀린 횟수
-  let selectedOptIdx  = null;
+  let questions      = [];
+  let currentQIdx    = 0;
+  let currentRound   = 1;
+  let correctCount   = 0;
+  let wrongAttempts  = 0;
+  let selectedOptIdx = null;
 
   document.getElementById('quiz-school').textContent  = school;
   document.getElementById('quiz-passage').textContent = passage.name || '지문';
-  document.getElementById('q-type-label').textContent = typeName;
+  document.getElementById('q-type-label').textContent = typeName.replace('_', ' ');
 
-  // 로그인
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = 'index.html'; return; }
-    if (!passage.id || !typeName) {
-      showError('지문 또는 유형 정보가 없어요.');
-      return;
-    }
+    if (!passage.id || !typeName) { showError('지문 또는 유형 정보가 없어요.'); return; }
     await loadProgressRound();
     await loadQuestions();
   });
 
-  // ──────────────────────────────────────
-  // 이전 회차 확인 → 새 회차 = 이전+1
-  // ──────────────────────────────────────
   async function loadProgressRound() {
     try {
-      const summaryId = `${userId}_${passage.id}`;
-      const snap = await getDoc(doc(db, 'progress_summary', summaryId));
+      const snap = await getDoc(doc(db, 'progress_summary', `${userId}_${passage.id}`));
       if (snap.exists()) {
         const data = snap.data();
         const prevRound = data[typeName]?.round || 0;
         currentRound = prevRound + 1;
       }
-    } catch(e) { console.warn(e); }
+    } catch(e) {}
   }
 
-  // ──────────────────────────────────────
-  // Firestore에서 이 지문 + 학교 + 유형의 문제 2개 가져오기
-  // ──────────────────────────────────────
   async function loadQuestions() {
     try {
       const snap = await getDocs(
@@ -146,30 +172,22 @@
       correctCount = 0;
       renderRoundBadge();
       renderCurrentQuestion();
-
     } catch(e) {
       console.error(e);
-      showError('문제를 불러오지 못했어요: ' + e.message);
+      showError('문제 로딩 실패: ' + e.message);
     }
   }
 
-  // ──────────────────────────────────────
-  // 회차 뱃지
-  // ──────────────────────────────────────
   function renderRoundBadge() {
-    const badge = document.getElementById('round-badge');
-    badge.innerHTML = `<span style="font-size:10px;color:#fff">${currentRound}회차</span>`;
+    document.getElementById('round-badge').innerHTML = `<span style="font-size:10px;color:#fff">${currentRound}회차</span>`;
   }
 
-  // ──────────────────────────────────────
-  // 현재 문제 렌더링
-  // ──────────────────────────────────────
+  // ════════════════════════════════════════
+  // 유형별 렌더링
+  // ════════════════════════════════════════
   function renderCurrentQuestion() {
     const q = questions[currentQIdx];
-    if (!q) {
-      showError('문제 데이터가 없어요.');
-      return;
-    }
+    if (!q) { showError('문제 데이터가 없어요.'); return; }
 
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('error-screen').style.display   = 'none';
@@ -177,101 +195,296 @@
 
     document.getElementById('q-pts-label').textContent = `문제 ${currentQIdx + 1}/2`;
     document.getElementById('q-text').textContent      = q.question || '';
-    document.getElementById('q-passage').innerHTML     = formatPassage(passage.text || '');
 
-    // 결과/해설 초기화
+    // 결과 초기화
     document.getElementById('res-correct').classList.remove('show');
     document.getElementById('res-wrong1').classList.remove('show');
     document.getElementById('res-wrong2').classList.remove('show');
     document.getElementById('q-explanation').classList.remove('show');
 
-    const optsEl = document.getElementById('q-options');
-    optsEl.innerHTML = '';
+    const displayEl = document.getElementById('q-display');
+    const inputEl   = document.getElementById('q-input');
+    displayEl.innerHTML = '';
+    inputEl.innerHTML = '';
+
     selectedOptIdx = null;
     wrongAttempts  = 0;
 
-    const isChoice = q.format === 'choice' || (q.choices && q.choices.length > 0);
+    const fmt = q.format;
 
-    if (isChoice) {
-      // 선택형
-      const nums = ['①','②','③','④','⑤'];
-      (q.choices || []).forEach((opt, i) => {
-        const div = document.createElement('div');
-        div.className = 'opt';
-        const cleanOpt = String(opt).replace(/^[①②③④⑤]\s*/, '').replace(/^[1-5][\.\)]\s*/, '');
-        div.innerHTML = `<div class="opt-num">${nums[i] || (i+1)}</div><span>${cleanOpt}</span>`;
-        div.onclick = () => selectOption(div, i);
-        optsEl.appendChild(div);
-      });
-      document.getElementById('btn-check').textContent = '정답 확인';
-      document.getElementById('btn-check').onclick = checkAnswer;
-    } else {
-      // 서답형
-      const wrap = document.createElement('div');
-      wrap.className = 'short-input-wrap';
-      wrap.innerHTML = `
-        <label>답안 입력</label>
-        <textarea id="short-answer" placeholder="답을 입력하세요"></textarea>
-      `;
-      optsEl.appendChild(wrap);
-      document.getElementById('btn-check').textContent = '제출';
-      document.getElementById('btn-check').onclick = checkShortAnswer;
+    // ── 1. 흐름무관 ──
+    if (fmt === 'irrelevant') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${markCircled(q.passage_marked)}</div>`;
+      renderNumberChoices(inputEl);
     }
+    // ── 2. 글의순서 ──
+    else if (fmt === 'order') {
+      displayEl.innerHTML = `
+        <div class="given-box">
+          <div class="given-box-title">주어진 글</div>
+          ${q.given_text || ''}
+        </div>
+        <div class="para-box"><span class="para-label">(A)</span>${q.para_a || ''}</div>
+        <div class="para-box"><span class="para-label">(B)</span>${q.para_b || ''}</div>
+        <div class="para-box"><span class="para-label">(C)</span>${q.para_c || ''}</div>
+      `;
+      renderOrderChoices(inputEl, q.choices);
+    }
+    // ── 3. 요약빈칸 ──
+    else if (fmt === 'summary_blank') {
+      displayEl.innerHTML = `
+        <div class="passage-box">${q.passage_text || ''}</div>
+        <div class="summary-box">${q.summary_template || ''}</div>
+      `;
+      renderTextChoices(inputEl, q.choices);
+    }
+    // ── 4. 문장삽입 ──
+    else if (fmt === 'insert') {
+      displayEl.innerHTML = `
+        <div class="given-box">
+          <div class="given-box-title">주어진 문장</div>
+          ${q.given_sentence || ''}
+        </div>
+        <div class="passage-box passage-marked">${markCircled(q.passage_marked)}</div>
+      `;
+      renderNumberChoices(inputEl);
+    }
+    // ── 5. 낱말쓰임 ──
+    else if (fmt === 'word') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatMarkedWithUnderline(q.passage_marked)}</div>`;
+      renderTextChoicesAsWords(inputEl, q.choices);
+    }
+    // ── 6. 어법 ──
+    else if (fmt === 'grammar') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatMarkedWithUnderline(q.passage_marked)}</div>`;
+      renderTextChoicesAsWords(inputEl, q.choices);
+    }
+    // ── 7. 빈칸추론 ──
+    else if (fmt === 'blank') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatBlank(q.passage_with_blank)}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    // ── 8. 글의제목 ──
+    else if (fmt === 'title') {
+      displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    // ── 9. 밑줄의미 ──
+    else if (fmt === 'underline') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatMarkedWithUnderline(q.passage_with_underline)}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    // ── 10. 요지빈칸 (서답형) ──
+    else if (fmt === 'short_summary') {
+      displayEl.innerHTML = `
+        <div class="passage-box">${q.passage_text || ''}</div>
+        <div class="summary-box">${q.summary_template || ''}</div>
+      `;
+      inputEl.innerHTML = `
+        <div class="short-input-wrap">
+          <label>(A) — 2단어</label>
+          <input type="text" id="ans-a" placeholder="예: positive thinking">
+        </div>
+        <div class="short-input-wrap">
+          <label>(B) — 2단어</label>
+          <input type="text" id="ans-b" placeholder="예: ignore obstacles">
+        </div>
+      `;
+    }
+    // ── 11. 이유서술 (서답형) ──
+    else if (fmt === 'short_korean') {
+      displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      inputEl.innerHTML = `
+        <div class="short-input-wrap">
+          <label>이유 1</label>
+          <textarea id="ans-1" placeholder="우리말로 서술하세요"></textarea>
+        </div>
+        <div class="short-input-wrap">
+          <label>이유 2</label>
+          <textarea id="ans-2" placeholder="우리말로 서술하세요"></textarea>
+        </div>
+      `;
+    }
+    // ── 12. 밑줄의미영작 (서답형) ──
+    else if (fmt === 'short_translate') {
+      let html = `<div class="passage-box passage-marked">${formatMarkedWithUnderline(q.passage_with_korean)}</div>`;
+      if (q.word_bank && q.word_bank.length) {
+        html += `<div class="word-bank"><b>보기:</b> ${q.word_bank.join(' / ')}</div>`;
+      }
+      if (q.conditions && q.conditions.length) {
+        html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
+      }
+      displayEl.innerHTML = html;
+      inputEl.innerHTML = `
+        <div class="short-input-wrap">
+          <label>영작</label>
+          <textarea id="ans-write" placeholder="영어로 작성하세요"></textarea>
+        </div>
+      `;
+    }
+    // ── 13. 내용일치 (한국어) ──
+    else if (fmt === 'match_kor') {
+      displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    // ── 14. 내용일치 (영어) ──
+    else if (fmt === 'match_eng') {
+      displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    // ── 서답형: 단어배열 ──
+    else if (fmt === 'short_arrange') {
+      let html = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      if (q.scrambled_words && q.scrambled_words.length) {
+        html += `<div class="word-bank"><b>단어:</b> ${q.scrambled_words.join(' / ')}</div>`;
+      }
+      displayEl.innerHTML = html;
+      inputEl.innerHTML = `
+        <div class="short-input-wrap">
+          <label>배열한 문장</label>
+          <textarea id="ans-write" placeholder="단어들을 올바른 순서로 배열하세요"></textarea>
+        </div>
+      `;
+    }
+    // ── 서답형: 가정법/접속사 영작 ──
+    else if (fmt === 'short_subjunctive' || fmt === 'short_conjunction') {
+      displayEl.innerHTML = `
+        <div class="passage-box">${q.passage_text || ''}</div>
+        <div class="given-box">
+          <div class="given-box-title">한국어 문장</div>
+          ${q.korean_sentence || ''}
+        </div>
+      `;
+      inputEl.innerHTML = `
+        <div class="short-input-wrap">
+          <label>영작</label>
+          <textarea id="ans-write" placeholder="영어로 작성하세요"></textarea>
+        </div>
+      `;
+    }
+    // ── 기본 (fallback) ──
+    else {
+      displayEl.innerHTML = `<div class="passage-box">${passage.text || ''}</div>`;
+      if (q.choices && q.choices.length) {
+        renderTextChoices(inputEl, q.choices);
+      } else {
+        inputEl.innerHTML = `<div class="short-input-wrap"><label>답안</label><textarea id="ans-write"></textarea></div>`;
+      }
+    }
+
+    // 버튼 설정
+    const isChoice = isChoiceFormat(fmt);
+    const btn = document.getElementById('btn-check');
+    btn.textContent = isChoice ? '정답 확인' : '제출';
+    btn.onclick = isChoice ? checkAnswer : checkShortAnswer;
   }
 
-  function formatPassage(text) {
-    return (text || '').replace(/([①②③④⑤])/g, '<u>$1</u>');
+  function isChoiceFormat(fmt) {
+    return ['irrelevant','order','summary_blank','insert','word','grammar','blank','title','underline','match_kor','match_eng'].includes(fmt);
   }
 
-  // ──────────────────────────────────────
-  // 선택형
-  // ──────────────────────────────────────
-  function selectOption(div, idx) {
+  // ════════════════════════════════════════
+  // 헬퍼: 선택지 렌더링
+  // ════════════════════════════════════════
+  function renderNumberChoices(container) {
+    const nums = ['①','②','③','④','⑤'];
+    let html = '<div class="options">';
+    nums.forEach((n, i) => {
+      html += `<div class="opt" onclick="selectOption(this,${i})">
+        <div class="opt-num-only">${n}</div>
+      </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function renderTextChoices(container, choices) {
+    if (!choices || !choices.length) {
+      container.innerHTML = '<div style="font-size:12px;color:#E24B4A">선택지가 없어요</div>';
+      return;
+    }
+    const nums = ['①','②','③','④','⑤'];
+    let html = '<div class="options">';
+    choices.forEach((c, i) => {
+      const clean = String(c).replace(/^[①②③④⑤]\s*/, '').replace(/^[1-5][\.\)]\s*/, '');
+      html += `<div class="opt" onclick="selectOption(this,${i})">
+        <div class="opt-num">${nums[i] || (i+1)}</div>
+        <span>${clean}</span>
+      </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function renderTextChoicesAsWords(container, choices) {
+    renderTextChoices(container, choices);
+  }
+
+  function renderOrderChoices(container, choices) {
+    renderTextChoices(container, choices);
+  }
+
+  // ════════════════════════════════════════
+  // 헬퍼: 텍스트 포맷팅
+  // ════════════════════════════════════════
+  function markCircled(text) {
+    if (!text) return '';
+    // ①②③④⑤ 를 강조해서 보여줌
+    return text.replace(/([①②③④⑤])/g, '<b style="color:#2B5EB8;font-size:15px"> $1</b>');
+  }
+
+  function formatMarkedWithUnderline(text) {
+    if (!text) return '';
+    // [단어/표현] 형태를 밑줄로 표시
+    return text.replace(/([①②③④⑤])\s*\[([^\]]+)\]/g,
+      '<b style="color:#2B5EB8;font-size:15px"> $1</b><u> $2</u>');
+  }
+
+  function formatBlank(text) {
+    if (!text) return '';
+    // _______ 빈칸을 시각화
+    return text.replace(/_{3,}/g, '<span class="blank-mark"></span>');
+  }
+
+  // ════════════════════════════════════════
+  // 선택형 정답 확인
+  // ════════════════════════════════════════
+  window.selectOption = (div, idx) => {
     if (div.classList.contains('disabled')) return;
     document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected'));
     div.classList.add('selected');
     selectedOptIdx = idx;
-  }
+  };
 
   window.checkAnswer = () => {
-    if (selectedOptIdx === null) {
-      alert('답을 선택해주세요.');
-      return;
-    }
+    if (selectedOptIdx === null) { alert('답을 선택해주세요.'); return; }
     const q = questions[currentQIdx];
-    const userAns = selectedOptIdx + 1;            // 1~5
-    const correctAns = parseInt(q.answer);          // 1~5 숫자
+    const userAns = selectedOptIdx + 1;
+    const correctAns = parseInt(q.answer);
 
     document.querySelectorAll('.opt').forEach(o => o.classList.add('disabled'));
 
     if (userAns === correctAns) {
-      // 정답
       const opts = document.querySelectorAll('.opt');
       opts[selectedOptIdx].classList.remove('selected');
       opts[selectedOptIdx].classList.add('correct');
-
       document.getElementById('res-correct').textContent = '✅ 정답이에요!';
       document.getElementById('res-correct').classList.add('show');
       showExplanation(q);
       correctCount++;
-
       proceedToNext();
-
     } else {
-      // 오답
       const opts = document.querySelectorAll('.opt');
       opts[selectedOptIdx].classList.remove('selected');
       opts[selectedOptIdx].classList.add('wrong');
       wrongAttempts++;
 
       if (wrongAttempts === 1) {
-        // 한 번 더 기회
         document.getElementById('res-wrong1').textContent = '아쉬워요! 다시 한 번 생각해보세요.';
         document.getElementById('res-wrong1').classList.add('show');
         document.getElementById('btn-check').textContent = '다시 선택';
         document.getElementById('btn-check').onclick = retryChoice;
       } else {
-        // 두 번 틀림 → 오답 처리
         document.getElementById('res-wrong2').textContent = `정답은 ${correctAns}번이에요.`;
         document.getElementById('res-wrong2').classList.add('show');
         opts[correctAns - 1]?.classList.add('correct');
@@ -291,104 +504,115 @@
     document.getElementById('btn-check').onclick = checkAnswer;
   }
 
-  // ──────────────────────────────────────
-  // 서답형 (단순 비교 채점, 추후 AI 채점 가능)
-  // ──────────────────────────────────────
+  // ════════════════════════════════════════
+  // 서답형 정답 확인
+  // ════════════════════════════════════════
   window.checkShortAnswer = () => {
-    const userAns = document.getElementById('short-answer').value.trim();
-    if (!userAns) {
-      alert('답을 입력해주세요.');
-      return;
-    }
     const q = questions[currentQIdx];
-    const modelAns = String(q.answer || '').trim();
+    const fmt = q.format;
+    let userAns = '';
+    let modelAns = '';
 
-    // 간단한 정답 판정 (대소문자/공백 무시 후 모범답안과 비교)
-    const normalize = s => s.toLowerCase().replace(/\s+/g, ' ').replace(/[.,!?]/g, '');
-    const isCorrect = normalize(userAns) === normalize(modelAns);
-
-    document.getElementById('short-answer').disabled = true;
-
-    if (isCorrect) {
-      document.getElementById('res-correct').textContent = '✅ 정답이에요!';
-      document.getElementById('res-correct').classList.add('show');
-      correctCount++;
+    if (fmt === 'short_summary') {
+      const a = document.getElementById('ans-a')?.value.trim() || '';
+      const b = document.getElementById('ans-b')?.value.trim() || '';
+      if (!a || !b) { alert('A, B 모두 입력해주세요.'); return; }
+      userAns = `(A) ${a} / (B) ${b}`;
+      modelAns = `(A) ${q.answer_a} / (B) ${q.answer_b}`;
+    } else if (fmt === 'short_korean') {
+      const a1 = document.getElementById('ans-1')?.value.trim() || '';
+      const a2 = document.getElementById('ans-2')?.value.trim() || '';
+      if (!a1 || !a2) { alert('이유 2가지 모두 입력해주세요.'); return; }
+      userAns = `1) ${a1}\n2) ${a2}`;
+      modelAns = `1) ${q.answer_1}\n2) ${q.answer_2}`;
     } else {
-      document.getElementById('res-wrong2').innerHTML = `
-        <div>✏️ 모범 답안과 비교해보세요.</div>
-        <div style="margin-top:6px;font-size:11px;color:#5A7BAD">내 답: ${userAns}</div>
-        <div style="font-size:11px;color:#3B6D11;margin-top:2px">모범 답안: ${modelAns}</div>
-      `;
-      document.getElementById('res-wrong2').classList.add('show');
-      // 서답형은 1번만 기회 — 모범답안 보여주고 학생이 스스로 판단
+      userAns = document.getElementById('ans-write')?.value.trim() || '';
+      if (!userAns) { alert('답을 입력해주세요.'); return; }
+      modelAns = q.answer || '';
     }
-    showExplanation(q);
-    proceedToNext();
+
+    // 입력창 비활성화
+    document.querySelectorAll('#q-input input, #q-input textarea').forEach(el => el.disabled = true);
+
+    // 서답형 — 모범답안 보여주기 (학생이 비교)
+    document.getElementById('res-wrong2').innerHTML = `
+      <div style="font-weight:500;margin-bottom:6px">✏️ 모범답안과 비교해보세요.</div>
+      <div style="font-size:11px;color:#5A7BAD;margin-top:6px;white-space:pre-line">내 답:<br>${userAns}</div>
+      <div style="font-size:11px;color:#3B6D11;margin-top:6px;white-space:pre-line"><b>모범답안:</b><br>${modelAns}</div>
+    `;
+    document.getElementById('res-wrong2').classList.add('show');
+
+    // 학생이 스스로 맞췄다고 표시할지 묻기
+    const btn = document.getElementById('btn-check');
+    btn.textContent = '✅ 맞춤 / ❌ 틀림 선택';
+    btn.onclick = () => askSelfCheck();
   };
 
-  // ──────────────────────────────────────
-  // 해설 표시
-  // ──────────────────────────────────────
+  function askSelfCheck() {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
+    wrap.innerHTML = `
+      <button class="btn-sub" style="flex:1;background:#EAF3DE;border-color:#A8D472;color:#27500A" onclick="selfCheckResult(true)">✅ 맞췄어요</button>
+      <button class="btn-sub" style="flex:1;background:#FFE4E4;border-color:#E5B774;color:#854F0B" onclick="selfCheckResult(false)">❌ 틀렸어요</button>
+    `;
+    document.getElementById('btn-check').replaceWith(wrap);
+  }
+
+  window.selfCheckResult = (correct) => {
+    if (correct) correctCount++;
+    showExplanation(questions[currentQIdx]);
+    const newBtn = document.createElement('button');
+    newBtn.className = 'btn-main';
+    newBtn.id = 'btn-check';
+    newBtn.textContent = currentQIdx === 0 ? '다음 문제 →' : '결과 보기 →';
+    newBtn.onclick = () => {
+      if (currentQIdx === 0) { currentQIdx = 1; renderCurrentQuestion(); }
+      else finishRound();
+    };
+    document.querySelector('.scroll-body').appendChild(newBtn);
+    document.querySelectorAll('.scroll-body > div:nth-last-child(2)').forEach(el => {
+      if (el.tagName === 'DIV' && !el.id) el.remove();
+    });
+  };
+
   function showExplanation(q) {
     const el = document.getElementById('q-explanation');
-    let html = '<div class="exp-title">해설</div>';
-    html += q.explanation || '(해설 없음)';
-    el.innerHTML = html;
+    el.innerHTML = `<div class="exp-title">해설</div>${q.explanation || '(해설 없음)'}`;
     el.classList.add('show');
   }
 
-  // ──────────────────────────────────────
-  // 다음 문제 or 회차 종료
-  // ──────────────────────────────────────
   function proceedToNext() {
-    document.getElementById('btn-check').textContent = currentQIdx === 0 ? '다음 문제 →' : '결과 보기 →';
-    document.getElementById('btn-check').onclick = () => {
-      if (currentQIdx === 0) {
-        currentQIdx = 1;
-        renderCurrentQuestion();
-      } else {
-        finishRound();
-      }
+    const btn = document.getElementById('btn-check');
+    btn.textContent = currentQIdx === 0 ? '다음 문제 →' : '결과 보기 →';
+    btn.onclick = () => {
+      if (currentQIdx === 0) { currentQIdx = 1; renderCurrentQuestion(); }
+      else finishRound();
     };
   }
 
-  // ──────────────────────────────────────
-  // 회차 종료 → progress 저장 → 결과 화면
-  // ──────────────────────────────────────
   async function finishRound() {
     const today = new Date().toISOString().split('T')[0];
     try {
-      // 1) progress: 회차별 기록 (개별)
       const progressId = `${userId}_${passage.id}_${typeName}_${currentRound}_${today}`;
       await setDoc(doc(db, 'progress', progressId), {
-        userId,
-        passageId: passage.id,
-        typeName,
+        userId, passageId: passage.id, typeName,
         round: currentRound,
-        correct: correctCount === 2,    // 호환용 (2개 다 맞춰야 true)
-        correctCount,                    // 0/1/2
+        correct: correctCount === 2,
+        correctCount,
         totalQuestions: 2,
         date: today,
         createdAt: new Date().toISOString()
       });
 
-      // 2) progress_summary: 유형별 최신 상태
       const summaryId = `${userId}_${passage.id}`;
       const sSnap = await getDoc(doc(db, 'progress_summary', summaryId));
       const existing = sSnap.exists() ? sSnap.data() : {};
       existing.userId = userId;
       existing.passageId = passage.id;
-      existing[typeName] = {
-        round: currentRound,
-        correct: correctCount,
-        date: today
-      };
+      existing[typeName] = { round: currentRound, correct: correctCount, date: today };
       await setDoc(doc(db, 'progress_summary', summaryId), existing);
-    } catch(e) {
-      console.error('저장 실패:', e);
-    }
+    } catch(e) { console.error(e); }
 
-    // 결과 화면으로 (결과 화면 없으면 일단 passage.html 로)
     localStorage.setItem('lastResult', JSON.stringify({
       passageName: passage.name,
       typeName,
@@ -397,13 +621,9 @@
       totalQuestions: 2,
     }));
 
-    // result.html 있으면 그쪽으로, 없으면 passage.html
     window.location.href = 'result.html';
   }
 
-  // ──────────────────────────────────────
-  // 오류 화면
-  // ──────────────────────────────────────
   function showError(msg) {
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('quiz-content').style.display   = 'none';
