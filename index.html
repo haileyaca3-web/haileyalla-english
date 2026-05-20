@@ -8,7 +8,6 @@
 </head>
 <body>
 
-<!-- 로그인 -->
 <div class="page" id="page-login">
   <div class="phone">
     <div class="top-bar">
@@ -38,7 +37,6 @@
   </div>
 </div>
 
-<!-- 회원가입 -->
 <div class="page hidden" id="page-signup">
   <div class="phone">
     <div class="top-bar">
@@ -55,8 +53,14 @@
         <select id="signup-school">
           <option value="">학교를 선택하세요</option>
           <option value="매산고">매산고등학교</option>
+          <option value="매산여고">매산여자고등학교</option>
           <option value="효천고">효천고등학교</option>
           <option value="복성고">복성고등학교</option>
+          <option value="강남여고">강남여자고등학교</option>
+          <option value="순천고">순천고등학교</option>
+          <option value="순여고">순천여자고등학교</option>
+          <option value="금당고">금당고등학교</option>
+          <option value="제일고">제일고등학교</option>
         </select>
       </div>
       <div class="field-wrap">
@@ -84,7 +88,6 @@
   </div>
 </div>
 
-<!-- 승인 대기 -->
 <div class="page hidden" id="page-pending">
   <div class="phone">
     <div class="top-bar">
@@ -169,7 +172,9 @@
       localStorage.setItem('userName',   u.name);
       localStorage.setItem('userSchool', u.school);
       localStorage.setItem('userGrade',  u.grade);
-      window.location.href = 'home.html';
+      localStorage.setItem('selectedSchool', u.school + '_' + u.grade);
+      
+      window.location.href = 'passage.html';
 
     } catch (e) {
       errEl.textContent = '아이디 또는 비밀번호가 틀렸어요.';
@@ -221,3 +226,4 @@
 
 </body>
 </html>
+
