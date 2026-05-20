@@ -50,6 +50,7 @@
       </div>
     </div>
 
+    <!-- 승인 탭 -->
     <div class="scroll-body" id="section-approve">
       <div class="section-label">승인 대기 중</div>
       <div id="pending-list"><div class="empty-msg">대기 중인 학생이 없어요</div></div>
@@ -58,69 +59,82 @@
       <div id="approved-list"><div class="empty-msg">승인된 학생이 없어요</div></div>
     </div>
 
+    <!-- 지문 탭 -->
     <div class="scroll-body hidden" id="section-passages">
-      <div class="section-label">교재 선택</div>
-      <div class="field-wrap">
-        <select id="p-textbook" onchange="updateUnitOptions()">
-          <option value="">교재를 선택하세요</option>
-          <option value="교과서">교과서</option>
-          <option value="리딩마스터">리딩마스터</option>
-          <option value="리뷰">리뷰 모의고사</option>
-          <option value="모의고사">모의고사</option>
-        </select>
+      
+      <!-- 1단계: 교재 종류 -->
+      <div class="section-label">1️⃣ 교재 종류 선택</div>
+      <div class="media-type-grid">
+        <button class="media-type-btn" data-media="교과서" onclick="selectMediaType('교과서')">
+          <div class="media-icon">📕</div>
+          <div class="media-label">교과서</div>
+        </button>
+        <button class="media-type-btn" data-media="부교재" onclick="selectMediaType('부교재')">
+          <div class="media-icon">📗</div>
+          <div class="media-label">부교재</div>
+        </button>
+        <button class="media-type-btn" data-media="모의고사" onclick="selectMediaType('모의고사')">
+          <div class="media-icon">📊</div>
+          <div class="media-label">모의고사</div>
+        </button>
       </div>
-      <div class="field-wrap">
-        <div class="field-label">강/회차/과</div>
-        <select id="p-unit"><option value="">교재를 먼저 선택하세요</option></select>
-      </div>
-      <div class="field-wrap">
-        <div class="field-label">어느 학교가 사용? (11개)</div>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;padding:4px 0">
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="매산고_고2"> 매산고(고2)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="매산여고_고2"> 매산여고(고2)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="효천고_고2"> 효천고(고2)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="강남여고_고1"> 강남여고(고1)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="강남여고_고2"> 강남여고(고2)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="복성고_고1"> 복성고(고1)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="순천고_고1"> 순고(고1)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="순여고_고1"> 순여고(고1)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="금당고_고1"> 금당고(고1)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="금당고_고2"> 금당고(고2)</label>
-          <label class="school-check"><input type="checkbox" class="p-school-cb" value="제일고_고1"> 제일고(고1)</label>
+
+      <!-- 2단계: 세부 입력 (직접 입력) -->
+      <div id="step-2-detail" class="hidden">
+        <div class="section-label">2️⃣ 세부 정보 입력</div>
+        <div class="field-wrap">
+          <div class="field-label" id="detail-label">강/회차/과</div>
+          <input type="text" id="p-detail" placeholder="">
+          <div id="detail-hint" style="font-size:11px;color:#888780;margin-top:3px"></div>
         </div>
       </div>
 
-      <div class="section-label" style="margin-top:4px">지문 전체 붙여넣기</div>
-      <div style="font-size:12px;color:#5A7BAD;margin-bottom:8px;line-height:1.6">
-        지문 번호(01, 02...)를 기준으로 자동 분리돼요. 각주는 *로 시작.
+      <!-- 3단계: 학교 -->
+      <div id="step-3-schools" class="hidden">
+        <div class="section-label">3️⃣ 어느 학교가 사용? (11개)</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;padding:4px 0">
+          <label class="school-check" data-key="매산고_고2"><input type="checkbox" class="p-school-cb" value="매산고_고2"> 매산고(고2)</label>
+          <label class="school-check" data-key="매산여고_고2"><input type="checkbox" class="p-school-cb" value="매산여고_고2"> 매산여고(고2)</label>
+          <label class="school-check" data-key="효천고_고2"><input type="checkbox" class="p-school-cb" value="효천고_고2"> 효천고(고2)</label>
+          <label class="school-check" data-key="강남여고_고1"><input type="checkbox" class="p-school-cb" value="강남여고_고1"> 강남여고(고1)</label>
+          <label class="school-check" data-key="강남여고_고2"><input type="checkbox" class="p-school-cb" value="강남여고_고2"> 강남여고(고2)</label>
+          <label class="school-check" data-key="복성고_고1"><input type="checkbox" class="p-school-cb" value="복성고_고1"> 복성고(고1)</label>
+          <label class="school-check" data-key="순천고_고1"><input type="checkbox" class="p-school-cb" value="순천고_고1"> 순천고(고1)</label>
+          <label class="school-check" data-key="순여고_고1"><input type="checkbox" class="p-school-cb" value="순여고_고1"> 순여고(고1)</label>
+          <label class="school-check" data-key="금당고_고1"><input type="checkbox" class="p-school-cb" value="금당고_고1"> 금당고(고1)</label>
+          <label class="school-check" data-key="금당고_고2"><input type="checkbox" class="p-school-cb" value="금당고_고2"> 금당고(고2)</label>
+          <label class="school-check" data-key="제일고_고1"><input type="checkbox" class="p-school-cb" value="제일고_고1"> 제일고(고1)</label>
+        </div>
       </div>
-      <textarea id="p-text" style="width:100%;min-height:200px;padding:10px 12px;border-radius:8px;border:0.5px solid #D6E4FF;font-size:14px;line-height:1.8;resize:vertical;background:#fff;color:#2C2C2A" placeholder="01&#10;..."></textarea>
-      <div class="error-msg" id="p-error"></div>
-      <div id="p-preview" style="display:none;background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:#1A3566;line-height:1.6"></div>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button class="btn-sub" style="flex:1" onclick="previewPassages()">미리보기</button>
-        <button class="btn-main" style="flex:1" id="btn-save-passages" onclick="savePassages()" disabled>Firebase 저장</button>
+
+      <!-- 4단계: 지문 입력 -->
+      <div id="step-4-passage" class="hidden">
+        <div class="section-label" style="margin-top:4px">4️⃣ 지문 전체 붙여넣기</div>
+        <div style="font-size:11px;color:#5A7BAD;margin-bottom:8px;line-height:1.6">
+          지문 번호(1, 2, 3 또는 01, 02, 03)를 기준으로 자동 분리.<br>
+          각주는 *로 시작.
+        </div>
+        <textarea id="p-text" style="width:100%;min-height:200px;padding:10px 12px;border-radius:8px;border:0.5px solid #D6E4FF;font-size:14px;line-height:1.8;resize:vertical;background:#fff;color:#2C2C2A" placeholder="1&#10;첫 번째 지문...&#10;&#10;2&#10;두 번째 지문..."></textarea>
+        <div class="error-msg" id="p-error"></div>
+        <div id="p-preview" style="display:none;background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:13px;color:#1A3566;line-height:1.6"></div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn-sub" style="flex:1" onclick="previewPassages()">미리보기</button>
+          <button class="btn-main" style="flex:1" id="btn-save-passages" onclick="savePassages()" disabled>Firebase 저장</button>
+        </div>
       </div>
 
       <div class="divider"></div>
-      <div class="section-label">📚 강별 문제 생성</div>
-      <div class="field-wrap">
-        <select id="filter-textbook" onchange="loadUnitList()">
-          <option value="">교재 선택</option>
-          <option value="교과서">교과서</option>
-          <option value="리딩마스터">리딩마스터</option>
-          <option value="리뷰">리뷰</option>
-          <option value="모의고사">모의고사</option>
-        </select>
-      </div>
-      <div id="unit-list"><div class="empty-msg">교재를 선택하세요</div></div>
+      <div class="section-label">📚 등록된 지문 관리 + 문제 생성</div>
+      <div id="unit-list"><div class="empty-msg">아직 등록된 지문이 없어요</div></div>
     </div>
 
+    <!-- 기록 탭 -->
     <div class="scroll-body hidden" id="section-records">
-      <div class="section-label">학생별 학습 진도</div>
+      <div class="section-label">학생별 학습 진도 (날짜별)</div>
       <div id="records-list"><div class="empty-msg">학생을 불러오는 중...</div></div>
     </div>
 
+    <!-- 설정 탭 -->
     <div class="scroll-body hidden" id="section-settings">
       <div class="section-label">🔑 Claude API 키</div>
       <div class="field-wrap">
@@ -136,8 +150,8 @@
       <div class="divider"></div>
       <div class="section-label">🗓️ 학기 마감</div>
       <div style="font-size:12px;color:#5A7BAD;margin-bottom:8px;line-height:1.6">
-        학기 끝나면 학생들의 학습 기록과 별 표시를 모두 초기화합니다.<br>
-        지문/문제/학생 계정은 그대로 유지돼요.
+        학기 끝나면 학생들의 학습 기록과 별 표시를 모두 초기화.<br>
+        지문/문제/학생 계정은 그대로 유지.
       </div>
       <button class="btn-sub" style="background:#FFF5E8;color:#854F0B;border-color:#E5B774" onclick="semesterReset()">학기 마감 (기록 리셋)</button>
 
@@ -152,8 +166,38 @@
 .btn-logout{background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:8px;padding:7px 13px;font-size:13px;cursor:pointer}
 .empty-msg{font-size:13px;color:#888780;text-align:center;padding:16px 0}
 .approved-row{background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:10px 13px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
-.school-check{display:flex;align-items:center;gap:5px;font-size:11px;color:#1A3566;cursor:pointer;padding:7px 9px;background:#fff;border:0.5px solid #D6E4FF;border-radius:6px}
-.school-check input{margin:0}
+
+/* 학교 체크박스 - 명확한 선택 표시 */
+.school-check{
+  display:flex;align-items:center;gap:5px;font-size:11px;color:#1A3566;
+  cursor:pointer;padding:8px 9px;background:#fff;border:1px solid #D6E4FF;border-radius:6px;
+  transition: all 0.15s;
+}
+.school-check:hover { background: #EBF2FF; }
+.school-check.selected {
+  background: #EBF2FF;
+  border: 1.5px solid #2B5EB8;
+  font-weight: 500;
+}
+.school-check input{margin:0;cursor:pointer}
+
+/* 1단계 교재 종류 버튼 */
+.media-type-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+  margin-bottom: 12px;
+}
+.media-type-btn {
+  background: #fff; border: 1.5px solid #D6E4FF; border-radius: 10px;
+  padding: 14px 8px; cursor: pointer; text-align: center;
+  transition: all 0.15s;
+}
+.media-type-btn:hover { background: #EBF2FF; border-color: #A8C4F5; }
+.media-type-btn.active {
+  background: #1A3566; border-color: #1A3566; color: #fff;
+}
+.media-icon { font-size: 22px; margin-bottom: 4px; }
+.media-label { font-size: 12px; font-weight: 500; }
+
 .unit-card{background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:13px;margin-bottom:10px}
 .unit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .unit-title{font-size:14px;font-weight:600;color:#1A3566}
@@ -200,6 +244,7 @@
 .kakao-btn{background:#FAE100;color:#3D1D1F;border:none;padding:9px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;width:100%;margin-top:8px}
 .copy-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1A3566;color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;display:none;z-index:9999}
 .copy-toast.show{display:block}
+.hidden{display:none !important}
 </style>
 
 <div class="gen-modal" id="gen-modal">
@@ -237,10 +282,10 @@
     '효천고_고2': ['단어장','낱말쓰임','요지','답할수없는질문','어법_2개','글의순서','요약빈칸','흐름무관','내용일치_한국어','지칭대상','주제','어법','영영풀이','문장삽입','빈칸추론','단어배열영작'],
   };
 
-  // 중복 제거 함수
   function uniqueTypes(types) { return [...new Set(types)]; }
 
   let CACHED_API_KEY = '';
+  let selectedMediaType = null;
 
   async function loadApiKey() {
     try {
@@ -295,7 +340,8 @@
     });
     document.getElementById('section-'+tab).classList.remove('hidden');
     document.getElementById('tab-'+tab).classList.add('on');
-    if (tab === 'records')  loadRecords();
+    if (tab === 'records') loadRecords();
+    if (tab === 'passages') loadUnitList();
     if (tab === 'settings') {
       const k = await loadApiKey();
       if (k) {
@@ -344,6 +390,9 @@
     }
   });
 
+  // ============================================
+  // 승인 관리
+  // ============================================
   async function loadPendingUsers() {
     const pEl = document.getElementById('pending-list');
     const aEl = document.getElementById('approved-list');
@@ -390,19 +439,44 @@
     loadPendingUsers();
   };
 
-  const unitOptions = {
-    '교과서':    ['Lesson 1','Lesson 2','Lesson 3','Lesson 4','Lesson 5','Lesson 6'],
-    '리딩마스터':['1강','2강','3강','4강','5강','6강','7강','8강','9강','10강','11강','12강','13강','14강','15강','16강'],
-    '리뷰':      ['1회','2회','3회','4회','5회'],
-    '모의고사':  ['3월 고2','6월 고2','9월 고2','11월 고2','3월 고1','6월 고1','9월 고1','11월 고1'],
+  // ============================================
+  // 지문 입력 (1-2-3-4단계)
+  // ============================================
+  window.selectMediaType = (type) => {
+    selectedMediaType = type;
+    document.querySelectorAll('[data-media]').forEach(b => {
+      b.classList.toggle('active', b.dataset.media === type);
+    });
+    document.getElementById('step-2-detail').classList.remove('hidden');
+    document.getElementById('step-3-schools').classList.remove('hidden');
+    document.getElementById('step-4-passage').classList.remove('hidden');
+    
+    const detailLabel = document.getElementById('detail-label');
+    const detailHint = document.getElementById('detail-hint');
+    const detailInput = document.getElementById('p-detail');
+    
+    if (type === '교과서') {
+      detailLabel.textContent = '교과서명 + Lesson';
+      detailInput.placeholder = '예: 박용예 영어1 Lesson 5';
+      detailHint.textContent = '예: "박용예 영어1 Lesson 5", "능률 김성곤 Lesson 3"';
+    } else if (type === '부교재') {
+      detailLabel.textContent = '부교재명 + 강/Unit/회';
+      detailInput.placeholder = '예: 리딩마스터 11강';
+      detailHint.textContent = '예: "리딩마스터 11강", "단어장 Unit 5", "리뷰 1회"';
+    } else if (type === '모의고사') {
+      detailLabel.textContent = '학년 + 연 + 월';
+      detailInput.placeholder = '예: 고1 26년 3월';
+      detailHint.textContent = '예: "고1 26년 3월", "고2 26년 6월"';
+    }
   };
 
-  window.updateUnitOptions = () => {
-    const tb  = document.getElementById('p-textbook').value;
-    const sel = document.getElementById('p-unit');
-    sel.innerHTML = '<option value="">선택하세요</option>';
-    (unitOptions[tb]||[]).forEach(u => sel.innerHTML += `<option value="${u}">${u}</option>`);
-  };
+  // 학교 체크박스 시각적 효과
+  document.querySelectorAll('.p-school-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const label = cb.closest('.school-check');
+      if (label) label.classList.toggle('selected', cb.checked);
+    });
+  });
 
   function splitPassages(text) {
     const lines = text.split('\n');
@@ -424,27 +498,26 @@
 
   window.previewPassages = () => {
     const text = document.getElementById('p-text').value.trim();
-    const tb   = document.getElementById('p-textbook').value;
-    const unit = document.getElementById('p-unit').value;
+    const detail = document.getElementById('p-detail').value.trim();
     const schools = Array.from(document.querySelectorAll('.p-school-cb:checked')).map(cb => cb.value);
     const err  = document.getElementById('p-error');
     const prev = document.getElementById('p-preview');
     err.textContent = '';
-    if (!tb||!unit) { err.textContent='교재와 강을 선택해주세요.'; return; }
+    if (!selectedMediaType) { err.textContent='교재 종류를 선택해주세요.'; return; }
+    if (!detail) { err.textContent='세부 정보를 입력해주세요.'; return; }
     if (schools.length === 0) { err.textContent='학교를 1개 이상 선택해주세요.'; return; }
     if (!text) { err.textContent='지문을 붙여넣어 주세요.'; return; }
     const passages = splitPassages(text);
-    if (passages.length===0) { err.textContent='지문을 인식하지 못했어요.'; return; }
+    if (passages.length===0) { err.textContent='지문을 인식하지 못했어요. 번호(1, 2, 3...)로 구분해주세요.'; return; }
     prev.style.display = 'block';
-    prev.innerHTML = `<b>${tb} ${unit} — 총 ${passages.length}개 지문</b><br>학교: ${schools.join(', ')}<br><br>`
+    prev.innerHTML = `<b>${selectedMediaType} · ${detail} — 총 ${passages.length}개 지문</b><br>학교: ${schools.join(', ')}<br><br>`
       + passages.map((p,i) => `${i+1}. [${p.num}] ${p.text.substring(0,50)}...`).join('<br>');
     document.getElementById('btn-save-passages').disabled = false;
   };
 
   window.savePassages = async () => {
     const text   = document.getElementById('p-text').value.trim();
-    const tb     = document.getElementById('p-textbook').value;
-    const unit   = document.getElementById('p-unit').value;
+    const detail = document.getElementById('p-detail').value.trim();
     const schools = Array.from(document.querySelectorAll('.p-school-cb:checked')).map(cb => cb.value);
     const err    = document.getElementById('p-error');
     const btn    = document.getElementById('btn-save-passages');
@@ -453,39 +526,66 @@
     const passages = splitPassages(text);
     try {
       for (const p of passages) {
-        const docId = `${tb}_${unit}_${p.num}`.replace(/[\s/]+/g,'_');
+        const safeDetail = detail.replace(/[\s/]+/g,'_');
+        const docId = `${selectedMediaType}_${safeDetail}_${p.num}`;
         await setDoc(doc(db,'passages',docId), {
-          textbook: tb, unit, num: p.num, text: p.text,
+          mediaType: selectedMediaType,
+          detail: detail,
+          textbook: selectedMediaType,  // 호환용
+          unit: detail,                  // 호환용
+          num: p.num,
+          text: p.text,
           footnote: p.footnote.trim(),
-          schools, range: tb+'_'+unit,
+          schools,
+          range: `${selectedMediaType}_${detail}`,
           createdAt: new Date().toISOString()
         }, { merge: true });
       }
       alert(`${passages.length}개 지문이 저장됐어요!`);
+      // 초기화
       document.getElementById('p-text').value = '';
+      document.getElementById('p-detail').value = '';
       document.getElementById('p-preview').style.display = 'none';
-      document.querySelectorAll('.p-school-cb').forEach(cb => cb.checked = false);
+      document.querySelectorAll('.p-school-cb').forEach(cb => {
+        cb.checked = false;
+        const label = cb.closest('.school-check');
+        if (label) label.classList.remove('selected');
+      });
+      document.querySelectorAll('[data-media]').forEach(b => b.classList.remove('active'));
+      selectedMediaType = null;
+      document.getElementById('step-2-detail').classList.add('hidden');
+      document.getElementById('step-3-schools').classList.add('hidden');
+      document.getElementById('step-4-passage').classList.add('hidden');
+      
+      loadUnitList();
     } catch(e) { err.textContent = '저장 오류: '+e.message; }
     btn.disabled = false; btn.textContent = 'Firebase 저장';
   };
 
+  // ============================================
+  // 등록된 지문 관리 + 문제 생성
+  // ============================================
   window.loadUnitList = async () => {
-    const tb = document.getElementById('filter-textbook').value;
     const el = document.getElementById('unit-list');
-    if (!tb) { el.innerHTML = '<div class="empty-msg">교재를 선택하세요</div>'; return; }
     el.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
 
     const snap = await getDocs(collection(db,'passages'));
-    const units = {};
+    const ranges = {};
     snap.forEach(d => {
       const p = d.data();
-      if (p.textbook !== tb) return;
-      if (!units[p.unit]) units[p.unit] = [];
-      units[p.unit].push({ id: d.id, ...p });
+      const key = p.range || `${p.mediaType||'교과서'}_${p.detail||p.unit||''}`;
+      if (!ranges[key]) {
+        ranges[key] = {
+          mediaType: p.mediaType || p.textbook || '교과서',
+          detail: p.detail || p.unit || '',
+          passages: []
+        };
+      }
+      ranges[key].passages.push({ id: d.id, ...p });
     });
 
-    if (Object.keys(units).length === 0) {
-      el.innerHTML = '<div class="empty-msg">저장된 지문이 없어요</div>';
+    if (Object.keys(ranges).length === 0) {
+      el.innerHTML = '<div class="empty-msg">아직 등록된 지문이 없어요</div>';
       return;
     }
 
@@ -493,29 +593,38 @@
     const typeCount = {};
     qSnap.forEach(d => {
       const q = d.data();
-      const key = `${q.textbook}_${q.unit}_${q.school}_${q.typeName}`;
+      const key = `${q.range || (q.mediaType+'_'+q.detail) || (q.textbook+'_'+q.unit)}_${q.school}_${q.typeName}`;
       typeCount[key] = (typeCount[key] || 0) + 1;
     });
 
-    const sortedUnits = Object.keys(units).sort((a,b) => (parseInt(a)||0) - (parseInt(b)||0));
-
     let html = '';
-    sortedUnits.forEach(unit => {
-      const passages = units[unit].sort((a,b) => a.num.localeCompare(b.num));
+    // 교재 종류별로 정렬
+    const sortedKeys = Object.keys(ranges).sort((a,b) => {
+      const order = {'교과서':1, '부교재':2, '모의고사':3};
+      const oa = order[ranges[a].mediaType] || 99;
+      const ob = order[ranges[b].mediaType] || 99;
+      if (oa !== ob) return oa - ob;
+      return a.localeCompare(b);
+    });
+
+    sortedKeys.forEach(rangeKey => {
+      const r = ranges[rangeKey];
+      const passages = r.passages.sort((a,b) => (a.num||'').localeCompare(b.num||''));
       const allSchools = new Set();
       passages.forEach(p => (p.schools||[]).forEach(s => allSchools.add(s)));
       const schoolList = Array.from(allSchools);
       const numPassages = passages.length;
+      const mediaIcon = r.mediaType === '교과서' ? '📕' : (r.mediaType === '부교재' ? '📗' : '📊');
 
       html += `<div class="unit-card">
         <div class="unit-header">
-          <div class="unit-title">${tb} ${unit}</div>
+          <div class="unit-title">${mediaIcon} ${r.mediaType} · ${r.detail}</div>
           <div class="unit-count">${numPassages}개 지문</div>
         </div>`;
 
       passages.forEach(p => {
         html += `<div class="passage-mini">
-          <span>${p.num}번 · ${p.text.substring(0,30)}...</span>
+          <span>${p.num}번 · ${(p.text||'').substring(0,30)}...</span>
           <button class="del-tiny" onclick="deletePassage('${p.id}')">삭제</button>
         </div>`;
       });
@@ -526,13 +635,13 @@
         schoolList.forEach(school => {
           const types = uniqueTypes(SCHOOL_TYPES[school] || []);
           const expectedPerType = numPassages * 2;
-          const allDone = types.every(t => (typeCount[`${tb}_${unit}_${school}_${t}`] || 0) >= expectedPerType);
+          const allDone = types.every(t => (typeCount[`${rangeKey}_${school}_${t}`] || 0) >= expectedPerType);
           const cls = allDone ? 'school-btn done' : 'school-btn';
           const schoolDisplay = school.replace('_', ' ');
           const label = allDone ? `${schoolDisplay} ✅ 전체 완료` : `${schoolDisplay} 전체 생성`;
-          const sid = `${tb}_${unit}_${school}`.replace(/[\s/]+/g,'_');
+          const sid = `${rangeKey}_${school}`.replace(/[\s/]+/g,'_');
           html += `<div style="margin-top:10px">
-            <button class="${cls}" onclick="generateUnitQuestions('${tb}','${unit}','${school}','all')">${label}</button>
+            <button class="${cls}" onclick="generateUnitQuestions('${rangeKey.replace(/'/g,'')}','${school}','all')">${label}</button>
             <div class="type-section">
               <div class="type-section-title" onclick="toggleTypes('${sid}')">
                 <span>${schoolDisplay} 유형별 (${types.length}개)</span>
@@ -541,10 +650,10 @@
               <div id="types-${sid}" style="display:none">
                 <div class="type-grid-mini">`;
           types.forEach(t => {
-            const cnt = typeCount[`${tb}_${unit}_${school}_${t}`] || 0;
+            const cnt = typeCount[`${rangeKey}_${school}_${t}`] || 0;
             const has = cnt >= expectedPerType;
             const cls2 = has ? 'type-mini-btn has' : 'type-mini-btn missing';
-            html += `<button class="${cls2}" onclick="generateUnitQuestions('${tb}','${unit}','${school}','${t}')">
+            html += `<button class="${cls2}" onclick="generateUnitQuestions('${rangeKey.replace(/'/g,'')}','${school}','${t}')">
               ${t.replace(/_/g,' ')}<br>${cnt}/${expectedPerType}
             </button>`;
           });
@@ -600,7 +709,7 @@
     loadUnitList();
   };
 
-  window.generateUnitQuestions = async (textbook, unit, school, typeFilter = 'all') => {
+  window.generateUnitQuestions = async (rangeKey, school, typeFilter = 'all') => {
     const apiKey = CACHED_API_KEY || await loadApiKey();
     if (!apiKey) { alert('먼저 [설정] 탭에서 Claude API 키를 저장해주세요.'); return; }
 
@@ -613,18 +722,19 @@
     const passages = [];
     snap.forEach(d => {
       const p = d.data();
-      if (p.textbook === textbook && p.unit === unit && (p.schools||[]).includes(school)) {
+      const pKey = p.range || `${p.mediaType||'교과서'}_${p.detail||p.unit||''}`;
+      if (pKey === rangeKey && (p.schools||[]).includes(school)) {
         passages.push({ id: d.id, ...p });
       }
     });
-    passages.sort((a,b) => a.num.localeCompare(b.num));
+    passages.sort((a,b) => (a.num||'').localeCompare(b.num||''));
 
     if (passages.length === 0) { alert(`${school}용 지문이 없어요.`); return; }
 
     const totalQ = passages.length * types.length * 2;
     const titleStr = typeFilter === 'all'
-      ? `${textbook} ${unit} · ${school.replace('_',' ')} 전체`
-      : `${textbook} ${unit} · ${school.replace('_',' ')} · ${typeFilter}`;
+      ? `${rangeKey} · ${school.replace('_',' ')} 전체`
+      : `${rangeKey} · ${school.replace('_',' ')} · ${typeFilter}`;
 
     if (!confirm(`${titleStr}\n\n지문 ${passages.length}개 × 유형 ${types.length}개 × 2문제 = 총 ${totalQ}문제\n예상 시간: 약 ${Math.ceil(passages.length * types.length * 0.1)}분`)) return;
 
@@ -643,8 +753,14 @@
             const q = result.questions[i];
             const docId = `${p.id}_${school}_${t}_${i+1}`.replace(/[\s/]+/g,'_');
             await setDoc(doc(db,'questions',docId), {
-              passageId: p.id, textbook, unit,
-              num: p.num, school, typeName: t,
+              passageId: p.id,
+              mediaType: p.mediaType || p.textbook,
+              detail: p.detail || p.unit,
+              textbook: p.textbook || p.mediaType,
+              unit: p.unit || p.detail,
+              num: p.num,
+              school, typeName: t,
+              range: p.range,
               idx: i+1,
               ...q,
               createdAt: new Date().toISOString()
@@ -667,7 +783,7 @@
   };
 
   // ============================================
-  // 프롬프트 (모든 유형 통합)
+  // 프롬프트 (모든 유형)
   // ============================================
   function getPrompt(type, passage, school) {
     const baseRules = `당신은 한국 고등학교 영어 변형 문제 출제 전문가입니다.
@@ -684,7 +800,7 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 2. {"questions":[문제1, 문제2]} 형태.
 3. explanation은 1줄로 짧게.
 4. 1등급 난이도 (어휘 어렵게, 함정 포함).
-5. 각 유형의 정확한 출력 형식을 반드시 준수.
+5. 각 유형의 정확한 출력 형식 준수.
 `;
 
     const prompts = {
@@ -720,11 +836,9 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 
       '글의순서_가나': `${baseRules}
 [유형: 글의순서 (가)~(나) 사이]
-(가)와 (나) 사이에 (A)(B)(C) 단락을 배열.
-
 {
   "format": "order_kana",
-  "question": "(가) 다음에 이어질 글의 순서로 가장 적절한 것은? ((나) 앞에 위치)",
+  "question": "(가) 다음에 이어질 글의 순서로 가장 적절한 것은?",
   "given_text_1": "(가) 시작 부분",
   "para_a": "단락 내용만",
   "para_b": "단락 내용만",
@@ -736,7 +850,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '요약빈칸': `${baseRules}
-[유형: 요약빈칸]
 {
   "format": "summary_blank",
   "question": "다음 글의 요약문의 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?",
@@ -748,7 +861,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '요약빈칸_3칸': `${baseRules}
-[유형: 요약빈칸 - 3칸 (A)(B)(C)]
 {
   "format": "summary_blank_3",
   "question": "다음 글의 요약문의 빈칸 (A), (B), (C)에 들어갈 말로 가장 적절한 것은?",
@@ -760,9 +872,7 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '문장삽입': `${baseRules}
-[유형: 문장삽입]
-⚠️ passage_marked: 정확히 5개의 ①②③④⑤가 문장 사이에!
-
+⚠️ passage_marked: 정확히 5개의 ①②③④⑤!
 {
   "format": "insert",
   "question": "글의 흐름으로 보아, 주어진 문장이 들어가기에 가장 적절한 곳은?",
@@ -774,10 +884,7 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '낱말쓰임': `${baseRules}
-[유형: 낱말쓰임]
-지문 안에 단어 5개를 ①[단어1] ②[단어2] ③[단어3] ④[단어4] ⑤[단어5] 형태로.
-⚠️ passage_marked: 반드시 5개의 ①~⑤ + 대괄호 단어!
-
+⚠️ passage_marked: 정확히 5개의 ①~⑤ + 대괄호!
 {
   "format": "word",
   "question": "다음 글의 밑줄 친 부분 중, 문맥상 낱말의 쓰임이 적절하지 않은 것은?",
@@ -788,22 +895,16 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '어법': `${baseRules}
-[유형: 어법]
-⚠️ passage_marked: 정확히 5개의 ①[표현]!
-
 {
   "format": "grammar",
   "question": "다음 글의 밑줄 친 부분 중, 어법상 틀린 것은?",
   "passage_marked": "①[phrase1] ②[phrase2] ③[phrase3] ④[phrase4] ⑤[phrase5]",
   "choices": ["phrase1", "phrase2", "phrase3", "phrase4", "phrase5"],
   "answer": 3,
-  "explanation": "③은 ~"
+  "explanation": "이유"
 }`,
 
       '어법_2개': `${baseRules}
-[유형: 어법 - 2개]
-2개 어법상 틀림.
-
 {
   "format": "grammar_2",
   "question": "다음 글의 밑줄 친 부분 중, 어법상 틀린 것 2개를 고르시오.",
@@ -811,13 +912,10 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
   "choices": ["phrase1", "phrase2", "phrase3", "phrase4", "phrase5"],
   "answer": 2,
   "answer_2": 4,
-  "explanation": "②④는 ~"
+  "explanation": "이유"
 }`,
 
       '어법_네모': `${baseRules}
-[유형: 어법 네모 (A)(B)(C)]
-지문 안에 (A), (B), (C) 자리에 [선택1/선택2] 두 개씩.
-
 {
   "format": "grammar_box",
   "question": "(A), (B), (C)의 각 네모 안에서 어법상 적절한 표현은?",
@@ -828,7 +926,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '빈칸추론': `${baseRules}
-[유형: 빈칸추론]
 {
   "format": "blank",
   "question": "빈칸에 들어갈 말로 가장 적절한 것은?",
@@ -839,7 +936,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '글의제목': `${baseRules}
-[유형: 글의제목]
 {
   "format": "title",
   "question": "다음 글의 제목으로 가장 적절한 것은?",
@@ -850,19 +946,16 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '밑줄의미': `${baseRules}
-[유형: 밑줄의미]
 {
   "format": "underline",
   "question": "밑줄 친 부분이 다음 글에서 의미하는 바로 가장 적절한 것은?",
   "passage_with_underline": "지문에 [밑줄 표현] 한 군데만",
-  "underlined_phrase": "표현 자체",
   "choices": ["m1", "m2", "m3", "m4", "m5"],
   "answer": 3,
   "explanation": "이유"
 }`,
 
       '요지빈칸': `${baseRules}
-[유형: 요지빈칸 (서답형 영어 2단어)]
 {
   "format": "short_summary",
   "question": "다음 글의 요지를 한 문장으로 쓸 때, 빈칸 (A), (B)에 들어갈 말을 영어 2단어로 쓰시오.",
@@ -875,7 +968,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '이유서술': `${baseRules}
-[유형: 이유서술 (한국어 2가지)]
 {
   "format": "short_korean",
   "question": "필자가 ~ 라고 말한 이유 2가지를 우리말로 서술하시오.",
@@ -888,7 +980,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '이유서술_한국어': `${baseRules}
-[유형: 이유서술_한국어 (한국어 서술)]
 {
   "format": "short_korean",
   "question": "다음 질문에 대한 답을 우리말로 서술하시오.",
@@ -901,7 +992,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '밑줄의미영작': `${baseRules}
-[유형: 밑줄의미영작 (서답형 영어)]
 {
   "format": "short_translate",
   "question": "밑줄 친 우리말 부분을 보기 단어를 활용하여 조건에 맞게 영작하시오.",
@@ -914,11 +1004,9 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '내용일치_한국어': `${baseRules}
-[유형: 내용일치 (한국어)]
 {
   "format": "match_kor",
   "question": "다음 글의 내용과 일치하지 않는 것은?",
-  "match_direction": "mismatch",
   "passage_text": "원본 지문",
   "choices": ["한국어1", "한국어2", "한국어3", "한국어4", "한국어5"],
   "answer": 3,
@@ -926,20 +1014,16 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '내용일치_영어': `${baseRules}
-[유형: 내용일치 (영어)]
 {
   "format": "match_eng",
   "question": "Which of the following is NOT consistent with the passage?",
-  "match_direction": "mismatch",
   "passage_text": "원본 지문",
   "choices": ["E1", "E2", "E3", "E4", "E5"],
   "answer": 3,
   "explanation": "이유"
 }`,
 
-      // === 효천고 NEW ===
       '단어배열영작': `${baseRules}
-[유형: 단어 배열 영작 (서답형)]
 {
   "format": "short_arrange",
   "question": "다음 단어들을 본문의 의미에 맞게 올바른 순서로 배열하여 영작하시오.",
@@ -951,9 +1035,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '단어장': `${baseRules}
-[유형: 단어장 부교재 문제]
-효천고 단어장 문제. 어휘 활용, 영영풀이, 어휘 관계 등.
-
 {
   "format": "vocab_book",
   "question": "다음 빈칸에 들어갈 알맞은 단어는?",
@@ -964,9 +1045,7 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
   "explanation": "이유"
 }`,
 
-      // === 복성고 ===
       '가정법영작': `${baseRules}
-[유형: 가정법 영작 (서답형)]
 {
   "format": "short_subjunctive",
   "question": "다음 한국어 문장을 가정법을 사용하여 영작하시오.",
@@ -978,7 +1057,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '조건영작': `${baseRules}
-[유형: 조건 영작 (서답형 일반)]
 {
   "format": "short_conditional",
   "question": "다음 상황에 대한 답을 조건에 맞게 영작하시오.",
@@ -989,7 +1067,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '조건영작_단어배열': `${baseRules}
-[유형: 조건 영작 - 단어 배열]
 {
   "format": "short_arrange",
   "question": "주어진 단어를 활용하여 조건에 맞게 영작하시오.",
@@ -1001,7 +1078,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '이유서술영작': `${baseRules}
-[유형: 이유 서술 영작 (서답형 영어)]
 {
   "format": "short_reason_write",
   "question": "다음에 대한 이유를 영어로 영작하시오.",
@@ -1011,9 +1087,7 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
   "explanation": "이유"
 }`,
 
-      // === 강남여고 ===
       '심경변화': `${baseRules}
-[유형: 심경변화]
 {
   "format": "mood_change",
   "question": "다음 글에 드러난 인물의 심경 변화로 가장 적절한 것은?",
@@ -1024,7 +1098,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '분위기': `${baseRules}
-[유형: 글의 분위기]
 {
   "format": "atmosphere",
   "question": "다음 글의 분위기로 가장 적절한 것은?",
@@ -1035,7 +1108,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '요지': `${baseRules}
-[유형: 글의 요지 (한국어 선택지)]
 {
   "format": "main_idea_kor",
   "question": "다음 글의 요지로 가장 적절한 것은?",
@@ -1046,7 +1118,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '요지_선택형': `${baseRules}
-[유형: 글의 요지 (영어 선택지)]
 {
   "format": "main_idea_eng",
   "question": "다음 글의 요지로 가장 적절한 것은?",
@@ -1057,7 +1128,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '글의목적': `${baseRules}
-[유형: 글의 목적]
 {
   "format": "purpose",
   "question": "다음 글의 목적으로 가장 적절한 것은?",
@@ -1068,7 +1138,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '주제': `${baseRules}
-[유형: 글의 주제]
 {
   "format": "topic",
   "question": "다음 글의 주제로 가장 적절한 것은?",
@@ -1079,11 +1148,9 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '도표': `${baseRules}
-[유형: 도표 일치]
 {
   "format": "chart",
   "question": "다음 도표의 내용과 일치하지 않는 것은?",
-  "match_direction": "mismatch",
   "chart_description": "도표에 관한 설명",
   "choices": ["①에서 ~", "②에서 ~", "③에서 ~", "④에서 ~", "⑤에서 ~"],
   "answer": 3,
@@ -1091,7 +1158,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '조건영작_that절': `${baseRules}
-[유형: 조건 영작 - suggest + that절 당위성]
 {
   "format": "short_conditional",
   "question": "다음 상황에 대한 조언을 조건에 맞게 영작하시오.",
@@ -1102,31 +1168,28 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '요약영작_분사구문': `${baseRules}
-[유형: 요약 영작 (분사구문 포함)]
 {
   "format": "short_summary_write",
   "question": "다음 글을 요약하고자 한다. 조건에 맞게 영작하시오.",
   "passage_text": "원본 지문",
-  "conditions": ["주어진 어휘 모두 사용", "분사구문 1회 사용", "주어와 동사가 있는 문장"],
+  "conditions": ["주어진 어휘 모두 사용", "분사구문 1회 사용"],
   "word_bank": ["w1", "w2", "w3", "w4"],
   "answer": "모범 영작",
   "explanation": "문법"
 }`,
 
       '요약영작_도치': `${baseRules}
-[유형: 요약 영작 (도치 포함)]
 {
   "format": "short_summary_write",
   "question": "다음 글의 요약문에 들어갈 영작을 조건에 맞게 작성하시오.",
   "passage_text": "원본 지문",
-  "conditions": ["Not only 등 도치 구문 사용", "단어 형태 변형 가능"],
+  "conditions": ["Not only 등 도치 구문 사용"],
   "word_bank": ["w1", "w2", "w3"],
   "answer": "모범 영작",
   "explanation": "도치"
 }`,
 
       '정의영작': `${baseRules}
-[유형: 정의 영작 (서답형)]
 {
   "format": "short_definition",
   "question": "다음을 영작하시오.",
@@ -1139,7 +1202,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '주제문영작': `${baseRules}
-[유형: 주제문 영작 (서답형)]
 {
   "format": "short_topic",
   "question": "다음 글의 주제문을 영작하시오.",
@@ -1149,9 +1211,7 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
   "explanation": "이유"
 }`,
 
-      // === 매여고 ===
       '추론_보기': `${baseRules}
-[유형: 추론 - <보기> 모두 고르기]
 {
   "format": "infer_set",
   "question": "다음 <보기>의 상황 중 본문에서 다룬 사례에 해당하는 것을 모두 고르시오.",
@@ -1163,7 +1223,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '어법영작': `${baseRules}
-[유형: 어법 영작 (서답형)]
 {
   "format": "short_grammar_write",
   "question": "다음 <보기>의 단어를 사용하여 빈칸에 들어갈 말을 어법에 맞게 영작하시오.",
@@ -1175,53 +1234,47 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '도치영작': `${baseRules}
-[유형: 도치 영작 (서답형)]
 {
   "format": "short_inversion",
   "question": "다음 한국어 의미와 일치하도록 도치 구문을 사용하여 영작하시오.",
   "korean_sentence": "한국어 문장",
   "word_bank": ["w1", "w2", "w3"],
-  "conditions": ["도치 구문 사용 필수", "보기 단어 모두 사용"],
+  "conditions": ["도치 구문 사용 필수"],
   "answer": "도치된 영문",
   "explanation": "도치"
 }`,
 
-      // === 순고 ===
       '연결어': `${baseRules}
-[유형: 연결어 (A)(B)]
 {
   "format": "connector",
   "question": "다음 글의 빈칸 (A), (B)에 들어갈 말로 가장 적절한 것은?",
-  "passage_with_blanks": "지문에 (A)_____와 (B)_____ 두 빈칸",
+  "passage_with_blanks": "지문에 (A)_____와 (B)_____",
   "choices": ["(A) However  (B) Therefore", "(A) Instead  (B) Moreover", "(A) Furthermore  (B) However", "(A) On the other hand  (B) For example", "(A) Therefore  (B) Instead"],
   "answer": 3,
   "explanation": "흐름"
 }`,
 
       '어휘_네모': `${baseRules}
-[유형: 어휘 네모 (A)(B)(C)]
 {
   "format": "vocab_box",
   "question": "다음 글의 (A), (B), (C)에 들어갈 말로 가장 적절한 것은?",
-  "passage_with_boxes": "지문에 (A)[option1 / option2] (B)[option1 / option2] (C)[option1 / option2]",
+  "passage_with_boxes": "지문에 (A)[opt1 / opt2] (B)[opt1 / opt2] (C)[opt1 / opt2]",
   "choices": ["(A) ~ (B) ~ (C) ~", "(A) ~ (B) ~ (C) ~", "(A) ~ (B) ~ (C) ~", "(A) ~ (B) ~ (C) ~", "(A) ~ (B) ~ (C) ~"],
   "answer": 3,
   "explanation": "이유"
 }`,
 
       '지칭대상': `${baseRules}
-[유형: 지칭 대상]
 {
   "format": "reference",
   "question": "다음 글의 밑줄 친 (a)~(e) 중에서 가리키는 대상이 나머지 넷과 다른 것은?",
-  "passage_with_refs": "지문에 (a) (b) (c) (d) (e) 표시",
+  "passage_with_refs": "지문에 (a) (b) (c) (d) (e)",
   "choices": ["(a)", "(b)", "(c)", "(d)", "(e)"],
   "answer": 3,
   "explanation": "이유"
 }`,
 
       '인물성격': `${baseRules}
-[유형: 인물의 성격]
 {
   "format": "character",
   "question": "다음 글에 드러난 인물의 성격으로 가장 적절한 것은?",
@@ -1232,7 +1285,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '조건영작_분사asif': `${baseRules}
-[유형: 조건 영작 - 분사구문 + as if]
 {
   "format": "short_cond_participle",
   "question": "다음을 분사구문과 as if 가정법을 사용하여 영작하시오. (13단어 이내)",
@@ -1244,10 +1296,9 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '조건영작_가정법': `${baseRules}
-[유형: 조건 영작 - Without + 가정법 과거완료]
 {
   "format": "short_cond_subjunctive",
-  "question": "Without으로 시작하여 가정법 과거완료로 영작하시오. (13단어 이내)",
+  "question": "Without으로 시작하여 가정법 과거완료로 영작하시오.",
   "passage_text": "원본 지문",
   "korean_sentence": "한국어 의미",
   "conditions": ["Without으로 시작", "가정법 과거완료", "13단어 이내"],
@@ -1256,36 +1307,30 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '조건영작_시작어구': `${baseRules}
-[유형: 조건 영작 - 시작어구 지정]
 {
   "format": "short_cond_start",
   "question": "지정된 시작어구로 시작하여 한 문장으로 영작하시오.",
   "passage_text": "원본 지문",
   "start_phrase": "All food",
-  "conditions": ["주어진 시작어구로 시작", "ONE sentence", "주어진 어휘 활용"],
+  "conditions": ["주어진 시작어구로 시작", "ONE sentence"],
   "word_bank": ["w1", "w2", "w3"],
   "answer": "모범 영작",
   "explanation": "문법"
 }`,
 
       '조건영작_조건충족': `${baseRules}
-[유형: 조건 영작 - 다중 조건]
 {
   "format": "short_cond_multi",
   "question": "주어진 조건에 맞게 영작하시오.",
   "passage_text": "원본 지문",
   "korean_sentence": "한국어 의미",
-  "conditions": ["역할 포함", "결과 포함", "주어진 어휘 활용"],
+  "conditions": ["역할 포함", "결과 포함"],
   "word_bank": ["w1", "w2", "w3"],
   "answer": "모범 영작",
   "explanation": "문법"
 }`,
 
-      // === 순여고 ===
       '영영풀이': `${baseRules}
-[유형: 영영풀이 부적절]
-지문 안 단어 5개. 각각 영영 풀이. 1개는 부적절.
-
 {
   "format": "definition",
   "question": "다음 글의 밑줄 친 단어의 영영 풀이로 적절하지 않은 것은?",
@@ -1302,9 +1347,7 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
   "explanation": "③의 단어는 실제로 ~"
 }`,
 
-      // === 금당고 ===
       '빈칸단답_공통': `${baseRules}
-[유형: 빈칸 단답 - 공통 단어]
 {
   "format": "short_blank_common",
   "question": "다음 글의 빈칸에 공통으로 들어갈 단어를 한 단어로 쓰시오.",
@@ -1314,7 +1357,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '빈칸단답': `${baseRules}
-[유형: 빈칸 단답]
 {
   "format": "short_blank",
   "question": "다음 빈칸에 들어갈 알맞은 말을 한 단어로 쓰시오.",
@@ -1324,7 +1366,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '빈칸단답_지문어휘': `${baseRules}
-[유형: 빈칸 단답 - 지문 어휘]
 {
   "format": "short_blank_passage",
   "question": "본문에서 찾아 빈칸에 들어갈 말을 쓰시오.",
@@ -1334,43 +1375,37 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '빈칸단답_변형': `${baseRules}
-[유형: 빈칸 단답 - 형태 변형]
 {
   "format": "short_blank_morph",
   "question": "본문에서 단어를 찾되 형태를 변형해 빈칸에 들어갈 말을 쓰시오.",
   "passage_with_blank": "지문에 _______",
-  "original_word": "본문 원형",
   "answer": "변형된 정답",
   "explanation": "변화"
 }`,
 
       '답변영작': `${baseRules}
-[유형: 답변 영작 (서답형)]
 {
   "format": "short_answer",
   "question": "다음 질문에 본문 근거로 영작하시오.",
   "passage_text": "원본 지문",
   "sub_question": "Why ~?",
-  "conditions": ["It으로 시작", "10단어 이내", "본문 연속 3단어 이상 금지"],
+  "conditions": ["It으로 시작", "10단어 이내"],
   "answer": "모범 답변",
   "explanation": "이유"
 }`,
 
       '요약문영작': `${baseRules}
-[유형: 요약문 영작 (서답형)]
 {
   "format": "short_summary_sent",
   "question": "다음 요약문의 빈 칸에 들어갈 한 문장을 영작하시오.",
   "passage_text": "원본 지문",
   "summary_template": "4문장 요약 중 한 칸 빔",
-  "conditions": ["25단어 내외", "본문 연속 4단어 이하"],
+  "conditions": ["25단어 내외"],
   "answer": "모범 한 문장",
   "explanation": "이유"
 }`,
 
-      // === 제일고 ===
       '답할수없는질문': `${baseRules}
-[유형: 답할 수 없는 질문]
 {
   "format": "unanswerable",
   "question": "다음 글을 읽고 답할 수 없는 질문은?",
@@ -1381,13 +1416,12 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '요지영작': `${baseRules}
-[유형: 요지 영작 (서답형)]
 {
   "format": "short_main_write",
   "question": "다음 글의 요지를 영작하시오.",
   "passage_text": "원본 지문",
   "word_bank": ["w1", "w2", "w3"],
-  "conditions": ["주어진 어휘 모두 포함", "30단어 이하", "to부정사를 목적격 보어로"],
+  "conditions": ["주어진 어휘 모두 포함", "30단어 이하"],
   "answer": "모범 영작",
   "explanation": "문법"
 }`,
@@ -1432,15 +1466,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
     }
 
     if (!parsed.questions || parsed.questions.length < 2) throw new Error('문제 2개 미만');
-
-    if (['흐름무관','문장삽입','낱말쓰임','어법','어법_2개'].includes(type)) {
-      for (const q of parsed.questions) {
-        const tx = q.passage_marked || '';
-        const count = (tx.match(/[①②③④⑤]/g) || []).length;
-        if (count < 5) throw new Error(`①~⑤ 부족(${count}/5)`);
-      }
-    }
-
     return parsed;
   }
 
@@ -1479,7 +1504,7 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
     </div>`;
   }
 
-  window.toggleStudent = async (uid, name, userId, school) => {
+  window.toggleStudent = async (uid) => {
     const sb = document.getElementById('sb-'+uid);
     const arr = document.getElementById('arr-'+uid);
     const isOpen = sb.classList.contains('open');
@@ -1494,7 +1519,6 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
       const snap = await getDocs(query(collection(db,'progress'), where('userId','==',uid)));
       if (snap.empty) { recEl.innerHTML='<div class="empty-msg">학습 기록이 없어요</div>'; return; }
 
-      // 날짜별 그룹
       const byDate = {};
       snap.forEach(d => {
         const data = d.data();
@@ -1506,11 +1530,9 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
       let html = '';
       Object.keys(byDate).sort().reverse().forEach(date => {
         const items = byDate[date];
-
-        // 지문별 그룹
         const byPassage = {};
         items.forEach(it => {
-          const pname = it.passageName || `${it.textbook||''} ${it.unit||''} ${it.num||''}`;
+          const pname = it.passageName || `${it.mediaType||''} ${it.detail||''} ${it.num||''}`;
           if (!byPassage[pname]) byPassage[pname] = [];
           byPassage[pname].push(it);
         });
