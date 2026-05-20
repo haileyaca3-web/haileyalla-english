@@ -3,358 +3,424 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>지문 선택 — 헤일리올라</title>
+  <title>지문/유형 선택 — 헤일리올라</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div class="page">
+<!-- 1. 범위 선택 -->
+<div class="page" id="page-range">
   <div class="phone">
     <div class="top-bar with-back">
-      <button class="back-btn" onclick="goBack()">←</button>
+      <button class="back-btn" onclick="goHome()">←</button>
       <div class="top-info">
-        <div class="top-school" id="school-label">매산고등학교</div>
-        <div class="top-title" id="page-title">지문 선택</div>
+        <div class="top-school" id="top-school-1">매산고</div>
+        <div class="top-title">범위 선택</div>
       </div>
     </div>
-
-    <!-- 스텝 표시 -->
-    <div style="background:#fff;padding:12px 14px 0">
+    <div class="scroll-body">
       <div class="step-row">
-        <div class="step">
-          <div class="step-num active" id="sn1">1</div>
-          <div class="step-text active" id="st1">지문 선택</div>
-        </div>
+        <div class="step"><div class="step-num active">1</div><div class="step-text active">범위</div></div>
         <div class="step-line"></div>
-        <div class="step">
-          <div class="step-num" id="sn2">2</div>
-          <div class="step-text" id="st2">유형 선택</div>
-        </div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">지문</div></div>
         <div class="step-line"></div>
-        <div class="step">
-          <div class="step-num" id="sn3">3</div>
-          <div class="step-text" id="st3">문제 풀기</div>
-        </div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">유형</div></div>
+      </div>
+
+      <div class="section-label">학습할 범위를 선택해주세요</div>
+      <div id="range-list"><div class="empty-msg">불러오는 중...</div></div>
+
+      <div class="selected-bar" style="margin-top:14px">
+        <span class="selected-text">선택된 범위</span>
+        <span class="selected-count" id="range-count">0개</span>
+      </div>
+      <button class="btn-main" onclick="goPassages()" id="btn-go-passages">다음: 지문 선택 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. 지문 선택 -->
+<div class="page hidden" id="page-passage">
+  <div class="phone">
+    <div class="top-bar with-back">
+      <button class="back-btn" onclick="backToRange()">←</button>
+      <div class="top-info">
+        <div class="top-school" id="top-school-2">매산고</div>
+        <div class="top-title">지문 선택</div>
       </div>
     </div>
-
-    <!-- Step 1: 지문 선택 -->
-    <div class="scroll-body" id="step1">
-      <div id="loading" style="text-align:center;padding:30px;font-size:13px;color:#888780">
-        지문 불러오는 중...
+    <div class="scroll-body">
+      <div class="step-row">
+        <div class="step"><div class="step-num done">✓</div><div class="step-text">범위</div></div>
+        <div class="step-line"></div>
+        <div class="step"><div class="step-num active">2</div><div class="step-text active">지문</div></div>
+        <div class="step-line"></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">유형</div></div>
       </div>
-      <div id="passage-list"></div>
-      <button class="btn-main" id="btn-step1" disabled onclick="goStep2()">
-        다음 — 유형 선택
-      </button>
+
+      <div class="section-label">지문을 하나 선택해주세요</div>
+      <div id="passage-list"><div class="empty-msg">불러오는 중...</div></div>
     </div>
+  </div>
+</div>
 
-    <!-- Step 2: 유형 선택 -->
-    <div class="scroll-body hidden" id="step2">
-      <div id="selected-passage-info"
-        style="background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#1A3566;">
+<!-- 3. 유형 선택 -->
+<div class="page hidden" id="page-type">
+  <div class="phone">
+    <div class="top-bar with-back">
+      <button class="back-btn" onclick="backToPassage()">←</button>
+      <div class="top-info">
+        <div class="top-school" id="top-school-3">매산고</div>
+        <div class="top-title">유형 선택</div>
       </div>
-      <div style="font-size:11px;color:#5A7BAD;margin-bottom:10px;line-height:1.6">
+    </div>
+    <div class="scroll-body">
+      <div class="step-row">
+        <div class="step"><div class="step-num done">✓</div><div class="step-text">범위</div></div>
+        <div class="step-line"></div>
+        <div class="step"><div class="step-num done">✓</div><div class="step-text">지문</div></div>
+        <div class="step-line"></div>
+        <div class="step"><div class="step-num active">3</div><div class="step-text active">유형</div></div>
+      </div>
+
+      <div class="selected-bar" style="margin-bottom:14px">
+        <span class="selected-text">선택한 지문</span>
+        <span class="selected-count" id="selected-passage-name" style="cursor:pointer;background:#FFF5E8;color:#854F0B">변경하기</span>
+      </div>
+
+      <div style="font-size:11px;color:#5A7BAD;margin-bottom:12px;line-height:1.6">
         💡 유형을 하나 선택하면 2문제를 풀어요.<br>
-        ⭐는 이미 다 맞힌 유형, 회차는 도전한 횟수예요.
+        ⭐ 표시는 이미 다 맞춘 유형이에요.
       </div>
+
       <div class="section-label">선택형 유형</div>
-      <div class="type-grid" id="type-grid-select"></div>
-      <div class="section-label" style="margin-top:4px">서답형 유형</div>
-      <div class="type-grid" id="type-grid-written"></div>
-      <button class="btn-main" id="btn-step2" disabled onclick="goStep3()" style="margin-top:8px">
-        문제 풀기 시작
-      </button>
+      <div class="type-grid" id="type-grid-choice"></div>
+
+      <div class="section-label hidden" id="label-short-blank">단답형 유형</div>
+      <div class="type-grid hidden" id="type-grid-short-blank"></div>
+
+      <div class="section-label">서답형 유형</div>
+      <div class="type-grid" id="type-grid-short"></div>
     </div>
   </div>
 </div>
 
 <style>
+.type-card .star{position:absolute;top:6px;right:8px;color:#E5B774;font-size:14px}
 .type-card{position:relative}
-.type-progress{font-size:10px;color:#5A7BAD;margin-top:3px}
-.type-progress.done{color:#3B6D11;font-weight:500}
-.type-card.has-questions::after{content:'';position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:#3B6D11}
-.type-card.no-questions{opacity:0.45;cursor:not-allowed}
-.type-card.no-questions .type-name::after{content:' (없음)';font-size:10px;color:#E24B4A;font-weight:normal}
+.type-card.disabled{opacity:0.4;cursor:not-allowed;pointer-events:none}
+.hidden{display:none !important}
 </style>
 
 <script type="module">
   import { auth, db } from './js/firebase.js';
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { collection, getDocs, query, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  const school         = localStorage.getItem('selectedSchool') || '매산고';
-  const selectedRanges = JSON.parse(localStorage.getItem('selectedRanges') || '[]');
-  const userId         = localStorage.getItem('userId');
-  let selectedPassage  = null;
-  let selectedType     = null;
-  let allPassages      = [];
-  let progressMap      = {};   // passageId → { typeName: {round, correct} }
-  let questionMap      = {};   // passageId_typeName → 개수
+  // ============================================
+  // 11개 학교 유형 정의 (SCHOOL_TYPES.js 기준)
+  // ============================================
+  const SCHOOL_TYPES = {
+    '매산고_고2': {
+      choice: ['흐름무관','낱말쓰임','글의제목','글의순서','요약빈칸','문장삽입','밑줄의미','어법','빈칸추론','내용일치_한국어','내용일치_영어'],
+      short: ['요지빈칸','이유서술','밑줄의미영작']
+    },
+    '강남여고_고1': {
+      choice: ['내용일치_한국어','심경변화','빈칸추론','분위기','글의순서','밑줄의미','요지_선택형','글의목적','주제','도표','글의제목','어법','낱말쓰임','흐름무관','내용일치_영어','문장삽입','요약빈칸'],
+      short: ['조건영작_that절','이유서술영작','이유서술_한국어','요약영작_분사구문']
+    },
+    '강남여고_고2': {
+      choice: ['낱말쓰임','내용일치_한국어','흐름무관','글의제목','분위기','요지_선택형','요지','주제','내용일치_영어','어법','빈칸추론','글의순서','문장삽입','밑줄의미','요약빈칸','심경변화'],
+      short: ['정의영작','주제문영작','이유서술영작','밑줄의미영작']
+    },
+    '복성고_고1': {
+      choice: ['지칭대상','내용일치_영어','답할수없는질문','심경변화','빈칸추론','낱말쓰임','글의순서_가나','추론_보기','어법_네모','글의목적','밑줄의미','요지_선택형','주제','글의제목','내용일치_한국어','흐름무관','글의순서','문장삽입','요약빈칸'],
+      short: ['가정법영작','조건영작','이유서술영작','밑줄의미영작','조건영작_단어배열']
+    },
+    '매산여고_고2': {
+      choice: ['내용일치_한국어','추론_보기','요약빈칸','요약빈칸_3칸','문장삽입','글의제목','빈칸추론','내용일치_영어','밑줄의미','어법','어법_2개','주제','글의순서','낱말쓰임'],
+      short: ['이유서술_한국어','어법영작','도치영작','요약영작_도치']
+    },
+    '순천고_고1': {
+      choice: ['주제','어법','낱말쓰임','밑줄의미','심경변화','지칭대상','내용일치_영어','글의목적','어휘_네모','인물성격','내용일치_한국어','요지_선택형','글의제목','연결어','빈칸추론','글의순서','문장삽입','요약빈칸'],
+      short: ['조건영작_분사asif','조건영작_가정법','조건영작_시작어구','조건영작_조건충족']
+    },
+    '순여고_고1': {
+      choice: ['글의순서','글의제목','빈칸추론','어법','낱말쓰임','문장삽입','요약빈칸','영영풀이','내용일치_영어','밑줄의미','내용일치_한국어'],
+      short: ['주제문영작','밑줄의미영작','정의영작']
+    },
+    '금당고_고2': {
+      choice: ['글의목적','밑줄의미','요지','내용일치_한국어','주제','글의제목','어법','낱말쓰임','빈칸추론','흐름무관','글의순서','문장삽입','요약빈칸'],
+      short: ['빈칸단답_공통','빈칸단답','빈칸단답_지문어휘','빈칸단답_변형','답변영작','정의영작','요약문영작','이유서술영작']
+    },
+    '제일고_고1': {
+      choice: ['답할수없는질문','지칭대상','내용일치_영어','어법','낱말쓰임','연결어','빈칸추론','흐름무관','글의순서','문장삽입','글의목적','내용일치_한국어','주제','밑줄의미','요약빈칸'],
+      short: ['답변영작','밑줄의미','요지영작']
+    },
+    '금당고_고1': {
+      choice: ['글의목적','내용일치_한국어','밑줄의미','요지','주제','글의제목','도표','내용일치_영어','어법','낱말쓰임','빈칸추론','흐름무관','글의순서','문장삽입','요약빈칸','지칭대상'],
+      short: ['이유서술_한국어']
+    },
+    '효천고_고2': {
+      choice: ['단어장','낱말쓰임','요지','답할수없는질문','어법_2개','글의순서','요약빈칸','흐름무관','내용일치_한국어','지칭대상','주제','어법','영영풀이','문장삽입','빈칸추론'],
+      short: ['단어배열영작']
+    },
+  };
 
-  document.getElementById('school-label').textContent = school + '등학교';
+  const TYPE_DESC = {
+    '흐름무관':'전체 흐름 파악','낱말쓰임':'어색한 낱말','글의제목':'제목 추론',
+    '글의순서':'순서 배열','글의순서_가나':'(가)(나) 배열','요약빈칸':'(A)(B) 완성','요약빈칸_3칸':'(A)(B)(C)',
+    '문장삽입':'삽입 위치','밑줄의미':'함축 의미','어법':'틀린 어법','어법_2개':'어법 2개','어법_네모':'어법 네모',
+    '빈칸추론':'논리 추론','내용일치_한국어':'내용 일치(한)','내용일치_영어':'내용 일치(영)',
+    '심경변화':'심경 변화','분위기':'글 분위기','요지':'요지(한)','요지_선택형':'요지(영)',
+    '글의목적':'글의 목적','주제':'글의 주제','도표':'도표 일치',
+    '추론_보기':'보기 추론','연결어':'(A)(B) 연결어','어휘_네모':'어휘 네모',
+    '지칭대상':'지칭 대상','인물성격':'인물 성격','영영풀이':'영영 풀이',
+    '답할수없는질문':'답 없는 Q','단어장':'단어장',
+    '요지빈칸':'(A)(B) 서술','이유서술':'국문 서술','밑줄의미영작':'조건 영작',
+    '가정법영작':'가정법','조건영작':'조건 영작','조건영작_that절':'that절',
+    '조건영작_분사asif':'분사+as if','조건영작_가정법':'가정법 강제',
+    '조건영작_시작어구':'시작어구','조건영작_조건충족':'다중 조건',
+    '조건영작_단어배열':'단어 배열',
+    '단어배열영작':'단어 배열','요약영작_분사구문':'요약+분사','요약영작_도치':'요약+도치',
+    '어법영작':'어법 영작','도치영작':'도치 영작','이유서술영작':'이유 영작',
+    '주제문영작':'주제문 영작','요지영작':'요지 영작','정의영작':'정의 영작',
+    '답변영작':'답변 영작','요약문영작':'요약문 영작',
+    '이유서술_한국어':'국문 서술',
+    '빈칸단답_공통':'공통 단어','빈칸단답':'한 단어','빈칸단답_지문어휘':'지문 어휘','빈칸단답_변형':'형태 변형',
+  };
+
+  let school = '';
+  let userId = '';
+  let allPassages = [];
+  let selectedRanges = new Set();
+  let selectedPassage = null;
+  let progressMap = {};
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = 'index.html'; return; }
-    await loadPassages();
-  });
 
-  // ──────────────────────────────────────
-  // 지문 불러오기 (새/옛 ID 구조 모두 호환)
-  // ──────────────────────────────────────
-  async function loadPassages() {
-    const loadingEl = document.getElementById('loading');
-    const listEl    = document.getElementById('passage-list');
+    const snap = await getDoc(doc(db,'users',user.uid));
+    if (!snap.exists()) { window.location.href = 'index.html'; return; }
+    const u = snap.data();
+    userId = user.uid;
+    localStorage.setItem('userId', userId);
 
-    try {
-      const snap = await getDocs(collection(db, 'passages'));
+    school = (u.school || '매산고') + '_' + (u.grade || '고2');
+    localStorage.setItem('selectedSchool', school);
 
-      allPassages = [];
-      snap.forEach(d => {
-        const p = d.data();
-        // 새 구조(schools 배열) 또는 옛 구조(school 단일) 모두 처리
-        const schools = p.schools || (p.school ? [p.school] : []);
-        const matchSchool = schools.includes(school) || schools.includes('전체');
-        if (!matchSchool) return;
-        if (selectedRanges.length > 0 && !selectedRanges.includes(p.range)) return;
-        allPassages.push({ id: d.id, ...p });
-      });
+    const schoolDisplay = school.replace('_', ' ');
+    document.getElementById('top-school-1').textContent = schoolDisplay;
+    document.getElementById('top-school-2').textContent = schoolDisplay;
+    document.getElementById('top-school-3').textContent = schoolDisplay;
 
-      loadingEl.style.display = 'none';
-
-      if (allPassages.length === 0) {
-        listEl.innerHTML = `
-          <div style="text-align:center;padding:30px;font-size:13px;color:#888780;line-height:1.8">
-            선택한 범위에 저장된 지문이 없어요.<br>
-            <span style="font-size:11px">관리자 화면에서 지문을 먼저 추가해주세요.</span>
-          </div>`;
+    // 지문 유지 모드
+    const keepPassage = localStorage.getItem('keepPassage');
+    if (keepPassage === 'true') {
+      const savedPassage = JSON.parse(localStorage.getItem('selectedPassage') || 'null');
+      if (savedPassage && savedPassage.id) {
+        selectedPassage = savedPassage;
+        await loadPassagesForSchool();
+        await loadProgress();
+        showTypeSelect();
+        localStorage.removeItem('keepPassage');
         return;
       }
-
-      // 범위별 그룹핑 + 번호순 정렬
-      const groups = {};
-      allPassages.forEach(p => {
-        const label = p.range || `${p.textbook}_${p.unit}`;
-        if (!groups[label]) groups[label] = [];
-        groups[label].push(p);
-      });
-      Object.keys(groups).forEach(g => {
-        groups[g].sort((a,b) => (a.num || '').localeCompare(b.num || ''));
-      });
-
-      let html = '';
-      Object.entries(groups).forEach(([range, items]) => {
-        html += `<div class="section-label">${rangeLabel(range)}</div>`;
-        items.forEach(p => {
-          const preview = p.text ? p.text.substring(0,45) + '...' : '';
-          html += `
-            <div class="passage-card" onclick="selectPassage(this,'${p.id}','${p.textbook} ${p.unit} ${p.num}번')">
-              <div class="p-num">${p.num}</div>
-              <div class="p-info">
-                <div class="p-name">${p.textbook} ${p.unit} — ${p.num}번</div>
-                <div class="p-sub">${preview}</div>
-              </div>
-            </div>`;
-        });
-      });
-      listEl.innerHTML = html;
-
-    } catch(e) {
-      loadingEl.textContent = '지문을 불러오지 못했어요.';
-      console.error(e);
     }
+
+    await loadPassagesForSchool();
+    await loadProgress();
+    renderRanges();
+  });
+
+  async function loadPassagesForSchool() {
+    const snap = await getDocs(collection(db,'passages'));
+    allPassages = [];
+    snap.forEach(d => {
+      const p = d.data();
+      if ((p.schools||[]).includes(school)) {
+        allPassages.push({ id: d.id, ...p });
+      }
+    });
   }
 
-  function rangeLabel(range) {
-    if (!range) return '기타';
-    return range.replace(/_/g, ' · ');
-  }
-
-  window.selectPassage = (card, id, name) => {
-    document.querySelectorAll('.passage-card').forEach(c => c.classList.remove('on'));
-    card.classList.add('on');
-    selectedPassage = { id, name };
-    document.getElementById('btn-step1').disabled = false;
-  };
-
-  // ──────────────────────────────────────
-  // 학교별 유형 정의
-  // ──────────────────────────────────────
-  const typeData = {
-    '매산고': {
-      select: [
-        { key:'흐름무관', name:'흐름무관', sub:'전체 흐름 파악' },
-        { key:'낱말쓰임', name:'낱말쓰임', sub:'어색한 낱말' },
-        { key:'글의제목', name:'글의 제목', sub:'제목 추론' },
-        { key:'글의순서', name:'글의 순서', sub:'순서 배열' },
-        { key:'요약빈칸', name:'요약빈칸', sub:'(A)(B) 완성' },
-        { key:'문장삽입', name:'문장삽입', sub:'삽입 위치' },
-        { key:'밑줄의미', name:'밑줄의미', sub:'함축 의미' },
-        { key:'어법',     name:'어법',     sub:'틀린 어법' },
-        { key:'빈칸추론', name:'빈칸추론', sub:'논리 추론' },
-      ],
-      written: [
-        { key:'요지빈칸', name:'요지빈칸', sub:'(A)(B) 서술' },
-        { key:'이유서술', name:'이유서술', sub:'국문 서술' },
-        { key:'밑줄의미영작', name:'밑줄영작', sub:'조건 영작' },
-      ]
-    },
-    '효천고': {
-      select: [
-        { key:'어법',     name:'어법',     sub:'틀린 어법' },
-        { key:'빈칸추론', name:'빈칸추론', sub:'논리 추론' },
-        { key:'문장삽입', name:'문장삽입', sub:'삽입 위치' },
-        { key:'글의순서', name:'글의 순서', sub:'순서 배열' },
-        { key:'내용일치', name:'내용일치', sub:'일치 여부' },
-        { key:'낱말쓰임', name:'낱말쓰임', sub:'어색한 낱말' },
-        { key:'요약빈칸', name:'요약빈칸', sub:'(A)(B) 완성' },
-      ],
-      written: [
-        { key:'단어배열', name:'단어배열', sub:'조건 배열' },
-      ]
-    },
-    '복성고': {
-      select: [
-        { key:'빈칸추론',   name:'빈칸추론',   sub:'논리 추론' },
-        { key:'문장삽입',   name:'문장삽입',   sub:'삽입 위치' },
-        { key:'낱말쓰임',   name:'낱말쓰임',   sub:'어색한 낱말' },
-        { key:'내용불일치', name:'내용불일치', sub:'불일치 여부' },
-        { key:'밑줄의미',   name:'밑줄의미',   sub:'함축 의미' },
-        { key:'글의순서',   name:'글의 순서', sub:'순서 배열' },
-        { key:'요약빈칸',   name:'요약빈칸',   sub:'(A)(B) 완성' },
-      ],
-      written: [
-        { key:'가정법영작', name:'가정법', sub:'조건 영작' },
-        { key:'접속사영작', name:'접속사', sub:'조건 영작' },
-      ]
-    }
-  };
-
-  window.goStep2 = async () => {
-    if (!selectedPassage) return;
-    document.getElementById('sn1').classList.remove('active');
-    document.getElementById('sn1').classList.add('done');
-    document.getElementById('sn1').textContent = '✓';
-    document.getElementById('sn2').classList.add('active');
-    document.getElementById('st2').classList.add('active');
-    document.getElementById('page-title').textContent = '유형 선택';
-    document.getElementById('step1').classList.add('hidden');
-    document.getElementById('step2').classList.remove('hidden');
-    document.getElementById('selected-passage-info').textContent = '선택한 지문: ' + selectedPassage.name;
-
-    // 진도 + 문제 존재 여부 로드
-    await loadProgressAndQuestions();
-    renderTypes();
-  };
-
-  async function loadProgressAndQuestions() {
-    // 진도
+  async function loadProgress() {
     progressMap = {};
     try {
-      if (userId) {
-        const psnap = await getDocs(
-          query(collection(db, 'progress_summary'), where('userId', '==', userId))
-        );
-        psnap.forEach(d => {
-          const data = d.data();
-          progressMap[data.passageId || d.id.replace(userId + '_', '')] = data;
-        });
-        // 옛 구조 호환
-        const oldSnap = await getDocs(collection(db, 'progress_summary'));
-        oldSnap.forEach(d => {
-          if (!d.id.startsWith(userId + '_')) return;
-          const pid = d.id.replace(userId + '_', '');
-          if (!progressMap[pid]) progressMap[pid] = d.data();
-        });
-      }
-    } catch(e) { console.warn(e); }
-
-    // 문제 존재 여부
-    questionMap = {};
-    try {
-      const qsnap = await getDocs(
-        query(collection(db, 'questions'),
-          where('passageId', '==', selectedPassage.id),
-          where('school',    '==', school)
-        )
-      );
-      qsnap.forEach(d => {
-        const q = d.data();
-        const key = q.typeName;
-        questionMap[key] = (questionMap[key] || 0) + 1;
+      const snap = await getDocs(query(collection(db,'progress_summary'), where('userId','==',userId)));
+      snap.forEach(d => {
+        const data = d.data();
+        const pid = data.passageId;
+        for (const k in data) {
+          if (['userId','passageId','passageName','textbook','unit','num'].includes(k)) continue;
+          if (data[k]?.round && data[k]?.correct === 2) {
+            progressMap[`${pid}_${k}`] = data[k].round;
+          }
+        }
       });
-    } catch(e) { console.warn(e); }
+    } catch(e) {}
   }
 
-  function renderTypes() {
-    const types     = typeData[school] || typeData['매산고'];
-    const passageProg = progressMap[selectedPassage.id] || {};
+  function renderRanges() {
+    const ranges = {};
+    allPassages.forEach(p => {
+      const key = p.range || `${p.textbook}_${p.unit}`;
+      if (!ranges[key]) ranges[key] = { textbook: p.textbook, unit: p.unit, count: 0 };
+      ranges[key].count++;
+    });
 
-    const renderCard = (t) => {
-      const hasQ      = (questionMap[t.key] || 0) >= 1;
-      const prog      = passageProg[t.key];
-      const round     = prog?.round || 0;
-      const correct   = prog?.correct;
-      const isPerfect = correct === 2;
+    const el = document.getElementById('range-list');
+    const keys = Object.keys(ranges).sort();
+    if (keys.length === 0) {
+      el.innerHTML = '<div class="empty-msg">아직 지문이 없어요</div>';
+      return;
+    }
 
-      let progressText = '';
-      if (round > 0) {
-        const star = isPerfect ? ' ⭐' : '';
-        progressText = `<div class="type-progress ${isPerfect ? 'done' : ''}">${round}회차${correct !== undefined ? ' · ' + correct + '/2' : ''}${star}</div>`;
-      }
-
-      const clickable = hasQ ? `onclick="selectType(this,'${t.key}')"` : '';
-      const cls       = hasQ ? 'type-card has-questions' : 'type-card no-questions';
-
-      return `<div class="${cls}" ${clickable}>
-        <div class="type-name">${t.name}</div>
-        <div class="type-sub">${t.sub}</div>
-        ${progressText}
+    el.innerHTML = keys.map(k => {
+      const r = ranges[k];
+      return `<div class="cat-card">
+        <div class="cat-header" onclick="toggleRange('${k}', this)">
+          <div class="cat-icon" style="background:#EBF2FF;color:#1A3566">📖</div>
+          <div class="cat-info">
+            <div class="cat-name">${r.textbook} · ${r.unit}</div>
+            <div class="cat-sub">${r.count}개 지문</div>
+          </div>
+          <div class="item-check" data-key="${k}">${selectedRanges.has(k)?'✓':''}</div>
+        </div>
       </div>`;
-    };
-
-    document.getElementById('type-grid-select').innerHTML  = types.select.map(renderCard).join('');
-    document.getElementById('type-grid-written').innerHTML = types.written.map(renderCard).join('');
+    }).join('');
+    updateRangeCount();
   }
 
-  window.selectType = (card, key) => {
-    if (!card.classList.contains('has-questions')) return;
-    document.querySelectorAll('.type-card').forEach(c => c.classList.remove('on'));
-    card.classList.add('on');
-    selectedType = key;
-    document.getElementById('btn-step2').disabled = false;
+  window.toggleRange = (key, div) => {
+    if (selectedRanges.has(key)) selectedRanges.delete(key);
+    else selectedRanges.add(key);
+    const chk = div.querySelector('.item-check');
+    if (chk) {
+      chk.textContent = selectedRanges.has(key) ? '✓' : '';
+      chk.style.background = selectedRanges.has(key) ? '#2B5EB8' : '#fff';
+      chk.style.color = selectedRanges.has(key) ? '#fff' : 'transparent';
+    }
+    updateRangeCount();
   };
 
-  window.goStep3 = () => {
-    if (!selectedPassage || !selectedType) return;
-    const passage = allPassages.find(p => p.id === selectedPassage.id);
-    localStorage.setItem('selectedPassage', JSON.stringify({
-      id:       selectedPassage.id,
-      name:     selectedPassage.name,
-      text:     passage?.text     || '',
-      footnote: passage?.footnote || '',
-    }));
-    localStorage.setItem('selectedType', selectedType);
+  function updateRangeCount() {
+    document.getElementById('range-count').textContent = `${selectedRanges.size}개`;
+  }
+
+  window.goPassages = () => {
+    if (selectedRanges.size === 0) { alert('범위를 1개 이상 선택해주세요.'); return; }
+    document.getElementById('page-range').classList.add('hidden');
+    document.getElementById('page-passage').classList.remove('hidden');
+    renderPassages();
+  };
+
+  function renderPassages() {
+    const filtered = allPassages.filter(p => selectedRanges.has(p.range || `${p.textbook}_${p.unit}`));
+    filtered.sort((a,b) => {
+      if (a.range === b.range) return a.num.localeCompare(b.num);
+      return (a.range || '').localeCompare(b.range || '');
+    });
+    const el = document.getElementById('passage-list');
+    if (filtered.length === 0) {
+      el.innerHTML = '<div class="empty-msg">선택한 범위에 지문이 없어요</div>';
+      return;
+    }
+    el.innerHTML = filtered.map(p => `
+      <div class="passage-card" onclick="selectPassage('${p.id}', '${p.textbook} ${p.unit} ${p.num}번')">
+        <div class="p-num">${p.num}</div>
+        <div class="p-info">
+          <div class="p-name">${p.textbook} ${p.unit} — ${p.num}번</div>
+          <div class="p-sub">${p.text.substring(0,40)}...</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.selectPassage = (pid, name) => {
+    const p = allPassages.find(x => x.id === pid);
+    if (!p) return;
+    selectedPassage = { id: p.id, name, text: p.text, textbook: p.textbook, unit: p.unit, num: p.num };
+    localStorage.setItem('selectedPassage', JSON.stringify(selectedPassage));
+    showTypeSelect();
+  };
+
+  function showTypeSelect() {
+    document.getElementById('page-range').classList.add('hidden');
+    document.getElementById('page-passage').classList.add('hidden');
+    document.getElementById('page-type').classList.remove('hidden');
+
+    document.getElementById('selected-passage-name').textContent = selectedPassage.name;
+
+    const types = SCHOOL_TYPES[school];
+    if (!types) {
+      alert('이 학교의 유형이 정의되지 않았어요: ' + school);
+      return;
+    }
+
+    renderTypeGrid('type-grid-choice', types.choice);
+    if (types.short_blank && types.short_blank.length) {
+      document.getElementById('label-short-blank').classList.remove('hidden');
+      document.getElementById('type-grid-short-blank').classList.remove('hidden');
+      renderTypeGrid('type-grid-short-blank', types.short_blank);
+    }
+    renderTypeGrid('type-grid-short', types.short);
+  }
+
+  async function renderTypeGrid(containerId, types) {
+    const el = document.getElementById(containerId);
+    const qSnap = await getDocs(query(collection(db,'questions'),
+      where('passageId','==',selectedPassage.id),
+      where('school','==',school)
+    ));
+    const existTypes = new Set();
+    qSnap.forEach(d => existTypes.add(d.data().typeName));
+
+    // 중복 제거 (Set으로)
+    const uniqueTypes = [...new Set(types)];
+
+    el.innerHTML = uniqueTypes.map(t => {
+      const desc = TYPE_DESC[t] || t.replace(/_/g,' ');
+      const round = progressMap[`${selectedPassage.id}_${t}`];
+      const star = round ? `<div class="star">⭐</div>` : '';
+      const hasQ = existTypes.has(t);
+      const dis = hasQ ? '' : 'disabled';
+      return `<div class="type-card ${dis}" onclick="${hasQ ? `selectType('${t}')` : ''}">
+        ${star}
+        <div class="type-name">${t.replace(/_/g,' ')}</div>
+        <div class="type-sub">${hasQ ? desc : '(없음)'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  window.selectType = (typeName) => {
+    localStorage.setItem('selectedType', typeName);
     window.location.href = 'quiz.html';
   };
 
-  window.goBack = () => {
-    const s2 = document.getElementById('step2');
-    if (!s2.classList.contains('hidden')) {
-      s2.classList.add('hidden');
-      document.getElementById('step1').classList.remove('hidden');
-      document.getElementById('sn1').classList.add('active');
-      document.getElementById('sn1').classList.remove('done');
-      document.getElementById('sn1').textContent = '1';
-      document.getElementById('sn2').classList.remove('active');
-      document.getElementById('st2').classList.remove('active');
-      document.getElementById('page-title').textContent = '지문 선택';
-      selectedType = null;
-    } else {
-      window.location.href = 'range.html';
-    }
+  document.getElementById('selected-passage-name').addEventListener('click', () => {
+    selectedPassage = null;
+    localStorage.removeItem('selectedPassage');
+    document.getElementById('page-type').classList.add('hidden');
+    document.getElementById('page-passage').classList.remove('hidden');
+    renderPassages();
+  });
+
+  window.backToRange = () => {
+    document.getElementById('page-passage').classList.add('hidden');
+    document.getElementById('page-range').classList.remove('hidden');
+  };
+
+  window.backToPassage = () => {
+    document.getElementById('page-type').classList.add('hidden');
+    document.getElementById('page-passage').classList.remove('hidden');
+    renderPassages();
+  };
+
+  window.goHome = () => {
+    window.location.href = 'index.html';
   };
 </script>
 
 </body>
-</html>
+</html
