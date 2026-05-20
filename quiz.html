@@ -96,6 +96,72 @@
 .vocab-card-header { font-size:12px; color:#5A7BAD; margin-bottom:4px; }
 .vocab-card-word { font-size:14px; font-weight:500; color:#1A3566; margin-bottom:6px; }
 .vocab-card-def { font-size:13px; color:#2C2C2A; line-height:1.6; }
+
+/* 어휘빈칸 전용 */
+.vocab-passage { line-height: 2.2; font-size: 15px; }
+.vocab-blank {
+  display: inline-block;
+  background: #FFF5E8;
+  border: 1.5px solid #E5B774;
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin: 0 2px;
+  cursor: pointer;
+  color: #854F0B;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.vocab-blank:hover { background: #FFE9CC; }
+.vocab-blank.filled {
+  background: #EBF2FF;
+  border-color: #2B5EB8;
+  color: #1A3566;
+}
+.vocab-blank.vocab-correct {
+  background: #EAF3DE !important;
+  border-color: #A8D472 !important;
+  color: #27500A !important;
+  cursor: default;
+}
+.vocab-blank.vocab-wrong {
+  background: #FFE4E4 !important;
+  border-color: #E5B774 !important;
+  color: #854F0B !important;
+  cursor: default;
+}
+.blank-line { display: inline-block; min-width: 50px; border-bottom: 1.5px solid #E5B774; }
+
+.vocab-popup-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5); z-index: 10000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.vocab-popup-inner {
+  background: #fff; border-radius: 14px; padding: 20px;
+  width: 100%; max-width: 340px;
+}
+.vocab-popup-title {
+  font-size: 15px; font-weight: 600; color: #1A3566;
+  margin-bottom: 14px; text-align: center;
+}
+.vocab-popup-choices {
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;
+}
+.vocab-choice {
+  background: #fff; border: 1.5px solid #D6E4FF; border-radius: 8px;
+  padding: 11px 13px; font-size: 14px; color: #2C2C2A; cursor: pointer;
+  text-align: left; transition: all 0.15s;
+}
+.vocab-choice:hover { background: #EBF2FF; border-color: #A8C4F5; }
+.vocab-choice.selected {
+  background: #EBF2FF; border-color: #2B5EB8; color: #1A3566; font-weight: 500;
+}
+.vocab-popup-cancel {
+  width: 100%; background: #fff; color: #888780;
+  border: 0.5px solid #D6E4FF; border-radius: 8px;
+  padding: 10px; font-size: 13px; cursor: pointer;
+}
 </style>
 
 <script type="module">
@@ -227,6 +293,7 @@
       'vocab_book'
     ];
     const shortBlankFormats = ['short_blank_common','short_blank','short_blank_passage','short_blank_morph'];
+    if (fmt === 'vocab_blank') return 'vocab_blank';
     if (choiceFormats.includes(fmt)) return 'choice';
     if (shortBlankFormats.includes(fmt)) return 'short_blank';
     return 'short';
@@ -352,6 +419,10 @@
       displayEl.innerHTML = html;
       renderTextChoices(inputEl, q.choices);
     }
+    else if (fmt === 'vocab_blank') {
+      // 어휘빈칸 - 한 화면에 5개 빈칸 다 표시
+      renderVocabBlanks(q, displayEl, inputEl);
+    }
 
     // 단답형
     else if (fmt === 'short_blank_common' || fmt === 'short_blank' || fmt === 'short_blank_passage' || fmt === 'short_blank_morph') {
@@ -422,9 +493,155 @@
     let handler = checkAnswer;
     if (category === 'short_blank') { label = '제출'; handler = checkShortBlank; }
     else if (category === 'short') { label = '제출'; handler = checkShortAnswer; }
+    else if (category === 'vocab_blank') { label = '제출'; handler = checkVocabBlanks; }
     area.innerHTML = `<button class="btn-main" id="btn-check">${label}</button>`;
     document.getElementById('btn-check').onclick = handler;
   }
+
+  // ===== 어휘빈칸 전용 =====
+  let vocabAnswers = {}; // {1: '단어', 2: '단어', ...}
+  let currentVocabIdx = null;
+
+  function renderVocabBlanks(q, displayEl, inputEl) {
+    vocabAnswers = {};
+    const totalBlanks = (q.blanks || []).length;
+
+    let passageHtml = q.passage_with_blanks || '';
+    // (1) (2) (3) (4) (5)를 클릭 가능한 빈칸으로 변환
+    passageHtml = passageHtml.replace(/\((\d+)\)/g, (m, num) => {
+      return `<span class="vocab-blank" data-num="${num}" onclick="openVocabPopup(${num})">(${num}) <span class="blank-line">_____</span></span>`;
+    });
+
+    displayEl.innerHTML = `
+      <div style="background:#FFF5E8;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#854F0B;line-height:1.5">
+        💡 각 빈칸을 클릭해서 단어를 선택하세요. 총 ${totalBlanks}개
+      </div>
+      <div class="passage-box vocab-passage" id="vocab-passage-display">${passageHtml}</div>
+      <div id="vocab-status" style="text-align:center;font-size:13px;color:#5A7BAD;margin-top:8px">
+        진행: <span id="vocab-progress">0</span> / ${totalBlanks}
+      </div>
+    `;
+    inputEl.innerHTML = '';
+  }
+
+  window.openVocabPopup = (num) => {
+    const q = questions[currentQIdx];
+    const blank = (q.blanks || []).find(b => b.num === parseInt(num));
+    if (!blank) return;
+    currentVocabIdx = num;
+
+    // 기존 팝업 제거
+    const existing = document.getElementById('vocab-popup');
+    if (existing) existing.remove();
+
+    const currentAnswer = vocabAnswers[num];
+    const choices = blank.choices || [];
+
+    const popup = document.createElement('div');
+    popup.id = 'vocab-popup';
+    popup.className = 'vocab-popup-overlay';
+    popup.innerHTML = `
+      <div class="vocab-popup-inner">
+        <div class="vocab-popup-title">(${num}) 빈칸에 알맞은 단어</div>
+        <div class="vocab-popup-choices">
+          ${choices.map((c, i) => {
+            const nums = ['①','②','③','④'];
+            const sel = currentAnswer === c ? 'selected' : '';
+            return `<button class="vocab-choice ${sel}" onclick="selectVocabAnswer(${num},'${c}')">${nums[i]} ${c}</button>`;
+          }).join('')}
+        </div>
+        <button class="vocab-popup-cancel" onclick="closeVocabPopup()">취소</button>
+      </div>
+    `;
+    document.body.appendChild(popup);
+  };
+
+  window.selectVocabAnswer = (num, answer) => {
+    vocabAnswers[num] = answer;
+    closeVocabPopup();
+    updateVocabDisplay();
+  };
+
+  window.closeVocabPopup = () => {
+    const p = document.getElementById('vocab-popup');
+    if (p) p.remove();
+  };
+
+  function updateVocabDisplay() {
+    const q = questions[currentQIdx];
+    const passage = document.getElementById('vocab-passage-display');
+    if (!passage) return;
+
+    // 빈칸들 업데이트
+    document.querySelectorAll('.vocab-blank').forEach(el => {
+      const num = parseInt(el.dataset.num);
+      const ans = vocabAnswers[num];
+      if (ans) {
+        el.classList.add('filled');
+        el.innerHTML = `(${num}) <b>${ans}</b>`;
+      } else {
+        el.classList.remove('filled');
+        el.innerHTML = `(${num}) <span class="blank-line">_____</span>`;
+      }
+    });
+
+    // 진행 상황
+    const totalBlanks = (q.blanks || []).length;
+    const filled = Object.keys(vocabAnswers).length;
+    const prog = document.getElementById('vocab-progress');
+    if (prog) prog.textContent = filled;
+  }
+
+  window.checkVocabBlanks = () => {
+    const q = questions[currentQIdx];
+    const blanks = q.blanks || [];
+
+    if (Object.keys(vocabAnswers).length < blanks.length) {
+      alert(`모든 빈칸을 채워주세요. (${Object.keys(vocabAnswers).length}/${blanks.length})`);
+      return;
+    }
+
+    let correct = 0;
+    const results = [];
+    blanks.forEach(b => {
+      const user = vocabAnswers[b.num];
+      const ok = user === b.answer;
+      if (ok) correct++;
+      results.push({ num: b.num, user, answer: b.answer, ok });
+    });
+
+    // 화면에 결과 표시
+    document.querySelectorAll('.vocab-blank').forEach(el => {
+      const num = parseInt(el.dataset.num);
+      const r = results.find(x => x.num === num);
+      if (r) {
+        el.classList.remove('filled');
+        if (r.ok) {
+          el.classList.add('vocab-correct');
+          el.innerHTML = `(${num}) <b>${r.user}</b> ✓`;
+        } else {
+          el.classList.add('vocab-wrong');
+          el.innerHTML = `(${num}) <b style="text-decoration:line-through">${r.user||''}</b> → <b>${r.answer}</b>`;
+        }
+      }
+      el.onclick = null;
+    });
+
+    // 결과 메시지
+    const allCorrect = correct === blanks.length;
+    if (allCorrect) {
+      document.getElementById('res-correct').textContent = `✅ 다 맞췄어요! (${correct}/${blanks.length})`;
+      document.getElementById('res-correct').classList.add('show');
+      correctCount++;
+    } else {
+      document.getElementById('res-wrong2').innerHTML = `📊 결과: ${correct}/${blanks.length} 맞췄어요. 위에서 확인해보세요.`;
+      document.getElementById('res-wrong2').classList.add('show');
+    }
+
+    showExplanation(q);
+    proceedToNext();
+  };
+
 
   function renderNumberChoices(container) {
     const nums = ['①','②','③','④','⑤'];
