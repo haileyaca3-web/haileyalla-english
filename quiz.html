@@ -11,12 +11,12 @@
 <div class="page">
   <div class="phone">
     <div class="top-bar with-back" style="justify-content:space-between">
-      <button class="back-btn" onclick="window.location.href='passage.html'">←</button>
+      <button class="back-btn" onclick="goBackToTypes()">←</button>
       <div class="top-info">
         <div class="top-school" id="quiz-school">매산고</div>
         <div class="top-title" id="quiz-passage">지문</div>
       </div>
-      <div class="round-badge" id="round-badge"></div>
+      <div style="width:34px"></div>
     </div>
 
     <div class="scroll-body" id="quiz-body">
@@ -40,66 +40,62 @@
         <div id="btn-area">
           <button class="btn-main" id="btn-check" onclick="checkAnswer()">정답 확인</button>
         </div>
+        <div style="text-align:center;margin-top:14px;font-size:11px;color:#888780" id="access-count">1번 접속</div>
       </div>
 
       <div id="error-screen" style="display:none;text-align:center;padding:30px 20px">
         <div style="font-size:13px;color:#E24B4A;margin-bottom:8px" id="error-msg">문제를 불러올 수 없어요</div>
-        <button class="btn-main" onclick="window.location.href='passage.html'">지문 선택으로</button>
+        <button class="btn-main" onclick="goBackToTypes()">유형 선택으로</button>
       </div>
     </div>
   </div>
 </div>
 
 <style>
-.given-box {
-  background:#FFF5E8; border:0.5px solid #E5B774; border-radius:8px;
-  padding:10px 12px; margin-bottom:12px; font-size:14px; color:#854F0B; line-height:1.7;
-}
+.given-box { background:#FFF5E8; border:0.5px solid #E5B774; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:14px; color:#854F0B; line-height:1.7; }
 .given-box-title { font-size:11px; color:#A07020; font-weight:600; margin-bottom:4px; }
-.passage-box {
-  background:#fff; border:0.5px solid #D6E4FF; border-radius:8px;
-  padding:12px; margin-bottom:12px; font-size:14px; color:#2C2C2A; line-height:1.9;
-}
-.summary-box {
-  background:#F5F8FF; border:0.5px solid #A8C4F5; border-radius:8px;
-  padding:10px 12px; margin-bottom:12px; font-size:14px; color:#1A3566; line-height:1.7;
-  font-style: italic;
-}
-.para-box {
-  background:#fff; border:0.5px solid #D6E4FF; border-radius:8px;
-  padding:10px 12px; margin-bottom:6px; font-size:14px; color:#2C2C2A; line-height:1.8;
-}
+.passage-box { background:#fff; border:0.5px solid #D6E4FF; border-radius:8px; padding:12px; margin-bottom:12px; font-size:14px; color:#2C2C2A; line-height:1.9; }
+.summary-box { background:#F5F8FF; border:0.5px solid #A8C4F5; border-radius:8px; padding:10px 12px; margin-bottom:12px; font-size:14px; color:#1A3566; line-height:1.7; font-style: italic; }
+.para-box { background:#fff; border:0.5px solid #D6E4FF; border-radius:8px; padding:10px 12px; margin-bottom:6px; font-size:14px; color:#2C2C2A; line-height:1.8; }
 .para-label { font-weight:600; color:#2B5EB8; margin-right:4px; }
 .word-bank { background:#EEEDFE; border-radius:8px; padding:8px 12px; margin-bottom:8px; font-size:13px; color:#3C3489; }
 .conditions-list { font-size:12px; color:#5A7BAD; margin-bottom:8px; line-height:1.7; }
 .short-input-wrap { margin-bottom:8px; }
 .short-input-wrap label { font-size:12px; color:#5A7BAD; display:block; margin-bottom:4px; }
-.short-input-wrap input, .short-input-wrap textarea {
-  width:100%; padding:9px 11px; border:0.5px solid #D6E4FF; border-radius:6px;
-  font-size:14px; color:#2C2C2A; background:#fff; box-sizing:border-box;
-}
+.short-input-wrap input, .short-input-wrap textarea { width:100%; padding:9px 11px; border:0.5px solid #D6E4FF; border-radius:6px; font-size:14px; color:#2C2C2A; background:#fff; box-sizing:border-box; }
 .short-input-wrap textarea { min-height:60px; resize:vertical; font-family:inherit; }
-.opt-num-only {
-  display:flex; align-items:center; justify-content:center;
-  font-size:15px; font-weight:500; color:#2B5EB8;
-  width:38px; height:38px;
-}
+.opt-num-only { display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:500; color:#2B5EB8; width:38px; height:38px; }
 .passage-marked .num-mark { color:#2B5EB8; font-weight:600; font-size:16px; }
-.passage-marked .underline-text {
-  text-decoration: underline; text-underline-offset: 3px;
-  text-decoration-thickness: 1.5px; font-weight: 500;
-}
-.blank-mark {
-  display: inline-block; min-width: 110px;
-  border-bottom: 2px solid #2B5EB8; margin: 0 2px;
-}
+.passage-marked .underline-text { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; font-weight: 500; }
+.blank-mark { display: inline-block; min-width: 110px; border-bottom: 2px solid #2B5EB8; margin: 0 2px; }
 .self-check-row { display:flex; gap:8px; margin-bottom:8px; }
-.self-check-row button {
-  flex:1; padding:11px; border-radius:8px; font-size:14px;
-  font-weight:500; cursor:pointer; border:0.5px solid;
-}
+.self-check-row button { flex:1; padding:11px; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; border:0.5px solid; }
 .self-check-row .sc-correct { background:#EAF3DE; border-color:#A8D472; color:#27500A; }
 .self-check-row .sc-wrong { background:#FFE4E4; border-color:#E5B774; color:#854F0B; }
+
+.opt { position: relative; }
+.opt.selected {
+  background: #EBF2FF !important;
+  border: 1.5px solid #2B5EB8 !important;
+}
+.opt.selected::after {
+  content: "✓";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #2B5EB8;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.vocab-card {
+  background:#fff; border:0.5px solid #D6E4FF; border-radius:8px;
+  padding:11px 13px; margin-bottom:8px;
+}
+.vocab-card-header { font-size:12px; color:#5A7BAD; margin-bottom:4px; }
+.vocab-card-word { font-size:14px; font-weight:500; color:#1A3566; margin-bottom:6px; }
+.vocab-card-def { font-size:13px; color:#2C2C2A; line-height:1.6; }
 </style>
 
 <script type="module">
@@ -107,38 +103,45 @@
   import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { collection, getDocs, query, where, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  const school   = localStorage.getItem('selectedSchool') || '매산고';
+  const school   = localStorage.getItem('selectedSchool') || '매산고_고2';
   const passage  = JSON.parse(localStorage.getItem('selectedPassage') || '{}');
   const typeName = localStorage.getItem('selectedType') || '';
   const userId   = localStorage.getItem('userId');
 
   let questions      = [];
   let currentQIdx    = 0;
-  let currentRound   = 1;
+  let accessCount    = 1;
   let correctCount   = 0;
   let wrongAttempts  = 0;
   let selectedOptIdx = null;
+  let firstWrongIdx  = null;
 
-  document.getElementById('quiz-school').textContent  = school;
+  document.getElementById('quiz-school').textContent  = school.replace('_', ' ');
   document.getElementById('quiz-passage').textContent = passage.name || '지문';
-  document.getElementById('q-type-label').textContent = typeName.replace('_', ' ');
+  document.getElementById('q-type-label').textContent = typeName.replace(/_/g, ' ');
+
+  window.goBackToTypes = () => {
+    localStorage.setItem('keepPassage', 'true');
+    window.location.href = 'passage.html';
+  };
 
   onAuthStateChanged(auth, async (user) => {
     if (!user) { window.location.href = 'index.html'; return; }
     if (!passage.id || !typeName) { showError('지문 또는 유형 정보가 없어요.'); return; }
-    await loadProgressRound();
+    await loadAccessCount();
     await loadQuestions();
   });
 
-  async function loadProgressRound() {
+  async function loadAccessCount() {
     try {
       const snap = await getDoc(doc(db, 'progress_summary', `${userId}_${passage.id}`));
       if (snap.exists()) {
         const data = snap.data();
-        const prevRound = data[typeName]?.round || 0;
-        currentRound = prevRound + 1;
+        const prevAccess = data[typeName]?.round || 0;
+        accessCount = prevAccess + 1;
       }
     } catch(e) {}
+    document.getElementById('access-count').textContent = `${accessCount}번 접속`;
   }
 
   async function loadQuestions() {
@@ -154,15 +157,26 @@
       snap.forEach(d => questions.push({ id: d.id, ...d.data() }));
       questions.sort((a, b) => (a.idx || 0) - (b.idx || 0));
       if (questions.length === 0) { showError('이 유형의 문제가 아직 없어요.'); return; }
+
+      // 정답 위치 무작위화
+      questions = questions.map(q => shuffleChoices(q));
+
       currentQIdx = 0;
       correctCount = 0;
-      renderRoundBadge();
       renderCurrentQuestion();
     } catch(e) { showError('문제 로딩 실패: ' + e.message); }
   }
 
-  function renderRoundBadge() {
-    document.getElementById('round-badge').innerHTML = `<span style="font-size:11px;color:#fff">${currentRound}회차</span>`;
+  function shuffleChoices(q) {
+    if (!q.choices || !q.choices.length || typeof q.answer !== 'number') return q;
+    const correctAnswer = q.choices[q.answer - 1];
+    const shuffled = [...q.choices];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const newAnswer = shuffled.indexOf(correctAnswer) + 1;
+    return { ...q, choices: shuffled, answer: newAnswer };
   }
 
   function stripParaPrefix(text, label) {
@@ -194,7 +208,31 @@
 
     selectedOptIdx = null;
     wrongAttempts  = 0;
+    firstWrongIdx  = null;
 
+    renderByFormat(q, displayEl, inputEl);
+
+    const cat = getCategoryByFormat(q.format);
+    setupCheckButton(cat);
+  }
+
+  function getCategoryByFormat(fmt) {
+    const choiceFormats = [
+      'irrelevant','order','order_kana','summary_blank','summary_blank_3','insert',
+      'word','grammar','grammar_2','grammar_correct','grammar_box','vocab_box',
+      'blank','title','underline','match_kor','match_eng',
+      'mood_change','atmosphere','main_idea_kor','main_idea_eng','main_idea_kor_selectable',
+      'purpose','topic','chart','infer_set','connector',
+      'reference','character','definition','unanswerable','infinitive_use',
+      'vocab_book'
+    ];
+    const shortBlankFormats = ['short_blank_common','short_blank','short_blank_passage','short_blank_morph'];
+    if (choiceFormats.includes(fmt)) return 'choice';
+    if (shortBlankFormats.includes(fmt)) return 'short_blank';
+    return 'short';
+  }
+
+  function renderByFormat(q, displayEl, inputEl) {
     const fmt = q.format;
 
     if (fmt === 'irrelevant') {
@@ -206,17 +244,27 @@
       const b = stripParaPrefix(q.para_b, 'B');
       const c = stripParaPrefix(q.para_c, 'C');
       displayEl.innerHTML = `
-        <div class="given-box">
-          <div class="given-box-title">주어진 글</div>
-          ${q.given_text || ''}
-        </div>
+        <div class="given-box"><div class="given-box-title">주어진 글</div>${q.given_text || ''}</div>
         <div class="para-box"><span class="para-label">(A)</span>${a}</div>
         <div class="para-box"><span class="para-label">(B)</span>${b}</div>
         <div class="para-box"><span class="para-label">(C)</span>${c}</div>
       `;
       renderTextChoices(inputEl, q.choices);
     }
-    else if (fmt === 'summary_blank') {
+    else if (fmt === 'order_kana') {
+      const a = stripParaPrefix(q.para_a, 'A');
+      const b = stripParaPrefix(q.para_b, 'B');
+      const c = stripParaPrefix(q.para_c, 'C');
+      displayEl.innerHTML = `
+        <div class="given-box"><div class="given-box-title">(가)</div>${q.given_text_1 || ''}</div>
+        <div class="para-box"><span class="para-label">(A)</span>${a}</div>
+        <div class="para-box"><span class="para-label">(B)</span>${b}</div>
+        <div class="para-box"><span class="para-label">(C)</span>${c}</div>
+        <div class="given-box"><div class="given-box-title">(나)</div>${q.given_text_2 || ''}</div>
+      `;
+      renderTextChoices(inputEl, q.choices);
+    }
+    else if (fmt === 'summary_blank' || fmt === 'summary_blank_3') {
       displayEl.innerHTML = `
         <div class="passage-box">${q.passage_text || ''}</div>
         <div class="summary-box">${q.summary_template || ''}</div>
@@ -225,23 +273,24 @@
     }
     else if (fmt === 'insert') {
       displayEl.innerHTML = `
-        <div class="given-box">
-          <div class="given-box-title">주어진 문장</div>
-          ${q.given_sentence || ''}
-        </div>
+        <div class="given-box"><div class="given-box-title">주어진 문장</div>${q.given_sentence || ''}</div>
         <div class="passage-box passage-marked">${formatCircled(q.passage_marked)}</div>
       `;
       renderNumberChoices(inputEl);
     }
-    else if (fmt === 'word' || fmt === 'grammar') {
+    else if (fmt === 'word' || fmt === 'grammar' || fmt === 'grammar_2' || fmt === 'grammar_correct') {
       displayEl.innerHTML = `<div class="passage-box passage-marked">${formatCircledWithUnderline(q.passage_marked)}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    else if (fmt === 'grammar_box' || fmt === 'vocab_box') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${q.passage_with_boxes || ''}</div>`;
       renderTextChoices(inputEl, q.choices);
     }
     else if (fmt === 'blank') {
       displayEl.innerHTML = `<div class="passage-box passage-marked">${formatBlank(q.passage_with_blank)}</div>`;
       renderTextChoices(inputEl, q.choices);
     }
-    else if (fmt === 'title') {
+    else if (fmt === 'title' || fmt === 'main_idea_kor' || fmt === 'main_idea_eng' || fmt === 'main_idea_kor_selectable' || fmt === 'purpose' || fmt === 'topic' || fmt === 'mood_change' || fmt === 'atmosphere' || fmt === 'character') {
       displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
       renderTextChoices(inputEl, q.choices);
     }
@@ -249,80 +298,132 @@
       displayEl.innerHTML = `<div class="passage-box passage-marked">${formatBracketUnderline(q.passage_with_underline)}</div>`;
       renderTextChoices(inputEl, q.choices);
     }
+    else if (fmt === 'match_kor' || fmt === 'match_eng') {
+      displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    else if (fmt === 'chart') {
+      displayEl.innerHTML = `<div class="passage-box">${q.chart_description || ''}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    else if (fmt === 'infer_set') {
+      let html = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      if (q.options_set) {
+        html += `<div class="word-bank"><b>&lt;보기&gt;</b><br>${q.options_set.map((o,i)=>String.fromCharCode(97+i)+'. '+o).join('<br>')}</div>`;
+      }
+      displayEl.innerHTML = html;
+      renderTextChoices(inputEl, q.choices);
+    }
+    else if (fmt === 'connector') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatBlank(q.passage_with_blanks)}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    else if (fmt === 'reference') {
+      displayEl.innerHTML = `<div class="passage-box">${q.passage_with_refs || ''}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    else if (fmt === 'definition') {
+      let html = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      if (q.definitions) {
+        q.definitions.forEach((d, i) => {
+          const num = ['①','②','③','④','⑤'][i];
+          html += `<div class="vocab-card">
+            <div class="vocab-card-header">${num} 단어</div>
+            <div class="vocab-card-word">${d.word}</div>
+            <div class="vocab-card-def">${d.def}</div>
+          </div>`;
+        });
+      }
+      displayEl.innerHTML = html;
+      renderNumberChoices(inputEl);
+    }
+    else if (fmt === 'unanswerable') {
+      displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    else if (fmt === 'infinitive_use') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatBracketUnderline(q.passage_with_underline)}</div>`;
+      renderTextChoices(inputEl, q.choices);
+    }
+    else if (fmt === 'vocab_book') {
+      let html = '';
+      if (q.passage_text) html += `<div class="passage-box">${q.passage_text}</div>`;
+      if (q.question_detail) html += `<div class="given-box"><div class="given-box-title">문제</div>${q.question_detail}</div>`;
+      displayEl.innerHTML = html;
+      renderTextChoices(inputEl, q.choices);
+    }
+
+    // 단답형
+    else if (fmt === 'short_blank_common' || fmt === 'short_blank' || fmt === 'short_blank_passage' || fmt === 'short_blank_morph') {
+      displayEl.innerHTML = `<div class="passage-box passage-marked">${formatBlank(q.passage_with_blank || q.passage_with_blanks || '')}</div>`;
+      let hint = '';
+      if (fmt === 'short_blank_common') hint = '두 빈칸에 공통으로 들어갈 영어 한 단어';
+      else if (fmt === 'short_blank_passage') hint = '본문에서 찾기';
+      else if (fmt === 'short_blank_morph') hint = '본문에서 찾되 형태 변형 가능';
+      else hint = '영어 한 단어';
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>${hint}</label><input type="text" id="ans-single" placeholder="한 단어"></div>`;
+    }
+
+    // 서답형 (기존)
     else if (fmt === 'short_summary') {
       displayEl.innerHTML = `
         <div class="passage-box">${q.passage_text || ''}</div>
         <div class="summary-box">${q.summary_template || ''}</div>
       `;
       inputEl.innerHTML = `
-        <div class="short-input-wrap">
-          <label>(A) — 영어 2단어</label>
-          <input type="text" id="ans-a" placeholder="예: positive thinking">
-        </div>
-        <div class="short-input-wrap">
-          <label>(B) — 영어 2단어</label>
-          <input type="text" id="ans-b" placeholder="예: ignore obstacles">
-        </div>
+        <div class="short-input-wrap"><label>(A) — 영어 2단어</label><input type="text" id="ans-a"></div>
+        <div class="short-input-wrap"><label>(B) — 영어 2단어</label><input type="text" id="ans-b"></div>
       `;
     }
     else if (fmt === 'short_korean') {
       displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
-      inputEl.innerHTML = `
-        <div class="short-input-wrap">
-          <label>이유 1</label>
-          <textarea id="ans-1" placeholder="우리말로 서술하세요"></textarea>
-        </div>
-        <div class="short-input-wrap">
-          <label>이유 2</label>
-          <textarea id="ans-2" placeholder="우리말로 서술하세요"></textarea>
-        </div>
-      `;
+      let count = q.answer_count || 2;
+      let html = '';
+      for (let i = 1; i <= count; i++) {
+        html += `<div class="short-input-wrap"><label>이유 ${i}</label><textarea id="ans-${i}"></textarea></div>`;
+      }
+      inputEl.innerHTML = html;
     }
     else if (fmt === 'short_translate') {
       let html = `<div class="passage-box passage-marked">${formatBracketUnderline(q.passage_with_korean)}</div>`;
-      if (q.word_bank && q.word_bank.length) html += `<div class="word-bank"><b>보기:</b> ${q.word_bank.join(' / ')}</div>`;
-      if (q.conditions && q.conditions.length) html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
+      if (q.word_bank?.length) html += `<div class="word-bank"><b>보기:</b> ${q.word_bank.join(' / ')}</div>`;
+      if (q.conditions?.length) html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
       displayEl.innerHTML = html;
-      inputEl.innerHTML = `<div class="short-input-wrap"><label>영작</label><textarea id="ans-write" placeholder="영어로 작성하세요"></textarea></div>`;
-    }
-    else if (fmt === 'match_kor' || fmt === 'match_eng') {
-      displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
-      renderTextChoices(inputEl, q.choices);
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>영작</label><textarea id="ans-write"></textarea></div>`;
     }
     else if (fmt === 'short_arrange') {
       let html = `<div class="passage-box">${q.passage_text || ''}</div>`;
-      if (q.scrambled_words && q.scrambled_words.length) html += `<div class="word-bank"><b>단어:</b> ${q.scrambled_words.join(' / ')}</div>`;
+      if (q.scrambled_words?.length) html += `<div class="word-bank"><b>단어:</b> ${q.scrambled_words.join(' / ')}</div>`;
       displayEl.innerHTML = html;
-      inputEl.innerHTML = `<div class="short-input-wrap"><label>배열한 문장</label><textarea id="ans-write" placeholder="단어들을 올바른 순서로 배열하세요"></textarea></div>`;
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>배열한 문장</label><textarea id="ans-write"></textarea></div>`;
     }
-    else if (fmt === 'short_subjunctive' || fmt === 'short_conjunction') {
-      displayEl.innerHTML = `
-        <div class="passage-box">${q.passage_text || ''}</div>
-        <div class="given-box">
-          <div class="given-box-title">한국어 문장</div>
-          ${q.korean_sentence || ''}
-        </div>
-      `;
-      inputEl.innerHTML = `<div class="short-input-wrap"><label>영작</label><textarea id="ans-write" placeholder="영어로 작성하세요"></textarea></div>`;
-    }
+
+    // 일반 서답형
     else {
-      displayEl.innerHTML = `<div class="passage-box">${passage.text || ''}</div>`;
-      if (q.choices && q.choices.length) renderTextChoices(inputEl, q.choices);
-      else inputEl.innerHTML = `<div class="short-input-wrap"><label>답안</label><textarea id="ans-write"></textarea></div>`;
+      let html = '';
+      if (q.passage_text) html += `<div class="passage-box">${q.passage_text}</div>`;
+      if (q.passage_with_underline) html = `<div class="passage-box passage-marked">${formatBracketUnderline(q.passage_with_underline)}</div>`;
+      if (q.passage_with_blank) html = `<div class="passage-box passage-marked">${formatBlank(q.passage_with_blank)}</div>`;
+      if (q.korean_sentence) html += `<div class="given-box"><div class="given-box-title">한국어</div>${q.korean_sentence}</div>`;
+      if (q.sub_question) html += `<div class="given-box"><div class="given-box-title">질문</div>${q.sub_question}</div>`;
+      if (q.start_phrase) html += `<div class="given-box"><div class="given-box-title">시작어구</div>"${q.start_phrase}"...</div>`;
+      if (q.word_bank?.length) html += `<div class="word-bank"><b>보기:</b> ${q.word_bank.join(' / ')}</div>`;
+      if (q.summary_template) html += `<div class="summary-box">${q.summary_template}</div>`;
+      if (q.conditions?.length) html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
+      displayEl.innerHTML = html;
+      const label = fmt.includes('한국어') || fmt === 'short_underline_kor' ? '한국어 서술' : '영작';
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>${label}</label><textarea id="ans-write"></textarea></div>`;
     }
-
-    const isChoice = isChoiceFormat(fmt);
-    setupCheckButton(isChoice);
   }
 
-  function setupCheckButton(isChoice) {
+  function setupCheckButton(category) {
     const area = document.getElementById('btn-area');
-    area.innerHTML = `<button class="btn-main" id="btn-check">${isChoice ? '정답 확인' : '제출'}</button>`;
-    document.getElementById('btn-check').onclick = isChoice ? checkAnswer : checkShortAnswer;
-  }
-
-  function isChoiceFormat(fmt) {
-    return ['irrelevant','order','summary_blank','insert','word','grammar','blank','title','underline','match_kor','match_eng'].includes(fmt);
+    let label = '정답 확인';
+    let handler = checkAnswer;
+    if (category === 'short_blank') { label = '제출'; handler = checkShortBlank; }
+    else if (category === 'short') { label = '제출'; handler = checkShortAnswer; }
+    area.innerHTML = `<button class="btn-main" id="btn-check">${label}</button>`;
+    document.getElementById('btn-check').onclick = handler;
   }
 
   function renderNumberChoices(container) {
@@ -357,19 +458,16 @@
     if (!text) return '';
     return text.replace(/([①②③④⑤])/g, '<span class="num-mark">$1</span>');
   }
-
   function formatCircledWithUnderline(text) {
     if (!text) return '';
     return text
       .replace(/([①②③④⑤])\s*\[([^\]]+)\]/g, '<span class="num-mark">$1</span><span class="underline-text">$2</span>')
       .replace(/([①②③④⑤])/g, '<span class="num-mark">$1</span>');
   }
-
   function formatBracketUnderline(text) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]/g, '<span class="underline-text">$1</span>');
   }
-
   function formatBlank(text) {
     if (!text) return '';
     return text.replace(/_{3,}/g, '<span class="blank-mark"></span>');
@@ -390,13 +488,20 @@
     if (selectedOptIdx === null) { alert('답을 선택해주세요.'); return; }
     const q = questions[currentQIdx];
     const userAns = selectedOptIdx + 1;
-    const correctAns = parseInt(q.answer);
+    let correctAns;
+    
+    // 어법_2개는 배열
+    if (Array.isArray(q.answer)) {
+      // 일단 첫 답만 비교 (단순화)
+      correctAns = q.answer[0];
+    } else {
+      correctAns = parseInt(q.answer);
+    }
 
     const opts = document.querySelectorAll('.opt');
 
     if (userAns === correctAns) {
       opts.forEach(o => o.classList.add('disabled'));
-      opts[selectedOptIdx].classList.remove('selected');
       opts[selectedOptIdx].classList.add('correct');
       document.getElementById('res-correct').textContent = '✅ 정답이에요!';
       document.getElementById('res-correct').classList.add('show');
@@ -405,16 +510,18 @@
       proceedToNext();
     } else {
       wrongAttempts++;
-      opts[selectedOptIdx].classList.remove('selected');
-      opts[selectedOptIdx].classList.add('wrong');
-      opts[selectedOptIdx].classList.add('disabled');
 
       if (wrongAttempts === 1) {
-        document.getElementById('res-wrong1').textContent = '아쉬워요! 다시 한 번 생각해보세요.';
+        firstWrongIdx = selectedOptIdx;
+        opts[selectedOptIdx].classList.add('disabled');
+        opts[selectedOptIdx].classList.remove('selected');
+        const optLabel = ['①','②','③','④','⑤'][selectedOptIdx];
+        document.getElementById('res-wrong1').innerHTML = `❌ <b>${optLabel}번</b>은 오답이에요. 다시 한 번 골라보세요.`;
         document.getElementById('res-wrong1').classList.add('show');
         selectedOptIdx = null;
       } else {
         opts.forEach(o => o.classList.add('disabled'));
+        opts[selectedOptIdx].classList.remove('selected');
         opts[correctAns - 1]?.classList.add('correct');
         document.getElementById('res-wrong1').classList.remove('show');
         document.getElementById('res-wrong2').textContent = `정답은 ${correctAns}번이에요.`;
@@ -423,6 +530,27 @@
         proceedToNext();
       }
     }
+  };
+
+  window.checkShortBlank = () => {
+    const userAns = (document.getElementById('ans-single')?.value || '').trim();
+    if (!userAns) { alert('답을 입력해주세요.'); return; }
+    const q = questions[currentQIdx];
+    const modelAns = (q.answer || '').toString().trim();
+
+    document.querySelectorAll('#q-input input').forEach(el => el.disabled = true);
+
+    const isCorrect = userAns.toLowerCase() === modelAns.toLowerCase();
+    if (isCorrect) {
+      document.getElementById('res-correct').textContent = '✅ 정답이에요!';
+      document.getElementById('res-correct').classList.add('show');
+      correctCount++;
+    } else {
+      document.getElementById('res-wrong2').innerHTML = `❌ 정답: <b>${modelAns}</b><br><span style="font-size:11px">내 답: ${userAns}</span>`;
+      document.getElementById('res-wrong2').classList.add('show');
+    }
+    showExplanation(q);
+    proceedToNext();
   };
 
   window.checkShortAnswer = () => {
@@ -438,11 +566,16 @@
       userAns = `(A) ${a} / (B) ${b}`;
       modelAns = `(A) ${q.answer_a || ''} / (B) ${q.answer_b || ''}`;
     } else if (fmt === 'short_korean') {
-      const a1 = document.getElementById('ans-1')?.value.trim() || '';
-      const a2 = document.getElementById('ans-2')?.value.trim() || '';
-      if (!a1 || !a2) { alert('이유 2가지 모두 입력해주세요.'); return; }
-      userAns = `1) ${a1}\n2) ${a2}`;
-      modelAns = `1) ${q.answer_1 || ''}\n2) ${q.answer_2 || ''}`;
+      const count = q.answer_count || 2;
+      let userArr = [], modelArr = [];
+      for (let i = 1; i <= count; i++) {
+        const v = document.getElementById(`ans-${i}`)?.value.trim() || '';
+        if (!v) { alert(`이유 ${count}가지 모두 입력해주세요.`); return; }
+        userArr.push(`${i}) ${v}`);
+        modelArr.push(`${i}) ${q[`answer_${i}`] || ''}`);
+      }
+      userAns = userArr.join('\n');
+      modelAns = modelArr.join('\n');
     } else {
       userAns = document.getElementById('ans-write')?.value.trim() || '';
       if (!userAns) { alert('답을 입력해주세요.'); return; }
@@ -492,13 +625,19 @@
   async function finishRound() {
     const today = new Date().toISOString().split('T')[0];
     try {
-      const progressId = `${userId}_${passage.id}_${typeName}_${currentRound}_${today}`;
+      const progressId = `${userId}_${passage.id}_${typeName}_${accessCount}_${today}`;
       await setDoc(doc(db, 'progress', progressId), {
         userId, passageId: passage.id, typeName,
-        round: currentRound,
+        accessCount: accessCount,
+        round: accessCount, // 호환용
         correct: correctCount === 2,
         correctCount, totalQuestions: 2,
-        date: today, createdAt: new Date().toISOString()
+        date: today,
+        passageName: passage.name,
+        textbook: passage.textbook,
+        unit: passage.unit,
+        num: passage.num,
+        createdAt: new Date().toISOString()
       });
 
       const summaryId = `${userId}_${passage.id}`;
@@ -506,13 +645,17 @@
       const existing = sSnap.exists() ? sSnap.data() : {};
       existing.userId = userId;
       existing.passageId = passage.id;
-      existing[typeName] = { round: currentRound, correct: correctCount, date: today };
+      existing.passageName = passage.name;
+      existing.textbook = passage.textbook;
+      existing.unit = passage.unit;
+      existing.num = passage.num;
+      existing[typeName] = { round: accessCount, correct: correctCount, date: today };
       await setDoc(doc(db, 'progress_summary', summaryId), existing);
     } catch(e) { console.error(e); }
 
     localStorage.setItem('lastResult', JSON.stringify({
       passageName: passage.name, typeName,
-      round: currentRound, correctCount, totalQuestions: 2,
+      round: accessCount, correctCount, totalQuestions: 2,
     }));
     window.location.href = 'result.html';
   }
@@ -527,3 +670,4 @@
 
 </body>
 </html>
+
