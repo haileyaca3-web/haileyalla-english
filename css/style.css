@@ -10,7 +10,7 @@ body {
   background: #F0F4FB;
   color: #2C2C2A;
   -webkit-font-smoothing: antialiased;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.6;
 }
 
@@ -52,24 +52,24 @@ body {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .top-info { flex: 1; }
 .top-school {
-  font-size: 12px;
+  font-size: 14px;
   color: rgba(255,255,255,0.75);
   margin-bottom: 3px;
 }
 .top-title {
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 600;
   color: #fff;
 }
 .top-sub {
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(255,255,255,0.7);
   margin-top: 4px;
 }
@@ -78,7 +78,7 @@ body {
   background: rgba(255,255,255,0.2);
   padding: 4px 10px;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 14px;
   color: #fff;
 }
 
@@ -92,7 +92,7 @@ body {
 /* ───────── 입력 필드 ───────── */
 .field-wrap { margin-bottom: 14px; }
 .field-label {
-  font-size: 13px;
+  font-size: 15px;
   color: #5A7BAD;
   margin-bottom: 6px;
   font-weight: 500;
@@ -101,7 +101,7 @@ body {
 input[type=text], input[type=password], select, textarea {
   width: 100%;
   padding: 12px 14px;
-  font-size: 15px;
+  font-size: 17px;
   border: 0.5px solid #D6E4FF;
   border-radius: 10px;
   background: #fff;
@@ -119,7 +119,7 @@ input:focus, select:focus, textarea:focus {
 .btn-main, .btn-sub {
   width: 100%;
   padding: 13px;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   border-radius: 10px;
   cursor: pointer;
@@ -148,7 +148,7 @@ input:focus, select:focus, textarea:focus {
 
 /* ───────── 오류/안내 ───────── */
 .error-msg {
-  font-size: 13px;
+  font-size: 15px;
   color: #E24B4A;
   margin-bottom: 8px;
   min-height: 18px;
@@ -161,7 +161,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .section-label {
-  font-size: 13px;
+  font-size: 15px;
   color: #5A7BAD;
   font-weight: 500;
   margin-bottom: 8px;
@@ -179,7 +179,7 @@ input:focus, select:focus, textarea:focus {
   flex: 1;
   padding: 12px 0;
   text-align: center;
-  font-size: 14px;
+  font-size: 16px;
   color: #888780;
   cursor: pointer;
   border-bottom: 2px solid transparent;
@@ -216,14 +216,14 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
 }
 .step-num.active { background: #1A3566; color: #fff; }
 .step-num.done { background: #A8D472; color: #fff; }
 
 .step-text {
-  font-size: 11px;
+  font-size: 13px;
   color: #888780;
 }
 .step-text.active { color: #1A3566; font-weight: 600; }
@@ -268,20 +268,20 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .p-info { flex: 1; min-width: 0; }
 .p-name {
-  font-size: 14px;
+  font-size: 16px;
   color: #1A3566;
   font-weight: 600;
   margin-bottom: 3px;
 }
 .p-sub {
-  font-size: 12px;
+  font-size: 14px;
   color: #888780;
   white-space: nowrap;
   overflow: hidden;
@@ -303,24 +303,24 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 20px;
   flex-shrink: 0;
 }
 
 .cat-info { flex: 1; }
 .cat-name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #1A3566;
 }
 .cat-sub {
-  font-size: 12px;
+  font-size: 14px;
   color: #888780;
   margin-top: 2px;
 }
 
 .cat-arrow {
-  font-size: 13px;
+  font-size: 15px;
   color: #A8C4F5;
 }
 
@@ -352,7 +352,7 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   color: transparent;
   flex-shrink: 0;
   transition: all 0.15s;
@@ -360,12 +360,12 @@ input:focus, select:focus, textarea:focus {
 
 .item-name {
   flex: 1;
-  font-size: 14px;
+  font-size: 16px;
   color: #1A3566;
 }
 
 .item-badge {
-  font-size: 11px;
+  font-size: 13px;
   padding: 3px 8px;
   border-radius: 6px;
   font-weight: 500;
@@ -386,11 +386,11 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
 }
 .selected-text {
-  font-size: 13px;
+  font-size: 15px;
   color: #5A7BAD;
 }
 .selected-count {
-  font-size: 13px;
+  font-size: 15px;
   color: #1A3566;
   font-weight: 600;
   background: #EBF2FF;
@@ -426,13 +426,13 @@ input:focus, select:focus, textarea:focus {
 }
 
 .type-name {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: #1A3566;
   margin-bottom: 3px;
 }
 .type-sub {
-  font-size: 11px;
+  font-size: 13px;
   color: #5A7BAD;
 }
 
@@ -449,12 +449,12 @@ input:focus, select:focus, textarea:focus {
   color: #3C3489;
   padding: 5px 12px;
   border-radius: 14px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
 }
 
 .q-pts {
-  font-size: 13px;
+  font-size: 15px;
   color: #5A7BAD;
 }
 
@@ -464,7 +464,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: 10px;
   padding: 14px;
   margin-bottom: 12px;
-  font-size: 15px;
+  font-size: 17px;
   color: #2C2C2A;
   line-height: 1.7;
   font-weight: 500;
@@ -476,7 +476,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: 10px;
   padding: 14px;
   margin-bottom: 12px;
-  font-size: 14px;
+  font-size: 16px;
   color: #2C2C2A;
   line-height: 2;
 }
@@ -498,7 +498,7 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 16px;
   transition: all 0.15s;
 }
 
@@ -538,7 +538,7 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -553,7 +553,7 @@ input:focus, select:focus, textarea:focus {
   border-radius: 10px;
   padding: 12px 14px;
   margin-bottom: 10px;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.6;
   display: none;
 }
@@ -583,14 +583,14 @@ input:focus, select:focus, textarea:focus {
   padding: 14px;
   margin-bottom: 14px;
   display: none;
-  font-size: 13px;
+  font-size: 15px;
   color: #2C2C2A;
   line-height: 1.7;
 }
 .explanation.show { display: block; }
 
 .exp-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #1A3566;
   margin-bottom: 6px;
@@ -609,7 +609,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .approve-btn, .reject-btn {
-  font-size: 12px;
+  font-size: 14px;
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
@@ -672,7 +672,7 @@ input:focus, select:focus, textarea:focus {
   border: none;
   padding: 10px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   margin-top: 8px;
@@ -686,10 +686,9 @@ input:focus, select:focus, textarea:focus {
   color: #fff;
   padding: 6px 12px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 14px;
   opacity: 0;
   transition: opacity 0.25s;
   pointer-events: none;
 }
 .copy-toast.show { opacity: 1; }
-
