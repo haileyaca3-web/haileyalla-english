@@ -12,106 +12,80 @@
   <div class="phone">
     <div class="top-bar">
       <div class="top-info">
-        <div class="top-school" id="r-school">매산고</div>
+        <div class="top-school" id="res-school">매산고</div>
         <div class="top-title">풀이 결과</div>
       </div>
     </div>
 
-    <div class="scroll-body" style="text-align:center;padding:30px 20px">
-      <div id="result-emoji" style="font-size:48px;margin-bottom:12px">🎉</div>
+    <div class="scroll-body" style="text-align:center">
+      <div style="font-size:20px;font-weight:600;color:#1A3566;margin:24px 0 8px" id="res-title">완벽해요</div>
+      <div style="font-size:13px;color:#5A7BAD;margin-bottom:20px" id="res-sub"></div>
 
-      <div id="result-title" style="font-size:18px;font-weight:600;color:#1A3566;margin-bottom:6px">
-        잘했어요!
+      <div style="background:#fff;border:0.5px solid #D6E4FF;border-radius:12px;padding:20px;margin-bottom:16px">
+        <div style="font-size:13px;color:#5A7BAD;margin-bottom:6px" id="res-info"></div>
+        <div style="font-size:36px;font-weight:700;color:#2B5EB8;margin:8px 0" id="res-score">2 / 2</div>
+        <div style="font-size:12px;color:#888780" id="res-access">1번 접속</div>
       </div>
 
-      <div id="result-sub" style="font-size:13px;color:#5A7BAD;margin-bottom:24px;line-height:1.7">
+      <div style="background:#EBF2FF;border-radius:10px;padding:14px;margin-bottom:20px;font-size:12px;color:#1A3566;line-height:1.7" id="res-msg">
+        도전을 더 해보고 싶다면 [다시 풀기]를 눌러주세요.
       </div>
 
-      <!-- 점수 박스 -->
-      <div style="background:#fff;border:0.5px solid #D6E4FF;border-radius:12px;padding:20px;margin-bottom:20px">
-        <div style="font-size:11px;color:#888780;margin-bottom:8px" id="r-info"></div>
-        <div style="font-size:36px;font-weight:600;color:#2B5EB8" id="r-score">0/2</div>
-        <div style="font-size:11px;color:#5A7BAD;margin-top:6px" id="r-round">1회차</div>
-      </div>
-
-      <!-- 메시지 -->
-      <div id="result-msg" style="background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:10px;
-        padding:14px;font-size:12px;color:#1A3566;line-height:1.7;margin-bottom:20px">
-      </div>
-
-      <!-- 액션 버튼 -->
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn-main" onclick="goRetry()">다시 풀기 (다음 회차 도전)</button>
-        <button class="btn-sub" onclick="goAnotherType()">다른 유형 풀기</button>
-        <button class="btn-sub" onclick="goHome()">홈으로</button>
-      </div>
+      <button class="btn-main" onclick="retryAgain()" style="margin-bottom:8px">다시 풀기</button>
+      <button class="btn-sub" onclick="otherType()" style="margin-bottom:8px">다른 유형 풀기</button>
+      <button class="btn-sub" onclick="otherPassage()" style="margin-bottom:8px">다른 지문 선택</button>
+      <button class="btn-sub" onclick="goHome()">홈으로</button>
     </div>
   </div>
 </div>
 
-<script type="module">
-  import { auth } from './js/firebase.js';
-  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
+<script>
+  const data = JSON.parse(localStorage.getItem('lastResult') || '{}');
   const school = localStorage.getItem('selectedSchool') || '매산고';
-  const result = JSON.parse(localStorage.getItem('lastResult') || '{}');
 
-  document.getElementById('r-school').textContent = school;
+  document.getElementById('res-school').textContent = school.replace('_', ' ');
+  document.getElementById('res-info').textContent = `${data.passageName || ''} · ${(data.typeName||'').replace(/_/g,' ')}`;
+  document.getElementById('res-score').textContent = `${data.correctCount || 0} / ${data.totalQuestions || 2}`;
+  document.getElementById('res-access').textContent = `${data.round || 1}번 접속`;
 
-  onAuthStateChanged(auth, (user) => {
-    if (!user) { window.location.href = 'index.html'; return; }
-    renderResult();
-  });
+  const cc = data.correctCount || 0;
+  const total = data.totalQuestions || 2;
 
-  function renderResult() {
-    if (!result.typeName) {
-      document.getElementById('result-title').textContent = '결과를 찾을 수 없어요';
-      return;
-    }
-
-    const cc = result.correctCount || 0;
-    const total = result.totalQuestions || 2;
-
-    document.getElementById('r-info').textContent = `${result.passageName || ''} · ${result.typeName}`;
-    document.getElementById('r-score').textContent = `${cc} / ${total}`;
-    document.getElementById('r-round').textContent = `${result.round || 1}회차`;
-
-    const emoji = document.getElementById('result-emoji');
-    const title = document.getElementById('result-title');
-    const sub   = document.getElementById('result-sub');
-    const msg   = document.getElementById('result-msg');
-
-    if (cc === total) {
-      emoji.textContent = '🎉';
-      title.textContent = '완벽해요!';
-      sub.innerHTML = `<b>${result.typeName}</b> 유형을 다 맞혔어요`;
-      msg.innerHTML = `이 유형은 ⭐ 표시가 붙어요.<br>도전을 더 해보고 싶다면 [다시 풀기]를 눌러주세요.`;
-    } else if (cc >= 1) {
-      emoji.textContent = '😊';
-      title.textContent = '아쉽지만 잘했어요';
-      sub.innerHTML = `<b>${result.typeName}</b> · ${cc}/${total} 맞춤`;
-      msg.innerHTML = `한 문제만 더 맞히면 완벽해요!<br>다시 도전해서 2/2를 노려보세요.`;
-    } else {
-      emoji.textContent = '💪';
-      title.textContent = '다음엔 더 잘할 수 있어요';
-      sub.innerHTML = `<b>${result.typeName}</b> · ${cc}/${total} 맞춤`;
-      msg.innerHTML = `해설을 다시 한 번 살펴보고<br>다시 도전해 보세요!`;
-    }
+  if (cc === total) {
+    document.getElementById('res-title').textContent = '완벽해요';
+    document.getElementById('res-sub').textContent = `${(data.typeName||'').replace(/_/g,' ')} 유형을 다 맞췄어요`;
+    document.getElementById('res-msg').innerHTML = '이 유형은 ⭐ 표시가 붙어요.<br>도전을 더 해보고 싶다면 [다시 풀기]를 눌러주세요.';
+  } else if (cc === 0) {
+    document.getElementById('res-title').textContent = '괜찮아요';
+    document.getElementById('res-sub').textContent = '다시 도전해보세요';
+    document.getElementById('res-msg').innerHTML = '아직 헷갈리는 부분이 있어요. [다시 풀기]로 한 번 더 풀어보세요!';
+  } else {
+    document.getElementById('res-title').textContent = '잘 했어요';
+    document.getElementById('res-sub').textContent = `${cc}개 맞췄어요`;
+    document.getElementById('res-msg').innerHTML = '조금만 더! [다시 풀기]로 한 번 더 풀어보세요.';
   }
 
-  window.goRetry = () => {
-    // 같은 지문, 같은 유형 → quiz.html (회차 자동 증가)
+  window.retryAgain = () => {
     window.location.href = 'quiz.html';
   };
 
-  window.goAnotherType = () => {
+  window.otherType = () => {
+    localStorage.setItem('keepPassage', 'true');
+    window.location.href = 'passage.html';
+  };
+
+  window.otherPassage = () => {
+    localStorage.removeItem('keepPassage');
+    localStorage.removeItem('selectedPassage');
     window.location.href = 'passage.html';
   };
 
   window.goHome = () => {
-    window.location.href = 'home.html';
+    localStorage.removeItem('keepPassage');
+    window.location.href = 'index.html';
   };
 </script>
 
 </body>
 </html>
+
