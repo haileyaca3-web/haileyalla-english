@@ -226,6 +226,7 @@
 .gen-log-item{margin-bottom:3px}
 .gen-log-ok{color:#3B6D11}
 .gen-log-err{color:#E24B4A}
+.gen-log-skip{color:#A07020;font-style:italic}
 .gen-close-btn{width:100%;background:#2B5EB8;color:#fff;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:500;cursor:pointer}
 
 .student-card{background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:10px;margin-bottom:8px}
@@ -741,7 +742,7 @@
     openGenModal(titleStr);
 
     const total = passages.length * types.length;
-    let done = 0, success = 0, failed = 0;
+    let done = 0, success = 0, failed = 0, skipped = 0;
 
     for (const p of passages) {
       for (const t of types) {
@@ -769,8 +770,13 @@
           success++;
           logGen(`${p.num}번 · ${t} ✅`, 'ok');
         } catch(e) {
-          failed++;
-          logGen(`${p.num}번 · ${t} ❌ ${e.message.substring(0,60)}`, 'err');
+          if (e.message.startsWith('SKIP:')) {
+            skipped++;
+            logGen(`${p.num}번 · ${t} ⏭️ ${e.message.replace('SKIP: ','').substring(0,40)}`, 'skip');
+          } else {
+            failed++;
+            logGen(`${p.num}번 · ${t} ❌ ${e.message.substring(0,60)}`, 'err');
+          }
         }
         done++;
         updateGenProgress(done, total);
@@ -778,7 +784,7 @@
     }
 
     document.getElementById('gen-title').textContent = '✅ 생성 완료';
-    document.getElementById('gen-sub').textContent = `성공 ${success}개 · 실패 ${failed}개`;
+    document.getElementById('gen-sub').textContent = `성공 ${success}개 · 스킵 ${skipped}개 · 실패 ${failed}개`;
     document.getElementById('gen-close-btn').style.display = 'block';
   };
 
@@ -964,6 +970,12 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '밑줄의미': `${baseRules}
+
+⚠️ 적합성 체크:
+이 지문에 비유적/함축적 표현이 있는가? (직설적 정보성 지문 X)
+- 없으면 → {"skip": true, "reason": "함축 표현 없음"}로만 응답
+- 있으면 → 아래 형식
+
 {
   "format": "underline",
   "question": "밑줄 친 부분이 다음 글에서 의미하는 바로 가장 적절한 것은?",
@@ -1106,6 +1118,12 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '심경변화': `${baseRules}
+
+⚠️ 적합성 체크 (반드시 먼저!):
+이 지문에 인물의 감정 변화가 있는가? (예: 슬픔→기쁨, 두려움→안도)
+- 없으면 (정보성, 설명문, 도표 등) → {"skip": true, "reason": "심경 변화 없는 정보성 지문"}로만 응답
+- 있으면 → 아래 형식대로 문제 생성
+
 {
   "format": "mood_change",
   "question": "다음 글에 드러난 인물의 심경 변화로 가장 적절한 것은?",
@@ -1116,6 +1134,12 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '분위기': `${baseRules}
+
+⚠️ 적합성 체크 (반드시 먼저!):
+이 지문에 묘사적/감성적 분위기가 있는가? (예: 평화로운 풍경, 긴장된 상황)
+- 없으면 (정보성/설명문) → {"skip": true, "reason": "분위기 없는 정보성 지문"}로만 응답
+- 있으면 → 아래 형식대로
+
 {
   "format": "atmosphere",
   "question": "다음 글의 분위기로 가장 적절한 것은?",
@@ -1166,6 +1190,12 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '도표': `${baseRules}
+
+⚠️ 적합성 체크:
+이 지문이 도표/그래프 관련인가?
+- 아니면 → {"skip": true, "reason": "도표 지문 아님"}로만 응답
+- 맞으면 → 아래 형식
+
 {
   "format": "chart",
   "question": "다음 도표의 내용과 일치하지 않는 것은?",
@@ -1283,6 +1313,12 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '지칭대상': `${baseRules}
+
+⚠️ 적합성 체크:
+이 지문에 여러 사람/사물이 he/she/it/they로 지칭되는가?
+- 없으면 → {"skip": true, "reason": "지칭 대상 비교 불가"}로만 응답
+- 있으면 → 아래 형식
+
 {
   "format": "reference",
   "question": "다음 글의 밑줄 친 (a)~(e) 중에서 가리키는 대상이 나머지 넷과 다른 것은?",
@@ -1293,6 +1329,12 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '인물성격': `${baseRules}
+
+⚠️ 적합성 체크:
+이 지문에 인물의 행동/말로 성격을 알 수 있는가?
+- 없으면 → {"skip": true, "reason": "인물 묘사 없음"}로만 응답
+- 있으면 → 아래 형식
+
 {
   "format": "character",
   "question": "다음 글에 드러난 인물의 성격으로 가장 적절한 것은?",
@@ -1424,6 +1466,12 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '답할수없는질문': `${baseRules}
+
+⚠️ 적합성 체크:
+이 지문에 구체적 사실 정보가 충분한가? (5개 질문 만들기 충분)
+- 부족하면 → {"skip": true, "reason": "사실 정보 부족"}로만 응답
+- 충분하면 → 아래 형식
+
 {
   "format": "unanswerable",
   "question": "다음 글을 읽고 답할 수 없는 질문은?",
@@ -1545,6 +1593,11 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
       else throw new Error('JSON 파싱 실패');
     }
 
+    // 스킵 체크 (적합하지 않은 지문)
+    if (parsed.skip === true) {
+      throw new Error(`SKIP: ${parsed.reason || '지문 부적합'}`);
+    }
+    
     if (!parsed.questions || parsed.questions.length < 2) throw new Error('문제 2개 미만');
     return parsed;
   }
