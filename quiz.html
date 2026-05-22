@@ -446,6 +446,13 @@
         <div class="short-input-wrap"><label>(B) — 영어 2단어</label><input type="text" id="ans-b"></div>
       `;
     }
+    else if (fmt === 'short_emphasis') {
+      const a1 = document.getElementById('ans-1')?.value.trim() || '';
+      const a2 = document.getElementById('ans-2')?.value.trim() || '';
+      if (!a1 || !a2) { alert('(1)과 (2) 모두 입력해주세요.'); return; }
+      userAns = `(1) ${a1}\n(2) ${a2}`;
+      modelAns = `(1) ${q.answer_1 || ''}\n(2) ${q.answer_2 || ''}`;
+    }
     else if (fmt === 'short_korean') {
       displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
       let count = q.answer_count || 2;
@@ -461,6 +468,49 @@
       if (q.conditions?.length) html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
       displayEl.innerHTML = html;
       inputEl.innerHTML = `<div class="short-input-wrap"><label>영작</label><textarea id="ans-write"></textarea></div>`;
+    }
+    else if (fmt === 'short_emphasis') {
+      // 강조구문 영작 - 2문장
+      let html = '';
+      if (q.passage_text) html += `<div class="passage-box" style="font-size:13px">${q.passage_text}</div>`;
+      html += `<div class="given-box"><div class="given-box-title">&lt;보기&gt;</div>`;
+      if (q.sentence_1) html += `<div style="margin-bottom:6px">${formatBracketUnderline(q.sentence_1)}</div>`;
+      if (q.sentence_2) html += `<div>${formatBracketUnderline(q.sentence_2)}</div>`;
+      html += `</div>`;
+      if (q.conditions?.length) html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
+      displayEl.innerHTML = html;
+      inputEl.innerHTML = `
+        <div class="short-input-wrap"><label>(1) 영작</label><textarea id="ans-1" placeholder="It ~ that..."></textarea></div>
+        <div class="short-input-wrap"><label>(2) 영작</label><textarea id="ans-2" placeholder="It ~ that..."></textarea></div>
+      `;
+    }
+    else if (fmt === 'short_comparative') {
+      // 비교급 영작
+      let html = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      if (q.korean_sentence) html += `<div class="given-box"><div class="given-box-title">한국어 의미</div>${q.korean_sentence}</div>`;
+      if (q.word_bank?.length) html += `<div class="word-bank"><b>보기:</b> ${q.word_bank.join(' / ')}</div>`;
+      if (q.conditions?.length) html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
+      displayEl.innerHTML = html;
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>영작 (the 비교급 + the 비교급)</label><textarea id="ans-write" placeholder="The closer ~ , the more ~"></textarea></div>`;
+    }
+    else if (fmt === 'short_topic_conditional') {
+      // 주제문 조건 영작
+      let html = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      if (q.required_word) html += `<div style="background:#FFE9F0;border:0.5px solid #F2A5C0;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-size:13px;color:#8B2C5A"><b>📝 필수 단어:</b> ${q.required_word}</div>`;
+      if (q.required_phrase) html += `<div style="background:#FFE9F0;border:0.5px solid #F2A5C0;border-radius:8px;padding:9px 12px;margin-bottom:8px;font-size:13px;color:#8B2C5A"><b>📝 필수 구문:</b> ${q.required_phrase}</div>`;
+      if (q.conditions?.length) html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
+      displayEl.innerHTML = html;
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>주제문 영작</label><textarea id="ans-write" placeholder="주어 + 동사 ~"></textarea></div>`;
+    }
+    else if (fmt === 'short_grammar_writing') {
+      // 문법영작 - 지문 안에 빈칸 + 한국어 의미 + 보기 + 조건
+      let html = `<div class="passage-box passage-marked">${formatBlank(q.passage_with_blank || '')}</div>`;
+      if (q.korean_part) html += `<div class="given-box"><div class="given-box-title">빈칸의 한국어 의미</div>${q.korean_part}</div>`;
+      if (q.grammar_focus) html += `<div style="background:#FFE9F0;border:0.5px solid #F2A5C0;border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:13px;color:#8B2C5A"><b>📚 사용 문법:</b> ${q.grammar_focus}</div>`;
+      if (q.word_bank?.length) html += `<div class="word-bank"><b>보기:</b> ${q.word_bank.join(' / ')}</div>`;
+      if (q.conditions?.length) html += `<div class="conditions-list"><b>조건:</b><br>${q.conditions.map((c,i)=>`${i+1}. ${c}`).join('<br>')}</div>`;
+      displayEl.innerHTML = html;
+      inputEl.innerHTML = `<div class="short-input-wrap"><label>영작</label><textarea id="ans-write" placeholder="빈칸에 들어갈 문장을 영작하세요"></textarea></div>`;
     }
     else if (fmt === 'short_arrange') {
       let html = `<div class="passage-box">${q.passage_text || ''}</div>`;
