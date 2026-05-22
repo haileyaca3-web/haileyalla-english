@@ -101,6 +101,7 @@
           <label class="school-check" data-key="복성고_고1"><input type="checkbox" class="p-school-cb" value="복성고_고1"> 복성고(고1)</label>
           <label class="school-check" data-key="순천고_고1"><input type="checkbox" class="p-school-cb" value="순천고_고1"> 순천고(고1)</label>
           <label class="school-check" data-key="순여고_고1"><input type="checkbox" class="p-school-cb" value="순여고_고1"> 순여고(고1)</label>
+          <label class="school-check" data-key="순여고_고2"><input type="checkbox" class="p-school-cb" value="순여고_고2"> 순여고(고2)</label>
           <label class="school-check" data-key="금당고_고1"><input type="checkbox" class="p-school-cb" value="금당고_고1"> 금당고(고1)</label>
           <label class="school-check" data-key="금당고_고2"><input type="checkbox" class="p-school-cb" value="금당고_고2"> 금당고(고2)</label>
           <label class="school-check" data-key="제일고_고1"><input type="checkbox" class="p-school-cb" value="제일고_고1"> 제일고(고1)</label>
@@ -206,6 +207,10 @@
 .del-tiny{font-size:11px;color:#E24B4A;border:0.5px solid #E24B4A;background:transparent;border-radius:4px;padding:3px 7px;cursor:pointer;flex-shrink:0}
 .school-btn{font-size:12px;padding:9px;border-radius:6px;border:0.5px solid #A8C4F5;background:#EBF2FF;color:#1A3566;cursor:pointer;text-align:center;font-weight:500;width:100%}
 .school-btn.done{background:#EAF3DE;border-color:#A8D472;color:#27500A}
+.school-del-btn{background:#FFE4E4;border:0.5px solid #E5B774;color:#E24B4A;padding:9px 11px;border-radius:6px;cursor:pointer;font-size:13px;flex-shrink:0}
+.school-del-btn:hover{background:#FFD0D0}
+.unit-del-btn{background:#FFE4E4;border:0.5px solid #E5B774;color:#E24B4A;padding:4px 8px;border-radius:5px;cursor:pointer;font-size:11px}
+.unit-del-btn:hover{background:#FFD0D0}
 
 .type-section{margin-top:10px;border-top:0.5px dashed #D6E4FF;padding-top:8px}
 .type-section-title{font-size:12px;color:#5A7BAD;margin-bottom:6px;font-weight:500;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
@@ -277,6 +282,7 @@
     '매산여고_고2': ['내용일치_한국어','추론_보기','요약빈칸','요약빈칸_3칸','문장삽입','글의제목','빈칸추론','내용일치_영어','밑줄의미','어법','어법_2개','주제','글의순서','낱말쓰임','이유서술_한국어','문법영작','요약영작_도치','어휘빈칸'],
     '순천고_고1': ['주제','어법','낱말쓰임','밑줄의미','심경변화','지칭대상','내용일치_영어','글의목적','어휘_네모','인물성격','내용일치_한국어','요지_선택형','글의제목','연결어','빈칸추론','글의순서','문장삽입','요약빈칸','문법영작','조건영작_시작어구','조건영작_조건충족','어휘빈칸'],
     '순여고_고1': ['글의순서','글의제목','빈칸추론','어법','낱말쓰임','문장삽입','요약빈칸','영영풀이','내용일치_영어','밑줄의미','내용일치_한국어','주제문영작','밑줄의미영작','정의영작','어휘빈칸'],
+    '순여고_고2': ['빈칸추론','요약빈칸','어법','낱말쓰임','흐름무관','문장삽입','글의순서','글의제목','주제','요지','내용일치_한국어','내용일치_영어','지칭대상','밑줄의미','어휘빈칸','요지영작_분사구문','강조구문영작','비교급영작','주제문영작_조건'],
     '금당고_고2': ['글의목적','밑줄의미','요지','내용일치_한국어','주제','글의제목','어법','낱말쓰임','빈칸추론','흐름무관','글의순서','문장삽입','요약빈칸','빈칸단답_공통','빈칸단답','빈칸단답_지문어휘','빈칸단답_변형','답변영작','정의영작','요약문영작','이유서술영작','어휘빈칸'],
     '제일고_고1': ['답할수없는질문','지칭대상','내용일치_영어','어법','낱말쓰임','연결어','빈칸추론','흐름무관','글의순서','문장삽입','글의목적','내용일치_한국어','주제','밑줄의미','요약빈칸','답변영작','밑줄의미','요지영작','어휘빈칸'],
     '금당고_고1': ['글의목적','내용일치_한국어','밑줄의미','요지','주제','글의제목','도표','내용일치_영어','어법','낱말쓰임','빈칸추론','흐름무관','글의순서','문장삽입','요약빈칸','지칭대상','이유서술_한국어','어휘빈칸'],
@@ -321,6 +327,57 @@
     let n = 0;
     for (const d of snap.docs) { await deleteDoc(d.ref); n++; }
     alert(`${n}개 문제를 삭제했어요.`);
+  };
+
+  // 학교별 삭제
+  window.deleteSchoolQuestions = async (rangeKey, school) => {
+    const schoolDisplay = school.replace('_', ' ');
+    if (!confirm(`${rangeKey}의 [${schoolDisplay}] 문제만 삭제할까요?`)) return;
+    const snap = await getDocs(collection(db,'questions'));
+    let n = 0;
+    for (const d of snap.docs) {
+      const q = d.data();
+      const qRange = q.range || `${q.mediaType||''}_${q.detail||q.unit||''}`;
+      if (qRange === rangeKey && q.school === school) {
+        await deleteDoc(d.ref); n++;
+      }
+    }
+    alert(`${n}개 문제를 삭제했어요.`);
+    loadUnitList();
+  };
+
+  // 유형별 삭제
+  window.deleteTypeQuestions = async (rangeKey, school, typeName) => {
+    const schoolDisplay = school.replace('_', ' ');
+    if (!confirm(`${schoolDisplay}의 [${typeName.replace(/_/g,' ')}] 문제만 삭제할까요?`)) return;
+    const snap = await getDocs(collection(db,'questions'));
+    let n = 0;
+    for (const d of snap.docs) {
+      const q = d.data();
+      const qRange = q.range || `${q.mediaType||''}_${q.detail||q.unit||''}`;
+      if (qRange === rangeKey && q.school === school && q.typeName === typeName) {
+        await deleteDoc(d.ref); n++;
+      }
+    }
+    alert(`${n}개 문제를 삭제했어요.`);
+    loadUnitList();
+  };
+
+  // 강(unit)별 삭제 (모든 학교 포함)
+  window.deleteUnitQuestions = async (rangeKey) => {
+    if (!confirm(`[${rangeKey}]의 모든 학교 문제를 삭제할까요?`)) return;
+    if (!confirm('정말로요? 모든 학교의 이 강 문제가 다 삭제돼요!')) return;
+    const snap = await getDocs(collection(db,'questions'));
+    let n = 0;
+    for (const d of snap.docs) {
+      const q = d.data();
+      const qRange = q.range || `${q.mediaType||''}_${q.detail||q.unit||''}`;
+      if (qRange === rangeKey) {
+        await deleteDoc(d.ref); n++;
+      }
+    }
+    alert(`${n}개 문제를 삭제했어요.`);
+    loadUnitList();
   };
 
   window.semesterReset = async () => {
@@ -620,7 +677,10 @@
       html += `<div class="unit-card">
         <div class="unit-header">
           <div class="unit-title">${mediaIcon} ${r.mediaType} · ${r.detail}</div>
-          <div class="unit-count">${numPassages}개 지문</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="unit-count">${numPassages}개 지문</span>
+            <button class="unit-del-btn" onclick="deleteUnitQuestions('${rangeKey.replace(/'/g,'')}')" title="이 강의 모든 문제 삭제">🗑️</button>
+          </div>
         </div>`;
 
       passages.forEach(p => {
@@ -642,7 +702,10 @@
           const label = allDone ? `${schoolDisplay} ✅ 전체 완료` : `${schoolDisplay} 전체 생성`;
           const sid = `${rangeKey}_${school}`.replace(/[\s/]+/g,'_');
           html += `<div style="margin-top:10px">
-            <button class="${cls}" onclick="generateUnitQuestions('${rangeKey.replace(/'/g,'')}','${school}','all')">${label}</button>
+            <div style="display:flex;gap:5px">
+              <button class="${cls}" style="flex:1" onclick="generateUnitQuestions('${rangeKey.replace(/'/g,'')}','${school}','all')">${label}</button>
+              <button class="school-del-btn" onclick="deleteSchoolQuestions('${rangeKey.replace(/'/g,'')}','${school}')">🗑️</button>
+            </div>
             <div class="type-section">
               <div class="type-section-title" onclick="toggleTypes('${sid}')">
                 <span>${schoolDisplay} 유형별 (${types.length}개)</span>
@@ -654,7 +717,7 @@
             const cnt = typeCount[`${rangeKey}_${school}_${t}`] || 0;
             const has = cnt >= expectedPerType;
             const cls2 = has ? 'type-mini-btn has' : 'type-mini-btn missing';
-            html += `<button class="${cls2}" onclick="generateUnitQuestions('${rangeKey.replace(/'/g,'')}','${school}','${t}')">
+            html += `<button class="${cls2}" onclick="generateUnitQuestions('${rangeKey.replace(/'/g,'')}','${school}','${t}')" oncontextmenu="event.preventDefault();deleteTypeQuestions('${rangeKey.replace(/'/g,'')}','${school}','${t}')" title="클릭=생성, 우클릭=삭제">
               ${t.replace(/_/g,' ')}<br>${cnt}/${expectedPerType}
             </button>`;
           });
@@ -906,6 +969,8 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 - 1번 문제 정답이 ④면, 2번은 ② 또는 다른 위치
 - ①, ②, ③, ④, ⑤ 모두에서 정답이 나올 수 있게
 
+⚠️ 대괄호 [ ] 필수! ①[word1] 형식. 대괄호 없으면 학생이 밑줄을 못 봐요!
+
 {
   "format": "word",
   "question": "다음 글의 밑줄 친 부분 중, 문맥상 낱말의 쓰임이 적절하지 않은 것은?",
@@ -916,23 +981,29 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '어법': `${baseRules}
-⚠️ ①~⑤를 지문 전체에 균등 분산 (앞/중간/끝). 한쪽에 몰리지 않게!
-⚠️ 정답 위치는 ①, ②, ③, ④, ⑤ 골고루.
+⚠️ 절대 규칙:
+1. ①~⑤를 지문 전체에 균등 분산 (앞/중간/끝). 한쪽에 몰리지 않게!
+2. 정답 위치는 ①, ②, ③, ④, ⑤ 골고루.
+3. passage_marked 형식: ①[단어/구] 처럼 반드시 대괄호 [ ] 사용!
+   예: "Recently an artist ①[used] AI ②[to create] images and the result ③[caused] controversy. ④[Few] people ⑤[were] supportive."
+   ⚠️ 대괄호 [ ] 없이 단어만 쓰면 학생이 밑줄을 못 봐서 어디가 문제인지 모릅니다!
 
 {
   "format": "grammar",
   "question": "다음 글의 밑줄 친 부분 중, 어법상 틀린 것은?",
-  "passage_marked": "①[phrase1] ②[phrase2] ③[phrase3] ④[phrase4] ⑤[phrase5]",
+  "passage_marked": "Recently an artist ①[used] AI ②[to create] images and ③[caused] controversy. ④[Few] ⑤[were] supportive.",
   "choices": ["phrase1", "phrase2", "phrase3", "phrase4", "phrase5"],
   "answer": 3,
   "explanation": "이유"
 }`,
 
       '어법_2개': `${baseRules}
+⚠️ 대괄호 [ ] 필수! ①[phrase] 형식. 
+
 {
   "format": "grammar_2",
   "question": "다음 글의 밑줄 친 부분 중, 어법상 틀린 것 2개를 고르시오.",
-  "passage_marked": "①[phrase1] ②[phrase2] ③[phrase3] ④[phrase4] ⑤[phrase5]",
+  "passage_marked": "지문 안에 ①[phrase1] ②[phrase2] ③[phrase3] ④[phrase4] ⑤[phrase5] 분산 배치",
   "choices": ["phrase1", "phrase2", "phrase3", "phrase4", "phrase5"],
   "answer": 2,
   "answer_2": 4,
@@ -1493,27 +1564,97 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '문법영작': `${baseRules}
-[유형: 문법 영작 (서답형)]
+[유형: 문법 영작 (지문 안에 빈칸 채우기)]
 
 ⚠️ 학교별 중요 문법:
-- 강남여고 → suggest + that절 (당위성, should 생략)
+- 강남여고 → suggest + that절 (당위성)
 - 복성고 → 가정법 (과거 또는 과거완료)
-- 매산여고 → 도치 구문 (Not only, Hardly, Never 등)
-- 순천고 → 분사구문 + as if 가정법
+- 매산여고 → 도치 구문
+- 순천고 → 분사구문 + as if
 - 다른 학교 → 학교 시험에 자주 나오는 문법
 
-학교에 맞는 문법을 선택해서 영작 문제 생성!
+⚠️ 작성 방법:
+1. 지문에서 [한국어 의미] 부분이 들어갈 자리를 _______로 빈칸 처리
+2. 그 빈칸을 학교 중요 문법으로 영작
+3. 한국어 의미는 지문의 흐름에 자연스럽게 이어지는 내용
+4. 지문 전체가 보이게 표시 (앞뒤 맥락 포함)
+
+예시:
+passage_with_blank: "AI was used to create images. _______. Some people felt it was unfair."
+korean_part: "그러나 몇몇 사람들이 그 대회가 AI 사용을 금지해야 한다고 제안했다."
+answer: "However, some people suggested that the contest prohibit the use of AI."
 
 {
   "format": "short_grammar_writing",
-  "question": "다음 한국어 문장을 [학교에 맞는 문법]을 사용하여 영작하시오.",
-  "passage_text": "원본 지문",
-  "korean_sentence": "한국어 의미",
+  "question": "다음 글의 빈칸에 들어갈 알맞은 말을 [학교 문법] 을 사용하여 영작하시오.",
+  "passage_with_blank": "지문에 _______ 빈칸이 한 군데 (앞뒤 맥락 보임)",
+  "korean_part": "빈칸에 들어갈 한국어 의미",
   "grammar_focus": "사용해야 할 문법 (예: suggest + that절)",
   "word_bank": ["w1", "w2", "w3"],
-  "conditions": ["조건1", "조건2", "12단어 이내"],
+  "conditions": ["문법 사용 필수", "12단어 이내"],
   "answer": "모범 영작",
   "explanation": "문법 설명"
+}`,
+
+      '강조구문영작': `${baseRules}
+[유형: 강조구문 영작 (서답형)]
+순여고 고2 서답형 2번 스타일.
+
+⚠️ 작동 방식:
+- 지문에서 2개 문장을 선택
+- 각 문장에 밑줄 처리할 부분 표시
+- 학생은 'It~that' 강조구문으로 그 부분을 강조한 문장 작성
+
+{
+  "format": "short_emphasis",
+  "question": "다음 <보기> 문장에서 밑줄 친 부분을 'It~that' 강조구문으로 강조한 문장을 영작하시오.",
+  "passage_text": "원본 지문 (참고용)",
+  "sentence_1": "(1) The fans tried to decode [the hidden message] in the lyrics.",
+  "sentence_2": "(2) This island is protected by UNESCO [because it has unique ecosystem].",
+  "conditions": ["It ~ that 강조구문 사용 필수", "주어와 동사 포함된 문장"],
+  "answer_1": "It was the hidden message that the fans tried to decode in the lyrics.",
+  "answer_2": "It is because it has unique ecosystem that this island is protected by UNESCO.",
+  "answer": "(1) It was ~ / (2) It is ~",
+  "explanation": "It~that 강조구문"
+}`,
+
+      '비교급영작': `${baseRules}
+[유형: the 비교급 + 비교급 영작 (서답형)]
+순여고 고2 서답형 3번 스타일.
+
+⚠️ 작동 방식:
+- 지문에 한국어 의미가 있는 부분이 있음
+- 그 부분을 'the 비교급 + 주어 + 동사, the 비교급 + 주어 + 동사' 구문으로 영작
+
+{
+  "format": "short_comparative",
+  "question": "다음 한국어 의미에 맞게 'the 비교급 + 주어 + 동사, the 비교급 + 주어 + 동사' 구문을 사용해 영작하시오.",
+  "passage_text": "원본 지문",
+  "korean_sentence": "한국어 의미 (예: 그 둘의 성의 첫 글자가 알파벳상 더 가까이 있을수록, 그들이 친구가 될 가능성은 더 컸다)",
+  "word_bank": ["in the alphabet", "of two individuals", "were", "be friends"],
+  "conditions": ["the 비교급 + 주어 + 동사 구문 (이중)", "지정 단어 모두 사용"],
+  "answer": "The closer the first letters of names of two individuals were in the alphabet, the more likely they were to be friends.",
+  "explanation": "이중 비교급"
+}`,
+
+      '주제문영작_조건': `${baseRules}
+[유형: 주제문 영작 - 특정 구문/단어 사용 (서답형)]
+순여고 고2 서답형 4번 스타일.
+
+⚠️ 작동 방식:
+- 지문의 주제문을 영작
+- 특정 명사와 구문을 반드시 활용
+- 함축적/예시적 표현 금지 (직설적)
+
+{
+  "format": "short_topic_conditional",
+  "question": "다음 글의 주제문을 조건에 맞게 영어로 쓰시오.",
+  "passage_text": "원본 지문",
+  "conditions": ["주어와 동사 포함된 완성된 문장", "명사 [지정단어]를 반드시 활용", "[지정구문] 구문을 반드시 활용", "함축적/예시적 표현 금지"],
+  "required_word": "지정 단어 (예: price)",
+  "required_phrase": "지정 구문 (예: from A to B)",
+  "answer": "모범 주제문 (예: Taxes and subsidies pass from those who are responsible to pay to others because taxes and subsidies change people's behavior.)",
+  "explanation": "주제문 구성"
 }`,
 
       '어휘빈칸': `${baseRules}
@@ -1738,4 +1879,3 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 
 </body>
 </html>
-
