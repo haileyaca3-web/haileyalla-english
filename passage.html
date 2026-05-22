@@ -106,6 +106,19 @@
 </div>
 
 <style>
+.p-chk {
+  width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid #D6E4FF;
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  color: transparent; font-weight: 700; font-size: 14px; flex-shrink: 0;
+}
+.passage-card.selected {
+  background: #EBF2FF !important;
+  border: 1.5px solid #2B5EB8 !important;
+}
+.passage-card.selected .p-chk {
+  background: #2B5EB8; border-color: #2B5EB8; color: #fff;
+}
 .range-group-label {
   font-size: 11px; color: #888780; font-weight: 500;
   margin: 14px 0 6px;
@@ -285,7 +298,8 @@
   let userId = '';
   let allPassages = [];
   let selectedRanges = new Set();
-  let selectedPassage = null;
+  let selectedPassages = new Set();  // 여러 지문 선택 (지문 ID들)
+  let selectedPassagesData = [];  // 풀이 시 사용할 지문 정보
   let progressMap = {};
 
   onAuthStateChanged(auth, async (user) => {
@@ -308,8 +322,10 @@
     const keepPassage = localStorage.getItem('keepPassage');
     if (keepPassage === 'true') {
       const savedPassage = JSON.parse(localStorage.getItem('selectedPassage') || 'null');
+      const savedPassages = JSON.parse(localStorage.getItem('selectedPassagesData') || '[]');
       if (savedPassage && savedPassage.id) {
-        selectedPassage = savedPassage;
+        selectedPassagesData = savedPassages.length > 0 ? savedPassages : [savedPassage];
+        selectedPassages = new Set(selectedPassagesData.map(p => p.id));
         await loadPassagesForSchool();
         await loadProgress();
         showTypeSelect();
@@ -487,7 +503,8 @@
       return;
     }
 
-    let html = '';
+    let html = `<div style="background:#FFF5E8;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#854F0B;line-height:1.5">💡 여러 지문 선택 가능! 순서대로 풀이됩니다.</div>`;
+    
     Object.keys(byRange).forEach(key => {
       const passages = byRange[key].sort((a,b) => (a.num||'').localeCompare(b.num||''));
       const first = passages[0];
@@ -497,29 +514,62 @@
 
       html += `<div class="range-group-label">${info.icon} ${mt} · ${detail}</div>`;
       passages.forEach(p => {
-        const displayName = `${detail} ${p.num}번`;
-        html += `<div class="passage-card" onclick="selectPassage('${p.id}', '${displayName.replace(/'/g, '')}')">
+        const isSel = selectedPassages.has(p.id);
+        const cls = isSel ? 'passage-card selected' : 'passage-card';
+        html += `<div class="${cls}" data-pid="${p.id}">
           <div class="p-num">${p.num}</div>
           <div class="p-info">
             <div class="p-name">${detail} — ${p.num}번</div>
             <div class="p-sub">${(p.text||'').substring(0,40)}...</div>
           </div>
+          <div class="p-chk">${isSel ? '✓' : ''}</div>
         </div>`;
       });
     });
+    
+    // 선택 카운트 + 다음 버튼
+    html += `<div class="selected-bar" style="margin-top:14px">
+      <span class="selected-text">선택한 지문</span>
+      <span class="selected-count">${selectedPassages.size}개</span>
+    </div>
+    <button class="btn-main" id="btn-passages-next">다음: 유형 선택 →</button>`;
+    
     el.innerHTML = html;
+    
+    // 이벤트
+    document.querySelectorAll('[data-pid]').forEach(card => {
+      card.onclick = () => {
+        const pid = card.dataset.pid;
+        if (selectedPassages.has(pid)) selectedPassages.delete(pid);
+        else selectedPassages.add(pid);
+        renderPassages();
+      };
+    });
+    document.getElementById('btn-passages-next').onclick = () => {
+      if (selectedPassages.size === 0) { alert('지문을 1개 이상 선택해주세요'); return; }
+      // 선택된 지문 데이터 저장
+      selectedPassagesData = Array.from(selectedPassages).map(pid => {
+        const p = allPassages.find(x => x.id === pid);
+        return {
+          id: p.id, 
+          name: `${p.detail || p.unit || ''} ${p.num}번`,
+          text: p.text,
+          mediaType: p.mediaType, detail: p.detail,
+          textbook: p.textbook, unit: p.unit, num: p.num
+        };
+      });
+      localStorage.setItem('selectedPassagesData', JSON.stringify(selectedPassagesData));
+      // 첫 번째 지문을 기본 selectedPassage로 (유형 화면에서 사용)
+      localStorage.setItem('selectedPassage', JSON.stringify(selectedPassagesData[0]));
+      showTypeSelect();
+    };
   }
 
   window.selectPassage = (pid, name) => {
-    const p = allPassages.find(x => x.id === pid);
-    if (!p) return;
-    selectedPassage = {
-      id: p.id, name, text: p.text,
-      mediaType: p.mediaType, detail: p.detail,
-      textbook: p.textbook, unit: p.unit, num: p.num
-    };
-    localStorage.setItem('selectedPassage', JSON.stringify(selectedPassage));
-    showTypeSelect();
+    // 호환성용 (외부에서 호출하는 경우)
+    if (selectedPassages.has(pid)) selectedPassages.delete(pid);
+    else selectedPassages.add(pid);
+    renderPassages();
   };
 
   function showTypeSelect() {
@@ -527,7 +577,13 @@
     document.getElementById('page-passage').classList.add('hidden');
     document.getElementById('page-type').classList.remove('hidden');
 
-    document.getElementById('selected-passage-name').textContent = selectedPassage.name;
+    // selectedPassage는 첫 번째 지문으로
+    const firstPassage = selectedPassagesData[0] || JSON.parse(localStorage.getItem('selectedPassage') || 'null');
+    if (!firstPassage) return;
+    
+    const cnt = selectedPassages.size || 1;
+    const label = cnt > 1 ? `${cnt}개 지문 (연속 풀이)` : firstPassage.name;
+    document.getElementById('selected-passage-name').textContent = label;
 
     const types = SCHOOL_TYPES[school];
     if (!types) {
@@ -542,7 +598,7 @@
   async function renderTypeGrid(containerId, types) {
     const el = document.getElementById(containerId);
     const qSnap = await getDocs(query(collection(db,'questions'),
-      where('passageId','==',selectedPassage.id),
+      where('passageId','==',(selectedPassagesData[0] || JSON.parse(localStorage.getItem('selectedPassage'))).id),
       where('school','==',school)
     ));
     const existTypes = new Set();
@@ -552,7 +608,8 @@
 
     el.innerHTML = uniqueTypes.map(t => {
       const desc = TYPE_DESC[t] || t.replace(/_/g,' ');
-      const round = progressMap[`${selectedPassage.id}_${t}`];
+      const firstP = selectedPassagesData[0] || JSON.parse(localStorage.getItem('selectedPassage'));
+      const round = progressMap[`${firstP.id}_${t}`];
       const star = round ? `<div class="star">⭐</div>` : '';
       const hasQ = existTypes.has(t);
       const dis = hasQ ? '' : 'disabled';
@@ -566,12 +623,19 @@
 
   window.selectType = (typeName) => {
     localStorage.setItem('selectedType', typeName);
+    // 여러 지문 정보 저장
+    if (selectedPassagesData.length > 0) {
+      localStorage.setItem('selectedPassagesData', JSON.stringify(selectedPassagesData));
+      localStorage.setItem('multiPassageMode', selectedPassagesData.length > 1 ? 'true' : 'false');
+    }
     window.location.href = 'quiz.html';
   };
 
   document.getElementById('selected-passage-name').addEventListener('click', () => {
-    selectedPassage = null;
+    selectedPassages = new Set();
+    selectedPassagesData = [];
     localStorage.removeItem('selectedPassage');
+    localStorage.removeItem('selectedPassagesData');
     document.getElementById('page-type').classList.add('hidden');
     document.getElementById('page-passage').classList.remove('hidden');
     renderPassages();
