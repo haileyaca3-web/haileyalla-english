@@ -434,7 +434,11 @@
     document.getElementById('page-admin-main').classList.add('hidden');
   };
 
+  let adminMainLoaded = false;
+  
   async function showAdminMain() {
+    if (adminMainLoaded) return;  // 이미 로드됨 - 중복 방지
+    adminMainLoaded = true;
     document.getElementById('page-admin-login').classList.add('hidden');
     document.getElementById('page-admin-main').classList.remove('hidden');
     await loadApiKey();
@@ -442,9 +446,11 @@
   }
 
   onAuthStateChanged(auth, async (user) => {
-    if (user) {
+    if (user && !adminMainLoaded) {
       const snap = await getDoc(doc(db, 'users', user.uid));
       if (snap.exists() && snap.data().role === 'admin') showAdminMain();
+    } else if (!user) {
+      adminMainLoaded = false;  // 로그아웃 시 리셋
     }
   });
 
