@@ -705,7 +705,7 @@
           const allDone = types.every(t => (typeCount[`${rangeKey}_${school}_${t}`] || 0) >= expectedPerType);
           const cls = allDone ? 'school-btn done' : 'school-btn';
           const schoolDisplay = school.replace('_', ' ');
-          const label = allDone ? `${schoolDisplay} ✅ 전체 완료` : `${schoolDisplay} 전체 생성`;
+          const label = allDone ? `✅ ${schoolDisplay} 문제 생성 완료` : `${schoolDisplay} 문제 생성하기`;
           const sid = `${rangeKey}_${school}`.replace(/[\s/]+/g,'_');
           html += `<div style="margin-top:10px">
             <div style="display:flex;gap:5px">
@@ -1902,4 +1902,3 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
 
 </body>
 </html>
-
