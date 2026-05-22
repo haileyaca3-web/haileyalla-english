@@ -170,7 +170,10 @@
   import { collection, getDocs, query, where, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const school   = localStorage.getItem('selectedSchool') || '매산고_고2';
-  const passage  = JSON.parse(localStorage.getItem('selectedPassage') || '{}');
+  const allPassages = JSON.parse(localStorage.getItem('selectedPassagesData') || '[]');
+  const isMultiMode = localStorage.getItem('multiPassageMode') === 'true' && allPassages.length > 1;
+  let currentPassageIdx = 0;
+  let passage = allPassages.length > 0 ? allPassages[0] : JSON.parse(localStorage.getItem('selectedPassage') || '{}');
   const typeName = localStorage.getItem('selectedType') || '';
   const userId   = localStorage.getItem('userId');
 
@@ -183,7 +186,42 @@
   let firstWrongIdx  = null;
 
   document.getElementById('quiz-school').textContent  = school.replace('_', ' ');
-  document.getElementById('quiz-passage').textContent = passage.name || '지문';
+  function updatePassageHeader() {
+    let label = passage.name || '지문';
+    if (isMultiMode) {
+      label = `${passage.name} (${currentPassageIdx + 1}/${allPassages.length})`;
+    }
+    document.getElementById('quiz-passage').textContent = label;
+  }
+  updatePassageHeader();
+  
+  // 다중 모드면 진행률 바 추가
+  if (isMultiMode) {
+    const top = document.querySelector('.top-bar') || document.querySelector('.phone');
+    const progressDiv = document.createElement('div');
+    progressDiv.id = 'multi-progress';
+    progressDiv.style.cssText = 'background:#fff;border-bottom:0.5px solid #D6E4FF;padding:8px 14px';
+    progressDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#5A7BAD;margin-bottom:4px">
+        <span>연속 풀이 진행</span>
+        <span id="multi-progress-text">1 / ${allPassages.length}</span>
+      </div>
+      <div style="background:#F0F4FB;height:5px;border-radius:3px;overflow:hidden">
+        <div id="multi-progress-fill" style="background:#2B5EB8;height:100%;transition:width 0.3s;width:${100/allPassages.length}%"></div>
+      </div>
+    `;
+    top.insertAdjacentElement('afterend', progressDiv);
+  }
+  
+  function updateMultiProgress() {
+    if (!isMultiMode) return;
+    const cur = currentPassageIdx + 1;
+    const tot = allPassages.length;
+    const txt = document.getElementById('multi-progress-text');
+    const fill = document.getElementById('multi-progress-fill');
+    if (txt) txt.textContent = `${cur} / ${tot}`;
+    if (fill) fill.style.width = `${(cur/tot)*100}%`;
+  }
   document.getElementById('q-type-label').textContent = typeName.replace(/_/g, ' ');
 
   window.goBackToTypes = () => {
