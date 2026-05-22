@@ -15,7 +15,7 @@
       <div style="display:flex;align-items:center;gap:8px;flex:1">
         <button class="back-btn" onclick="goHome()">←</button>
         <div class="top-info">
-          <div class="top-school" id="top-school-1">매산고</div>
+          <div class="top-school" id="top-school-1">...</div>
           <div class="top-title">범위 선택</div>
         </div>
       </div>
@@ -51,7 +51,7 @@
     <div class="top-bar with-back">
       <button class="back-btn" onclick="backToRange()">←</button>
       <div class="top-info">
-        <div class="top-school" id="top-school-2">매산고</div>
+        <div class="top-school" id="top-school-2">...</div>
         <div class="top-title">지문 선택</div>
       </div>
     </div>
@@ -76,7 +76,7 @@
     <div class="top-bar with-back">
       <button class="back-btn" onclick="backToPassage()">←</button>
       <div class="top-info">
-        <div class="top-school" id="top-school-3">매산고</div>
+        <div class="top-school" id="top-school-3">...</div>
         <div class="top-title">유형 선택</div>
       </div>
     </div>
@@ -314,7 +314,13 @@
     userId = user.uid;
     localStorage.setItem('userId', userId);
 
-    school = (u.school || '매산고') + '_' + (u.grade || '고2');
+    // 학교 정보 가져옴
+    if (!u.school || !u.grade) {
+      console.error('학생 정보 부족:', u);
+      alert('학교/학년 정보가 없어요. 선생님께 문의하세요.');
+      return;
+    }
+    school = u.school + '_' + u.grade;
     localStorage.setItem('selectedSchool', school);
 
     const schoolDisplay = school.replace('_', ' ');
@@ -664,7 +670,7 @@
     <div class="top-bar with-back">
       <button class="back-btn" onclick="hideMyHistory()">←</button>
       <div class="top-info">
-        <div class="top-school" id="top-school-history">매산고</div>
+        <div class="top-school" id="top-school-history">...</div>
         <div class="top-title">📊 내 학습 기록</div>
       </div>
     </div>
