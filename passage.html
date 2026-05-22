@@ -11,12 +11,15 @@
 <!-- 1. 범위 선택 -->
 <div class="page" id="page-range">
   <div class="phone">
-    <div class="top-bar with-back">
-      <button class="back-btn" onclick="goHome()">←</button>
-      <div class="top-info">
-        <div class="top-school" id="top-school-1">매산고</div>
-        <div class="top-title">범위 선택</div>
+    <div class="top-bar with-back" style="justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:8px;flex:1">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div class="top-info">
+          <div class="top-school" id="top-school-1">매산고</div>
+          <div class="top-title">범위 선택</div>
+        </div>
       </div>
+      <button onclick="showMyHistory()" style="background:rgba(255,255,255,0.15);color:#fff;border:none;padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;flex-shrink:0">📊 내 기록</button>
     </div>
     <div class="scroll-body">
       <div class="step-row">
@@ -655,8 +658,128 @@
   window.goHome = () => {
     window.location.href = 'index.html';
   };
+<!-- 내 학습 기록 -->
+<div class="page hidden" id="page-history">
+  <div class="phone">
+    <div class="top-bar with-back">
+      <button class="back-btn" onclick="hideMyHistory()">←</button>
+      <div class="top-info">
+        <div class="top-school" id="top-school-history">매산고</div>
+        <div class="top-title">📊 내 학습 기록</div>
+      </div>
+    </div>
+    <div class="scroll-body">
+      <div id="history-stats" style="background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:14px;margin-bottom:14px;text-align:center">
+        <div style="font-size:11px;color:#5A7BAD;margin-bottom:5px">전체 통계</div>
+        <div id="history-total" style="font-size:14px;color:#1A3566">불러오는 중...</div>
+      </div>
+      <div id="history-list"><div class="empty-msg">학습 기록 불러오는 중...</div></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  // 학습 기록 페이지 함수
+  window.showMyHistory = async () => {
+    document.getElementById('page-range').classList.add('hidden');
+    document.getElementById('page-passage').classList.add('hidden');
+    document.getElementById('page-type').classList.add('hidden');
+    document.getElementById('page-history').classList.remove('hidden');
+    document.getElementById('top-school-history').textContent = document.getElementById('top-school-1').textContent;
+    await loadMyHistory();
+  };
+  
+  window.hideMyHistory = () => {
+    document.getElementById('page-history').classList.add('hidden');
+    document.getElementById('page-range').classList.remove('hidden');
+  };
+  
+  async function loadMyHistory() {
+    const userId = localStorage.getItem('userId');
+    const listEl = document.getElementById('history-list');
+    const statsEl = document.getElementById('history-total');
+    
+    if (!userId) {
+      listEl.innerHTML = '<div class="empty-msg">로그인이 필요해요</div>';
+      return;
+    }
+    
+    try {
+      const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      const { db } = await import('./js/firebase.js');
+      
+      const snap = await getDocs(query(collection(db,'progress'), where('userId','==',userId)));
+      
+      if (snap.empty) {
+        statsEl.textContent = '아직 학습 기록이 없어요';
+        listEl.innerHTML = '<div class="empty-msg">문제를 풀고 다시 와보세요! 💪</div>';
+        return;
+      }
+      
+      // 통계 계산
+      let totalSessions = 0;
+      let totalCorrect = 0;
+      const byDate = {};
+      
+      snap.forEach(d => {
+        const data = d.data();
+        const date = data.date;
+        totalSessions++;
+        if (data.correctCount === 2 || data.correct) totalCorrect++;
+        if (!byDate[date]) byDate[date] = [];
+        byDate[date].push(data);
+      });
+      
+      statsEl.innerHTML = `총 <b style="color:#2B5EB8">${totalSessions}회</b> 학습 · <b style="color:#3B6D11">${totalCorrect}회</b> 완전 정답`;
+      
+      // 날짜별 표시
+      let html = '';
+      Object.keys(byDate).sort().reverse().forEach(date => {
+        const items = byDate[date];
+        const byPassage = {};
+        items.forEach(it => {
+          const pname = it.passageName || `${it.mediaType||''} ${it.detail||''} ${it.num||''}`;
+          if (!byPassage[pname]) byPassage[pname] = [];
+          byPassage[pname].push(it);
+        });
+        
+        html += `<div style="background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:12px;margin-bottom:10px">
+          <div style="font-size:12px;color:#5A7BAD;font-weight:500;margin-bottom:8px;display:flex;justify-content:space-between">
+            <span>📅 ${formatDate(date)}</span>
+            <span style="color:#3B6D11">${items.length}건</span>
+          </div>`;
+        
+        Object.keys(byPassage).forEach(pname => {
+          const types = byPassage[pname];
+          html += `<div style="background:#F8FAFE;border-radius:7px;padding:8px 11px;margin-bottom:5px">
+            <div style="font-size:12px;color:#1A3566;font-weight:500;margin-bottom:4px">${pname}</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">`;
+          types.forEach(t => {
+            const ok = t.correctCount === 2 || t.correct;
+            const bg = ok ? '#EAF3DE' : '#FFE4E4';
+            const cl = ok ? '#27500A' : '#854F0B';
+            const score = t.correctCount ?? (t.correct?2:0);
+            html += `<span style="background:${bg};color:${cl};font-size:10px;padding:3px 7px;border-radius:5px;font-weight:500">${t.typeName} ${score}/2</span>`;
+          });
+          html += `</div></div>`;
+        });
+        html += `</div>`;
+      });
+      
+      listEl.innerHTML = html;
+      
+    } catch(e) {
+      console.error(e);
+      listEl.innerHTML = `<div class="empty-msg">기록을 불러올 수 없어요: ${e.message}</div>`;
+    }
+  }
+  
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    const days = ['일','월','화','수','목','금','토'];
+    return `${d.getMonth()+1}/${d.getDate()} (${days[d.getDay()]})`;
+  }
 </script>
 
 </body>
 </html>
-
