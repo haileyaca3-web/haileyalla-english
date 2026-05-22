@@ -111,6 +111,30 @@
   margin: 14px 0 6px;
   display: flex; align-items: center; gap: 6px;
 }
+
+/* 접기/펼치기 그룹 */
+.media-group {
+  background: #fff; border: 1.5px solid #D6E4FF; border-radius: 10px;
+  margin-bottom: 8px; overflow: hidden;
+}
+.media-header {
+  display: flex; align-items: center; gap: 10px; padding: 11px 13px;
+  cursor: pointer; transition: background 0.15s;
+}
+.media-header:hover { background: #F8FAFE; }
+.media-header.open { background: #EBF2FF; border-bottom: 0.5px solid #A8C4F5; }
+.media-arrow {
+  font-size: 13px; color: #5A7BAD; transition: transform 0.2s; flex-shrink: 0;
+}
+.media-arrow.open { transform: rotate(180deg); }
+.media-body {
+  max-height: 0; overflow: hidden; transition: max-height 0.3s;
+  background: #F8FAFE;
+}
+.media-body.open {
+  max-height: 800px;
+  padding: 8px 0;
+}
 .range-card {
   background: #fff; border: 1px solid #D6E4FF; border-radius: 10px;
   padding: 11px 13px; margin-bottom: 6px; cursor: pointer;
@@ -335,8 +359,11 @@
     return { icon: '📖', cls: 'textbook' };
   }
 
+  // 접기/펼치기 상태 관리
+  let mediaOpened = { '교과서': true, '부교재': false, '모의고사': false };
+
   function renderRanges() {
-    // range 단위로 그룹화 (mediaType_detail이 키)
+    // range 단위로 그룹화
     const ranges = {};
     allPassages.forEach(p => {
       const key = p.range || `${p.mediaType||'교과서'}_${p.detail||''}`;
@@ -371,26 +398,54 @@
       const items = byMedia[mt] || [];
       if (items.length === 0) return;
       const info = getMediaIcon(mt);
-      html += `<div class="range-group-label">${info.icon} ${mt}</div>`;
+      const isOpen = mediaOpened[mt];
+      // 선택된 개수 카운트
+      const selCnt = items.filter(i => selectedRanges.has(i.key)).length;
+      
+      html += `<div class="media-group">
+        <div class="media-header ${isOpen?'open':''}" data-mediatype="${mt}">
+          <div class="range-icon ${info.cls}">${info.icon}</div>
+          <div class="range-info">
+            <div class="range-name">${mt}</div>
+            <div class="range-sub">${items.length}개 범위${selCnt > 0 ? ` · <b style="color:#2B5EB8">선택 ${selCnt}</b>` : ''}</div>
+          </div>
+          <span class="media-arrow ${isOpen?'open':''}">▼</span>
+        </div>
+        <div class="media-body ${isOpen?'open':''}">`;
+      
       items.sort((a,b) => a.detail.localeCompare(b.detail));
       items.forEach(r => {
         const isSel = selectedRanges.has(r.key);
         const cls = isSel ? 'range-card selected' : 'range-card';
-        html += `<div class="${cls}" data-range="${r.key}">
-          <div class="range-icon ${info.cls}">${info.icon}</div>
+        html += `<div class="${cls}" data-range="${r.key}" style="margin:0 8px 5px 8px">
+          <div class="range-icon ${info.cls}" style="width:26px;height:26px;font-size:13px">${info.icon}</div>
           <div class="range-info">
-            <div class="range-name">${r.detail}</div>
-            <div class="range-sub">${r.count}개 지문</div>
+            <div class="range-name" style="font-size:13px">${r.detail}</div>
+            <div class="range-sub" style="font-size:10px">${r.count}개 지문</div>
           </div>
           <div class="range-chk">${isSel ? '✓' : ''}</div>
         </div>`;
       });
+      
+      html += `</div></div>`;
     });
 
     el.innerHTML = html;
 
+    // 펼치기/접기 이벤트
+    document.querySelectorAll('[data-mediatype]').forEach(h => {
+      h.onclick = (e) => {
+        e.stopPropagation();
+        const mt = h.dataset.mediatype;
+        mediaOpened[mt] = !mediaOpened[mt];
+        renderRanges();
+      };
+    });
+
+    // 범위 선택 이벤트
     document.querySelectorAll('[data-range]').forEach(el => {
-      el.onclick = () => {
+      el.onclick = (e) => {
+        e.stopPropagation();
         const key = el.dataset.range;
         if (selectedRanges.has(key)) selectedRanges.delete(key);
         else selectedRanges.add(key);
@@ -540,3 +595,4 @@
 
 </body>
 </html>
+
