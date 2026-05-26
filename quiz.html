@@ -682,8 +682,15 @@
 
   window.checkVocabBlanks = () => {
     const q = questions[currentQIdx];
-    const blanks = q.blanks || [];
-
+    let blanks = q.blanks || [];
+    
+    // 실제 화면에 표시된 빈칸만 카운트 (passage_with_blanks 안에서 (1)~(5) 패턴 찾기)
+    const passageBlanks = (q.passage_with_blanks || '').match(/\(\d+\)/g) || [];
+    const actualBlankNums = new Set(passageBlanks.map(p => parseInt(p.match(/\d+/)[0])));
+    
+    // 화면에 있는 빈칸만 검증 대상으로
+    blanks = blanks.filter(b => actualBlankNums.has(b.num));
+    
     if (Object.keys(vocabAnswers).length < blanks.length) {
       alert(`모든 빈칸을 채워주세요. (${Object.keys(vocabAnswers).length}/${blanks.length})`);
       return;
@@ -962,7 +969,29 @@
       passageName: passage.name, typeName,
       round: accessCount, correctCount, totalQuestions: 2,
     }));
+    
+    // 연속 풀이 모드: 다음 지문으로
+    if (isMultiMode && currentPassageIdx < allPassages.length - 1) {
+      await goToNextPassage();
+      return;
+    }
+    
     window.location.href = 'result.html';
+  }
+  
+  async function goToNextPassage() {
+    currentPassageIdx++;
+    passage = allPassages[currentPassageIdx];
+    localStorage.setItem('selectedPassage', JSON.stringify(passage));
+    currentQIdx = 0;
+    correctCount = 0;
+    wrongAttempts = 0;
+    selectedOptIdx = null;
+    firstWrongIdx = null;
+    updatePassageHeader();
+    updateMultiProgress();
+    await loadAccessCount();
+    await loadQuestions();
   }
 
   function showError(msg) {
@@ -975,4 +1004,3 @@
 
 </body>
 </html>
-
