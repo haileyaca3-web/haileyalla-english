@@ -592,9 +592,13 @@
 
   function renderVocabBlanks(q, displayEl, inputEl) {
     vocabAnswers = {};
-    const totalBlanks = (q.blanks || []).length;
 
     let passageHtml = q.passage_with_blanks || '';
+    
+    // 실제 passage에 있는 (1) (2) (3) (4) (5) 개수 세기
+    const matches = passageHtml.match(/\(\d+\)/g) || [];
+    const totalBlanks = matches.length;  // 실제 화면에 표시될 빈칸 개수
+    
     // (1) (2) (3) (4) (5)를 클릭 가능한 빈칸으로 변환
     passageHtml = passageHtml.replace(/\((\d+)\)/g, (m, num) => {
       return `<span class="vocab-blank" data-num="${num}" onclick="openVocabPopup(${num})">(${num}) <span class="blank-line">_____</span></span>`;
@@ -684,9 +688,12 @@
     const q = questions[currentQIdx];
     let blanks = q.blanks || [];
     
-    // 실제 화면에 표시된 빈칸만 카운트 (passage_with_blanks 안에서 (1)~(5) 패턴 찾기)
-    const passageBlanks = (q.passage_with_blanks || '').match(/\(\d+\)/g) || [];
-    const actualBlankNums = new Set(passageBlanks.map(p => parseInt(p.match(/\d+/)[0])));
+    // 화면에 실제로 보이는 빈칸 요소만 카운트
+    const visibleBlanks = document.querySelectorAll('.vocab-blank[data-num]');
+    const actualBlankNums = new Set();
+    visibleBlanks.forEach(el => {
+      actualBlankNums.add(parseInt(el.dataset.num));
+    });
     
     // 화면에 있는 빈칸만 검증 대상으로
     blanks = blanks.filter(b => actualBlankNums.has(b.num));
@@ -1004,3 +1011,4 @@
 
 </body>
 </html>
+
