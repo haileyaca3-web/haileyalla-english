@@ -466,6 +466,7 @@
     snap.forEach(d => {
       const u = d.data();
       if (u.role === 'admin') return;
+      if (u.rejected) return;  // 거절된 학생은 화면에 안 보임
       if (!u.approved) {
         pc++;
         pEl.innerHTML += `<div class="pending-card">
@@ -1697,9 +1698,17 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
 - 오답은 비슷한 의미 또는 정반대 의미 단어 (헷갈리게)
 - 모두 영어 단어
 
-⚠️ passage_with_blanks 형식:
-- 지문 전체를 그대로 두되, 5개 단어만 (1), (2), (3), (4), (5)로 표시
+⚠️ passage_with_blanks 형식 (절대 지킬 것!):
+- 지문 전체를 그대로 두되, 정확히 5개 단어를 (1), (2), (3), (4), (5)로 표시
+- ⚠️ 반드시 (1), (2), (3), (4), (5) 다섯 개 모두 본문에 있어야 함!
+- 단어를 (1) 같은 표시로 대체하는 것이지, 단어를 지우는 게 아님
 - 예: "The achievements of the ancient Egyptian were (1) because they (2) the foundation of modern civilization."
+  → 여기서 (1)은 "remarkable" 자리, (2)는 "established" 자리
+
+⚠️ 검증:
+- passage_with_blanks에 (1), (2), (3), (4), (5)가 모두 있는지 확인
+- blanks 배열에도 num이 1,2,3,4,5인 5개가 모두 있는지 확인
+- 둘 다 5개여야 함!
 
 ⚠️ 2문제 모두 같은 지문이지만 다른 단어 5개를 선택할 것!
 
@@ -1763,6 +1772,20 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
     }
     
     if (!parsed.questions || parsed.questions.length < 2) throw new Error('문제 2개 미만');
+    
+    // 어휘빈칸 검증: 빈칸 5개 다 있는지
+    if (type === '어휘빈칸') {
+      for (let i = 0; i < parsed.questions.length; i++) {
+        const q = parsed.questions[i];
+        const passageBlanks = (q.passage_with_blanks || '').match(/\(\d+\)/g) || [];
+        const blanksCount = (q.blanks || []).length;
+        
+        if (passageBlanks.length < 5 || blanksCount < 5) {
+          throw new Error(`어휘빈칸 문제 ${i+1}: 빈칸 ${passageBlanks.length}/${blanksCount}개 (5개 필요)`);
+        }
+      }
+    }
+    
     return parsed;
   }
 
