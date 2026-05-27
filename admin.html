@@ -158,6 +158,7 @@
 
       <div class="divider"></div>
       <div class="section-label">🗑️ 위험 작업</div>
+      <button class="btn-sub" style="background:#FFF5E8;color:#854F0B;border-color:#E5B774;margin-bottom:8px" onclick="deleteVocabBlankAll()">⭐ 어휘빈칸만 일괄 삭제</button>
       <button class="btn-sub" style="background:#FFE4E4;color:#E24B4A;border-color:#E24B4A" onclick="deleteAllQuestions()">모든 문제 삭제</button>
     </div>
   </div>
@@ -327,6 +328,21 @@
     let n = 0;
     for (const d of snap.docs) { await deleteDoc(d.ref); n++; }
     alert(`${n}개 문제를 삭제했어요.`);
+  };
+
+  // 어휘빈칸만 일괄 삭제
+  window.deleteVocabBlankAll = async () => {
+    if (!confirm('모든 학교의 어휘빈칸 문제를 삭제할까요?')) return;
+    if (!confirm('정말로요? 이건 되돌릴 수 없어요.')) return;
+    const snap = await getDocs(collection(db,'questions'));
+    let n = 0;
+    for (const d of snap.docs) {
+      const q = d.data();
+      if (q.typeName === '어휘빈칸') {
+        await deleteDoc(d.ref); n++;
+      }
+    }
+    alert(`어휘빈칸 ${n}개 삭제했어요. 이제 다시 생성하면 빈칸 5개로 만들어져요.`);
   };
 
   // 학교별 삭제
@@ -814,9 +830,56 @@
     const total = passages.length * types.length;
     let done = 0, success = 0, failed = 0, skipped = 0;
 
+    // 재사용 가능한 공통 유형 (학교 출제 스타일 다르지 않음)
+    const REUSABLE_TYPES = [
+      '빈칸추론','어법','어법_2개','낱말쓰임','어휘빈칸',
+      '글의제목','주제','요지','요지_선택형','흐름무관',
+      '문장삽입','글의순서','요약빈칸','요약빈칸_3칸',
+      '내용일치_한국어','내용일치_영어','글의목적','밑줄의미',
+      '심경변화','분위기','지칭대상','연결어','인물성격',
+      '추론_보기','영영풀이','답할수없는질문','도표',
+      '어법_네모','글의순서_가나','어휘_네모','단어장'
+    ];
+    let reused = 0;
+    
     for (const p of passages) {
       for (const t of types) {
         try {
+          // 재사용 체크: 같은 지문+같은 유형이 다른 학교에 있는지
+          if (REUSABLE_TYPES.includes(t)) {
+            const existingSnap = await getDocs(query(
+              collection(db,'questions'),
+              where('passageId','==',p.id),
+              where('typeName','==',t)
+            ));
+            
+            const existingDocs = [];
+            existingSnap.forEach(d => {
+              const data = d.data();
+              if (data.school !== school) {
+                existingDocs.push({ id: d.id, ...data });
+              }
+            });
+            
+            if (existingDocs.length >= 2) {
+              // 재사용! 같은 지문+같은 유형 문제 2개 복사
+              logGen(`${p.num}번 · ${t} ♻️ 재사용 (${existingDocs[0].school.replace('_',' ')}에서)`);
+              for (let i = 0; i < 2; i++) {
+                const src = existingDocs[i];
+                const newDoc = { ...src, school, idx: i+1, createdAt: new Date().toISOString() };
+                delete newDoc.id;
+                const docId = `${p.id}_${school}_${t}_${i+1}`.replace(/[\s/]+/g,'_');
+                await setDoc(doc(db,'questions',docId), newDoc);
+              }
+              done++;
+              success++;
+              reused++;
+              updateGenProgress(done, total, success, failed, skipped, reused);
+              continue;  // AI 호출 안 함!
+            }
+          }
+          
+          // 재사용 안 됨 → AI 호출해서 새로 생성
           logGen(`${p.num}번 · ${t} 생성 중...`);
           const result = await generateForType(apiKey, p, t, school);
 
