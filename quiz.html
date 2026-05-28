@@ -492,11 +492,16 @@
       modelAns = `(1) ${q.answer_1 || ''}\n(2) ${q.answer_2 || ''}`;
     }
     else if (fmt === 'short_korean') {
-      displayEl.innerHTML = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      let dHtml = `<div class="passage-box">${q.passage_text || ''}</div>`;
+      // 질문 표시 (sub_question)
+      if (q.sub_question) dHtml += `<div class="given-box"><div class="given-box-title">질문</div>${q.sub_question}</div>`;
+      displayEl.innerHTML = dHtml;
       let count = q.answer_count || 2;
       let html = '';
+      const inputLabel = count > 1 ? '이유' : '답';
       for (let i = 1; i <= count; i++) {
-        html += `<div class="short-input-wrap"><label>이유 ${i}</label><textarea id="ans-${i}"></textarea></div>`;
+        const lbl = count > 1 ? `${inputLabel} ${i}` : inputLabel;
+        html += `<div class="short-input-wrap"><label>${lbl}</label><textarea id="ans-${i}"></textarea></div>`;
       }
       inputEl.innerHTML = html;
     }
@@ -698,8 +703,16 @@
     // 화면에 있는 빈칸만 검증 대상으로
     blanks = blanks.filter(b => actualBlankNums.has(b.num));
     
+    // 디버그용
+    console.log('q.blanks:', q.blanks);
+    console.log('passage_with_blanks:', q.passage_with_blanks);
+    console.log('visibleBlanks count:', visibleBlanks.length);
+    console.log('actualBlankNums:', [...actualBlankNums]);
+    console.log('filtered blanks:', blanks);
+    console.log('vocabAnswers:', vocabAnswers);
+    
     if (Object.keys(vocabAnswers).length < blanks.length) {
-      alert(`모든 빈칸을 채워주세요. (${Object.keys(vocabAnswers).length}/${blanks.length})`);
+      alert(`모든 빈칸을 채워주세요. (${Object.keys(vocabAnswers).length}/${blanks.length})\n\n디버그: 화면 빈칸 ${visibleBlanks.length}개, 데이터 빈칸 ${q.blanks?.length}개`);
       return;
     }
 
@@ -1011,4 +1024,3 @@
 
 </body>
 </html>
-
