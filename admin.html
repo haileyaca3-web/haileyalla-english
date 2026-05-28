@@ -1168,10 +1168,18 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 }`,
 
       '이유서술_한국어': `${baseRules}
+[유형: 한국어 서술형]
+
+⚠️ 반드시 sub_question (구체적 질문)을 포함할 것!
+- 지문 내용에 대한 구체적 질문
+- 예: "글쓴이가 강아지 공원을 만든 이유 2가지를 쓰시오."
+- 예: "필자가 주장하는 바와 그 근거를 서술하시오."
+
 {
   "format": "short_korean",
   "question": "다음 질문에 대한 답을 우리말로 서술하시오.",
   "passage_text": "원본 지문",
+  "sub_question": "구체적 질문 (예: 강아지 공원의 특징 2가지를 쓰시오)",
   "answer_count": 2,
   "answer_1": "한국어 서술",
   "answer_2": "한국어 서술",
