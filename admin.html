@@ -158,7 +158,7 @@
 
       <div class="divider"></div>
       <div class="section-label">🗑️ 위험 작업</div>
-      <button class="btn-sub" style="background:#FFF5E8;color:#854F0B;border-color:#E5B774;margin-bottom:8px" onclick="deleteVocabBlankAll()">⭐ 어휘빈칸만 일괄 삭제</button>
+      <button class="btn-sub" style="background:#FFF5E8;color:#854F0B;border-color:#E5B774;margin-bottom:8px" onclick="deleteByTypePrompt()">🗑️ 특정 유형만 일괄 삭제</button>
       <button class="btn-sub" style="background:#FFE4E4;color:#E24B4A;border-color:#E24B4A" onclick="deleteAllQuestions()">모든 문제 삭제</button>
     </div>
   </div>
@@ -330,6 +330,23 @@
     alert(`${n}개 문제를 삭제했어요.`);
   };
 
+  // 특정 유형 일괄 삭제 (사용자 입력)
+  window.deleteByTypePrompt = async () => {
+    const typeName = prompt('삭제할 유형 이름을 입력하세요\n예: 어휘빈칸, 이유서술_한국어, 문장삽입, 어법');
+    if (!typeName) return;
+    if (!confirm(`정말로 모든 학교의 "${typeName}" 문제를 삭제할까요?`)) return;
+    
+    const snap = await getDocs(collection(db,'questions'));
+    let n = 0;
+    for (const d of snap.docs) {
+      const q = d.data();
+      if (q.typeName === typeName) {
+        await deleteDoc(d.ref); n++;
+      }
+    }
+    alert(`"${typeName}" ${n}개 삭제했어요. 이제 다시 생성하면 새 코드로 만들어져요.`);
+  };
+  
   // 어휘빈칸만 일괄 삭제
   window.deleteVocabBlankAll = async () => {
     if (!confirm('모든 학교의 어휘빈칸 문제를 삭제할까요?')) return;
@@ -879,9 +896,23 @@
             }
           }
           
-          // 재사용 안 됨 → AI 호출해서 새로 생성
-          logGen(`${p.num}번 · ${t} 생성 중...`);
-          const result = await generateForType(apiKey, p, t, school);
+          // 재사용 안 됨 → AI 호출해서 새로 생성 (최대 2회 재시도)
+          let result;
+          let retryCount = 0;
+          const maxRetries = 2;
+          while (true) {
+            try {
+              if (retryCount === 0) logGen(`${p.num}번 · ${t} 생성 중...`);
+              else logGen(`${p.num}번 · ${t} 재시도 ${retryCount}/${maxRetries}...`);
+              result = await generateForType(apiKey, p, t, school);
+              break; // 성공하면 빠져나옴
+            } catch (retryErr) {
+              if (retryErr.message.startsWith('SKIP:')) throw retryErr; // 스킵은 재시도 X
+              retryCount++;
+              if (retryCount > maxRetries) throw retryErr; // 최대 재시도 초과
+              logGen(`⚠️ ${p.num}번 · ${t} 검증 실패: ${retryErr.message.substring(0,60)} → 재시도`);
+            }
+          }
 
           for (let i = 0; i < result.questions.length; i++) {
             const q = result.questions[i];
@@ -1844,18 +1875,121 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
     
     if (!parsed.questions || parsed.questions.length < 2) throw new Error('문제 2개 미만');
     
-    // 어휘빈칸 검증: 빈칸 5개 다 있는지
-    if (type === '어휘빈칸') {
-      for (let i = 0; i < parsed.questions.length; i++) {
-        const q = parsed.questions[i];
+    // ============= 유형별 자동 검증 =============
+    for (let i = 0; i < parsed.questions.length; i++) {
+      const q = parsed.questions[i];
+      const qNum = i + 1;
+      
+      // 1. 어휘빈칸: 빈칸 5개
+      if (type === '어휘빈칸') {
         const passageBlanks = (q.passage_with_blanks || '').match(/\(\d+\)/g) || [];
         const blanksCount = (q.blanks || []).length;
-        
         if (passageBlanks.length < 5 || blanksCount < 5) {
-          throw new Error(`어휘빈칸 문제 ${i+1}: 빈칸 ${passageBlanks.length}/${blanksCount}개 (5개 필요)`);
+          throw new Error(`${type} 문제 ${qNum}: 빈칸 ${passageBlanks.length}/${blanksCount}개 (5개 필요)`);
+        }
+        // 각 blank가 정답+보기 4개 있는지
+        for (const b of q.blanks) {
+          if (!b.answer || !b.choices || b.choices.length < 4) {
+            throw new Error(`${type} 문제 ${qNum}: 보기 4개 없음 (빈칸 ${b.num})`);
+          }
         }
       }
+      
+      // 2. 글의순서: 답이 ABC 6가지 중 하나
+      if (type === '글의순서' || type === '글의순서_가나') {
+        const validOrders = [1,2,3,4,5];
+        if (!validOrders.includes(parseInt(q.answer))) {
+          throw new Error(`${type} 문제 ${qNum}: 답이 1~5 사이가 아님 (현재: ${q.answer})`);
+        }
+        if (!q.para_a || !q.para_b || !q.para_c) {
+          throw new Error(`${type} 문제 ${qNum}: (A)(B)(C) 단락 누락`);
+        }
+        if (!q.choices || q.choices.length !== 5) {
+          throw new Error(`${type} 문제 ${qNum}: choices 5개 아님`);
+        }
+      }
+      
+      // 3. 문장삽입: 답이 1~5
+      if (type === '문장삽입') {
+        const ans = parseInt(q.answer);
+        if (ans < 1 || ans > 5) {
+          throw new Error(`${type} 문제 ${qNum}: 답이 1~5 사이 아님 (현재: ${q.answer})`);
+        }
+        if (!q.given_sentence) {
+          throw new Error(`${type} 문제 ${qNum}: given_sentence 누락`);
+        }
+        const marks = (q.passage_marked || '').match(/[①②③④⑤]/g) || [];
+        if (marks.length < 5) {
+          throw new Error(`${type} 문제 ${qNum}: 지문에 ①~⑤ 5개 없음`);
+        }
+      }
+      
+      // 4. 어법, 낱말쓰임: ①~⑤ 5개 + 대괄호 [ ]
+      if (type === '어법' || type === '낱말쓰임' || type === '어법_2개') {
+        const marks = (q.passage_marked || '').match(/[①②③④⑤]/g) || [];
+        if (marks.length < 5) {
+          throw new Error(`${type} 문제 ${qNum}: 지문에 ①~⑤ 5개 없음 (${marks.length}개)`);
+        }
+        const brackets = (q.passage_marked || '').match(/\[[^\]]+\]/g) || [];
+        if (brackets.length < 5) {
+          throw new Error(`${type} 문제 ${qNum}: 대괄호 [ ] 5개 없음 (${brackets.length}개)`);
+        }
+        if (type === '어법_2개') {
+          if (!Array.isArray(q.answer) || q.answer.length !== 2) {
+            throw new Error(`${type} 문제 ${qNum}: 답이 2개가 아님`);
+          }
+        } else {
+          const ans = parseInt(q.answer);
+          if (ans < 1 || ans > 5) throw new Error(`${type} 문제 ${qNum}: 답이 1~5 아님`);
+        }
+      }
+      
+      // 5. 흐름무관: ①~⑤ 5개
+      if (type === '흐름무관') {
+        const marks = (q.passage_marked || '').match(/[①②③④⑤]/g) || [];
+        if (marks.length < 5) {
+          throw new Error(`${type} 문제 ${qNum}: ①~⑤ 5개 없음`);
+        }
+        const ans = parseInt(q.answer);
+        if (ans < 1 || ans > 5) throw new Error(`${type} 문제 ${qNum}: 답이 1~5 아님`);
+      }
+      
+      // 6. 빈칸추론, 글의제목, 주제, 요지, 분위기, 심경변화 등 (5지선다)
+      const choiceTypes5 = ['빈칸추론','글의제목','주제','요지','요지_선택형','분위기','심경변화','글의목적','내용일치_한국어','내용일치_영어','밑줄의미','지칭대상','인물성격','연결어','영영풀이','답할수없는질문','단어장','도표','어휘_네모','어법_네모','grammar_box','vocab_box','추론_보기'];
+      if (choiceTypes5.includes(type)) {
+        if (!q.choices || q.choices.length < 5) {
+          throw new Error(`${type} 문제 ${qNum}: 선택지 5개 미만 (${q.choices?.length||0}개)`);
+        }
+        const ans = parseInt(q.answer);
+        if (ans < 1 || ans > 5) throw new Error(`${type} 문제 ${qNum}: 답이 1~5 아님`);
+      }
+      
+      // 7. 요약빈칸: (A)(B) 있고 답 5개 보기
+      if (type === '요약빈칸') {
+        if (!q.summary_template || !q.summary_template.includes('(A)') || !q.summary_template.includes('(B)')) {
+          throw new Error(`${type} 문제 ${qNum}: 요약문에 (A)(B) 없음`);
+        }
+        if (!q.choices || q.choices.length < 5) {
+          throw new Error(`${type} 문제 ${qNum}: 선택지 5개 미만`);
+        }
+      }
+      if (type === '요약빈칸_3칸') {
+        if (!q.summary_template) throw new Error(`${type} 문제 ${qNum}: 요약문 없음`);
+      }
+      
+      // 8. 서답형 - sub_question, passage_text 등 필수
+      if (type === '이유서술_한국어' || type === '이유서술') {
+        if (!q.sub_question) {
+          throw new Error(`${type} 문제 ${qNum}: sub_question (질문) 누락`);
+        }
+      }
+      
+      // 9. 모든 유형 공통: question 필드 있어야 함
+      if (!q.question) {
+        throw new Error(`${type} 문제 ${qNum}: question 필드 누락`);
+      }
     }
+    // ============= 검증 끝 =============
     
     return parsed;
   }
@@ -1996,3 +2130,4 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
 
 </body>
 </html>
+
