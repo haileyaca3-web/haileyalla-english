@@ -329,22 +329,37 @@
     document.getElementById('top-school-3').textContent = schoolDisplay;
 
     const keepPassage = localStorage.getItem('keepPassage');
+    
+    // 데이터 먼저 로드
+    await loadPassagesForSchool();
+    await loadProgress();
+    
     if (keepPassage === 'true') {
       const savedPassage = JSON.parse(localStorage.getItem('selectedPassage') || 'null');
       const savedPassages = JSON.parse(localStorage.getItem('selectedPassagesData') || '[]');
-      if (savedPassage && savedPassage.id) {
-        selectedPassagesData = savedPassages.length > 0 ? savedPassages : [savedPassage];
-        selectedPassages = new Set(selectedPassagesData.map(p => p.id));
-        await loadPassagesForSchool();
-        await loadProgress();
+      
+      // 안전 체크: 저장된 지문이 실제 데이터에 있는지
+      const validPassages = (savedPassages.length > 0 ? savedPassages : (savedPassage ? [savedPassage] : []))
+        .filter(p => p && p.id && allPassages.find(ap => ap.id === p.id));
+      
+      localStorage.removeItem('keepPassage');
+      
+      if (validPassages.length > 0) {
+        selectedPassagesData = validPassages;
+        selectedPassages = new Set(validPassages.map(p => p.id));
+        
+        // selectedRanges도 복원 (지문에 해당하는 범위들)
+        validPassages.forEach(p => {
+          const key = p.range || `${p.mediaType||'교과서'}_${p.detail||''}`;
+          selectedRanges.add(key);
+        });
+        
         showTypeSelect();
-        localStorage.removeItem('keepPassage');
         return;
       }
+      // 복원 실패하면 범위 선택부터
     }
-
-    await loadPassagesForSchool();
-    await loadProgress();
+    
     renderRanges();
   });
 
