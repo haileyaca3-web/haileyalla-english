@@ -138,15 +138,14 @@
     <!-- 설정 탭 -->
     <div class="scroll-body hidden" id="section-settings">
       <div class="section-label">🔑 Claude API 키</div>
-      <div class="field-wrap">
-        <div class="field-label">API 키</div>
-        <input type="password" id="api-key-input" placeholder="sk-ant-api03-...">
+      <div style="background:#EAF3DE;border:0.5px solid #A8D472;border-radius:8px;padding:11px 13px;font-size:13px;color:#27500A;line-height:1.7">
+        ✅ <b>안전한 서버 환경변수로 관리 중!</b><br>
+        <span style="font-size:11px;color:#3B6D11">
+          API 키는 Vercel 환경변수에 저장되어 있어서 안전합니다.<br>
+          키 변경은 Vercel 대시보드에서:<br>
+          Settings → Environment Variables → ANTHROPIC_API_KEY
+        </span>
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-sub" style="flex:1" onclick="toggleApiKeyView()">보기/숨김</button>
-        <button class="btn-main" style="flex:1" onclick="saveApiKey()">저장</button>
-      </div>
-      <div id="api-key-status" style="margin-top:10px;font-size:12px;color:#888780"></div>
 
       <div class="divider"></div>
       <div class="section-label">🗓️ 학기 마감</div>
@@ -726,7 +725,10 @@
       passages.forEach(p => {
         html += `<div class="passage-mini">
           <span>${p.num}번 · ${(p.text||'').substring(0,30)}...</span>
-          <button class="del-tiny" onclick="deletePassage('${p.id}')">삭제</button>
+          <div style="display:flex;gap:4px">
+            <button class="del-tiny" style="background:#FFF5E8;color:#854F0B;border-color:#E5B774" onclick="editPassage('${p.id}')">수정</button>
+            <button class="del-tiny" onclick="deletePassage('${p.id}')">삭제</button>
+          </div>
         </div>`;
       });
 
@@ -778,6 +780,54 @@
     arr.textContent = isOpen ? '▼' : '▲';
   };
 
+  // 지문 수정 - 기존 정보를 폼에 채우기
+  window.editPassage = async (id) => {
+    try {
+      const snap = await getDoc(doc(db,'passages',id));
+      if (!snap.exists()) { alert('지문을 찾을 수 없어요'); return; }
+      const p = snap.data();
+      
+      // 페이지 위로 스크롤
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // 1. 교재 종류 자동 선택
+      const mediaType = p.mediaType || '교과서';
+      if (window.selectMediaType) {
+        window.selectMediaType(mediaType);
+      }
+      
+      // 2. 입력 채우기 (약간 딜레이)
+      setTimeout(() => {
+        const detailInput = document.getElementById('p-detail');
+        const textInput = document.getElementById('p-text');
+        
+        if (detailInput) detailInput.value = p.detail || p.unit || '';
+        
+        // 지문 텍스트 + 각주를 입력 형식으로 채우기
+        let fullText = `${p.num}\n${p.text || ''}`;
+        if (p.footnote) {
+          fullText += `\n${p.footnote}`;
+        }
+        if (textInput) textInput.value = fullText;
+        
+        // 학교 체크
+        const schools = p.schools || [];
+        document.querySelectorAll('.p-school-cb').forEach(cb => {
+          cb.checked = schools.includes(cb.value);
+          const label = cb.closest('.school-check');
+          if (label) {
+            if (cb.checked) label.classList.add('selected');
+            else label.classList.remove('selected');
+          }
+        });
+        
+        alert('✏️ 지문 정보를 불러왔어요!\n\n수정 후 "Firebase 저장" 버튼을 누르면 기존 지문이 업데이트됩니다.\n(같은 번호로 저장되므로 덮어씌워져요)');
+      }, 400);
+    } catch(e) {
+      alert('수정 실패: ' + e.message);
+    }
+  };
+  
   window.deletePassage = async (id) => {
     if (!confirm('이 지문을 삭제하시겠어요? (관련 문제도 함께 삭제됩니다)')) return;
     await deleteDoc(doc(db,'passages',id));
@@ -814,8 +864,8 @@
   };
 
   window.generateUnitQuestions = async (rangeKey, school, typeFilter = 'all') => {
-    const apiKey = CACHED_API_KEY || await loadApiKey();
-    if (!apiKey) { alert('먼저 [설정] 탭에서 Claude API 키를 저장해주세요.'); return; }
+    // API 키는 서버 환경변수에 있으므로 클라이언트에서 체크 안 함
+    const apiKey = null; // 사용 안 됨
 
     const allTypes = uniqueTypes(SCHOOL_TYPES[school]);
     if (!allTypes) { alert('이 학교의 유형이 정의되지 않았어요: ' + school); return; }
@@ -899,7 +949,7 @@
           // 재사용 안 됨 → AI 호출해서 새로 생성 (최대 2회 재시도)
           let result;
           let retryCount = 0;
-          const maxRetries = 2;
+          const maxRetries = 3;
           while (true) {
             try {
               if (retryCount === 0) logGen(`${p.num}번 · ${t} 생성 중...`);
@@ -971,6 +1021,24 @@ ${passage.footnote ? '\n[각주]\n' + passage.footnote : ''}
 3. explanation은 1줄로 짧게.
 4. 1등급 난이도 (어휘 어렵게, 함정 포함).
 5. 각 유형의 정확한 출력 형식 준수.
+
+🎯 정확성 필수 규칙 (실수 시 학생들이 큰 피해):
+A. 답을 정하기 전에 반드시 단계적으로 추론하세요 (속으로):
+   - 지문 내용 정확히 파악
+   - 각 선택지가 맞는지 하나하나 검증
+   - 정답이 명확한지 재확인
+B. 모든 선택지(오답 포함)도 그럴듯하게, 하지만 정답은 명백하게.
+C. 답을 정한 후 마지막으로 "이 답이 정말 맞나?" 자체 검증.
+D. 만약 답이 애매하거나 여러 개가 가능하면 문제를 다시 만드세요.
+E. 지문에 명시되지 않은 내용으로 추론하지 마세요. 지문 근거만 사용.
+F. choices 배열에 들어가는 텍스트는 깔끔하게 (①②③④⑤ 번호 절대 포함 X).
+
+❌ 자주 발생하는 실수 (절대 피하기):
+- 글의순서: A-B-C 논리적 연결 검증 안 함
+- 문장삽입: 앞뒤 문맥 연결 안 봄
+- 어법: 단순한 문법 오류 출제 (1등급 수준 X)
+- 빈칸추론: 빈칸이 너무 추상적이라 답 여러 개 가능
+- 답이 1번이나 3번에만 몰림 (위치 다양하게)
 `;
 
     const prompts = {
@@ -1836,17 +1904,17 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
   async function generateForType(apiKey, passage, type, school) {
     const prompt = getPrompt(type, passage, school);
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    // 우리 서버리스 함수 호출 (Vercel API Route)
+    // API 키는 서버 환경변수에 있어서 안전!
+    const res = await fetch('/api/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-opus-4-5',
         max_tokens: 4000,
+        temperature: 0.3,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -2130,4 +2198,3 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
 
 </body>
 </html>
-
