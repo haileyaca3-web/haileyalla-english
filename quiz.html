@@ -956,9 +956,39 @@
 
   function showExplanation(q) {
     const el = document.getElementById('q-explanation');
-    el.innerHTML = `<div class="exp-title">해설</div>${q.explanation || '(해설 없음)'}`;
+    el.innerHTML = `<div class="exp-title">해설</div>${q.explanation || '(해설 없음)'}
+      <div style="margin-top:12px;padding-top:10px;border-top:0.5px dashed #D6E4FF;text-align:center">
+        <button onclick="reportQuestion('${q.id}')" 
+                style="background:#FFE4E4;color:#E24B4A;border:0.5px solid #F2A5A5;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer">
+          🚨 이 문제 답/내용이 이상해요
+        </button>
+      </div>`;
     el.classList.add('show');
   }
+  
+  // 학생 문제 신고
+  window.reportQuestion = async (questionId) => {
+    const reason = prompt('문제가 어떻게 이상한지 간단히 알려주세요:\n(예: 답이 ②인데 ④가 맞는 거 같아요)');
+    if (!reason || !reason.trim()) return;
+    
+    try {
+      const reportId = `${questionId}_${userId || 'anon'}_${Date.now()}`;
+      await setDoc(doc(db, 'reports', reportId), {
+        questionId,
+        userId: userId || '',
+        userName: localStorage.getItem('userName') || '',
+        school: school || '',
+        passageName: passage?.name || `${passage?.detail||''} ${passage?.num||''}번`,
+        typeName: typeName || '',
+        reason: reason.trim(),
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
+      alert('🙏 신고해주셔서 감사합니다!\n선생님이 확인 후 처리할게요.');
+    } catch(e) {
+      alert('신고 실패: ' + e.message);
+    }
+  };
 
   function proceedToNext() {
     const area = document.getElementById('btn-area');
