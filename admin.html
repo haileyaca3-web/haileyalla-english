@@ -42,10 +42,11 @@
     </div>
 
     <div style="background:#fff;padding:0 14px">
-      <div class="tab-row" style="margin-bottom:0;border-bottom:0.5px solid #D6E4FF">
+      <div class="tab-row" style="margin-bottom:0;border-bottom:0.5px solid #D6E4FF;overflow-x:auto">
         <div class="tab on" onclick="switchTab('approve')"  id="tab-approve">승인</div>
         <div class="tab"    onclick="switchTab('passages')" id="tab-passages">지문</div>
         <div class="tab"    onclick="switchTab('records')"  id="tab-records">기록</div>
+        <div class="tab"    onclick="switchTab('reports')"  id="tab-reports">🚨 신고</div>
         <div class="tab"    onclick="switchTab('settings')" id="tab-settings">설정</div>
       </div>
     </div>
@@ -135,6 +136,30 @@
       <div id="records-list"><div class="empty-msg">학생을 불러오는 중...</div></div>
     </div>
 
+    <!-- 신고 탭 -->
+    <div class="scroll-body hidden" id="section-reports">
+      <div class="section-label">🚨 학생 신고 문제</div>
+      
+      <div style="background:#FFF5E8;border:0.5px solid #E5B774;border-radius:8px;padding:9px 12px;margin-bottom:14px;font-size:11px;color:#854F0B;line-height:1.5">
+        💡 학생이 "문제가 이상해요"라고 신고한 거나 AI 검증으로 의심된 문제들이에요.
+      </div>
+      
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+        <button class="btn-sub" onclick="loadReports()" style="flex:1;min-width:120px">🔄 신고 다시 불러오기</button>
+        <button class="btn-sub" onclick="startAiVerification()" style="flex:1;min-width:120px;background:#EBF2FF;color:#2B5EB8;border-color:#A8C4F5">🤖 AI 자동 검증</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn-sub" onclick="analyzeAnswerDistribution()" style="flex:1;min-width:120px;background:#FFF5E8;color:#854F0B;border-color:#E5B774">📊 답 분포 분석</button>
+        <button class="btn-sub" onclick="analyzeMissingFields()" style="flex:1;min-width:120px;background:#FFF5E8;color:#854F0B;border-color:#E5B774">🔍 누락 필드 검사</button>
+      </div>
+      
+      <div id="analysis-result" style="display:none;background:#fff;border:0.5px solid #D6E4FF;border-radius:8px;padding:11px;margin-bottom:14px;font-size:12px;color:#1A3566;line-height:1.7;max-height:400px;overflow-y:auto"></div>
+      
+      <div id="verification-progress" style="display:none;background:#fff;border:0.5px solid #D6E4FF;border-radius:8px;padding:11px;margin-bottom:10px;font-size:12px;color:#1A3566"></div>
+      
+      <div id="reports-list"><div class="empty-msg">신고 내역을 불러오는 중...</div></div>
+    </div>
+    
     <!-- 설정 탭 -->
     <div class="scroll-body hidden" id="section-settings">
       <div class="section-label">🔑 Claude API 키</div>
@@ -424,21 +449,431 @@
   };
 
   window.switchTab = async (tab) => {
-    ['approve','passages','records','settings'].forEach(t => {
-      document.getElementById('section-'+t).classList.add('hidden');
-      document.getElementById('tab-'+t).classList.remove('on');
+    ['approve','passages','records','reports','settings'].forEach(t => {
+      const sec = document.getElementById('section-'+t);
+      const tabEl = document.getElementById('tab-'+t);
+      if (sec) sec.classList.add('hidden');
+      if (tabEl) tabEl.classList.remove('on');
     });
-    document.getElementById('section-'+tab).classList.remove('hidden');
-    document.getElementById('tab-'+tab).classList.add('on');
+    const targetSec = document.getElementById('section-'+tab);
+    const targetTab = document.getElementById('tab-'+tab);
+    if (targetSec) targetSec.classList.remove('hidden');
+    if (targetTab) targetTab.classList.add('on');
     if (tab === 'records') loadRecords();
     if (tab === 'passages') loadUnitList();
-    if (tab === 'settings') {
-      const k = await loadApiKey();
-      if (k) {
-        document.getElementById('api-key-input').value = k;
-        document.getElementById('api-key-status').style.color = '#3B6D11';
-        document.getElementById('api-key-status').textContent = '✅ 저장된 키가 있어요';
+    if (tab === 'reports') loadReports();
+  };
+  
+  // ========== 신고 시스템 ==========
+  window.loadReports = async () => {
+    const el = document.getElementById('reports-list');
+    el.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
+    try {
+      const snap = await getDocs(collection(db, 'reports'));
+      const reports = [];
+      snap.forEach(d => reports.push({ id: d.id, ...d.data() }));
+      
+      // 미해결만 + 최신순
+      const pending = reports.filter(r => r.status === 'pending')
+                             .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      if (pending.length === 0) {
+        el.innerHTML = '<div class="empty-msg">신고된 문제가 없어요 ✨</div>';
+        return;
       }
+      
+      let html = `<div style="font-size:12px;color:#5A7BAD;margin-bottom:10px"><b>총 ${pending.length}건</b> 미해결</div>`;
+      
+      for (const r of pending) {
+        // 문제 정보 가져오기
+        let qInfo = null;
+        try {
+          const qSnap = await getDoc(doc(db, 'questions', r.questionId));
+          if (qSnap.exists()) qInfo = qSnap.data();
+        } catch(e) {}
+        
+        const isAi = r.reportType === 'ai_verification';
+        const headerBg = isAi ? '#EBF2FF' : '#FFF5E8';
+        const headerCl = isAi ? '#2B5EB8' : '#854F0B';
+        
+        html += `<div style="background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:12px;margin-bottom:10px">
+          <div style="background:${headerBg};color:${headerCl};font-size:11px;padding:4px 9px;border-radius:5px;display:inline-block;margin-bottom:8px">
+            ${isAi ? '🤖 AI 검증' : '🚨 학생 신고'} · ${r.school?.replace('_',' ')||''} · ${r.typeName}
+          </div>
+          <div style="font-size:13px;font-weight:500;color:#1A3566;margin-bottom:6px">${r.passageName||'지문'}</div>
+          <div style="background:#F8FAFE;border-radius:6px;padding:8px 10px;font-size:12px;color:#5A7BAD;margin-bottom:8px">
+            <b>신고 내용:</b> ${r.reason}
+          </div>`;
+        
+        if (qInfo) {
+          html += `<div style="font-size:11px;color:#888780;margin-bottom:6px;line-height:1.5">
+            <b>문제:</b> ${(qInfo.question||'').substring(0,80)}<br>
+            <b>현재 답:</b> ${Array.isArray(qInfo.answer) ? qInfo.answer.join(',') : qInfo.answer}
+            ${r.aiAnswer ? `<br><b>AI 검증 답:</b> ${r.aiAnswer}` : ''}
+          </div>`;
+        }
+        
+        html += `<div style="display:flex;gap:5px;flex-wrap:wrap">
+            <button onclick="changeAnswer('${r.questionId}','${r.id}')" style="flex:1;background:#FFF5E8;color:#854F0B;border:0.5px solid #E5B774;border-radius:6px;padding:6px;font-size:11px;cursor:pointer">✏️ 답 수정</button>
+            <button onclick="deleteReportedQuestion('${r.questionId}','${r.id}')" style="flex:1;background:#FFE4E4;color:#E24B4A;border:0.5px solid #F2A5A5;border-radius:6px;padding:6px;font-size:11px;cursor:pointer">🗑️ 문제 삭제</button>
+            <button onclick="dismissReport('${r.id}')" style="flex:1;background:#EAF3DE;color:#27500A;border:0.5px solid #A8D472;border-radius:6px;padding:6px;font-size:11px;cursor:pointer">✓ 정상 (무시)</button>
+          </div>
+        </div>`;
+      }
+      
+      el.innerHTML = html;
+    } catch(e) {
+      el.innerHTML = `<div class="empty-msg">로딩 실패: ${e.message}</div>`;
+    }
+  };
+  
+  // 답 수정
+  window.changeAnswer = async (questionId, reportId) => {
+    const newAns = prompt('새로운 답 번호 입력 (예: 3)\n어법_2개 같은 경우 콤마로 구분 (예: 2,4)');
+    if (!newAns || !newAns.trim()) return;
+    try {
+      const isMulti = newAns.includes(',');
+      const answer = isMulti ? newAns.split(',').map(n => parseInt(n.trim())) : parseInt(newAns.trim());
+      await setDoc(doc(db, 'questions', questionId), { answer }, { merge: true });
+      // 신고 해결 처리
+      await setDoc(doc(db, 'reports', reportId), { status: 'resolved', resolvedAt: new Date().toISOString() }, { merge: true });
+      alert(`✅ 답이 "${newAns}"로 수정됐어요.`);
+      loadReports();
+    } catch(e) {
+      alert('수정 실패: ' + e.message);
+    }
+  };
+  
+  // 문제 삭제 (신고된 거)
+  window.deleteReportedQuestion = async (questionId, reportId) => {
+    if (!confirm('이 문제를 삭제할까요?')) return;
+    try {
+      await deleteDoc(doc(db, 'questions', questionId));
+      await setDoc(doc(db, 'reports', reportId), { status: 'resolved', resolvedAt: new Date().toISOString() }, { merge: true });
+      alert('🗑️ 문제 삭제했어요. 필요하면 다시 생성하세요.');
+      loadReports();
+    } catch(e) {
+      alert('삭제 실패: ' + e.message);
+    }
+  };
+  
+  // 신고 무시 (정상 처리)
+  window.dismissReport = async (reportId) => {
+    try {
+      await setDoc(doc(db, 'reports', reportId), { status: 'dismissed', resolvedAt: new Date().toISOString() }, { merge: true });
+      loadReports();
+    } catch(e) { alert(e.message); }
+  };
+  
+  // ========== 답 분포 분석 ==========
+  window.analyzeAnswerDistribution = async () => {
+    const el = document.getElementById('analysis-result');
+    el.style.display = 'block';
+    el.innerHTML = '📊 분석 중...';
+    
+    try {
+      const snap = await getDocs(collection(db, 'questions'));
+      const allQ = [];
+      snap.forEach(d => allQ.push({ id: d.id, ...d.data() }));
+      
+      // 선택형만 분석
+      const choiceTypes = ['빈칸추론','글의제목','주제','요지','요지_선택형','분위기','심경변화','글의목적','내용일치_한국어','내용일치_영어','밑줄의미','지칭대상','인물성격','연결어','영영풀이','답할수없는질문','단어장','도표','어휘_네모','어법_네모','글의순서','글의순서_가나','문장삽입','어법','낱말쓰임','흐름무관','요약빈칸','요약빈칸_3칸','추론_보기'];
+      const verifiable = allQ.filter(q => choiceTypes.includes(q.typeName) && q.answer);
+      
+      // 학교 × 유형으로 그룹핑
+      const groups = {};
+      for (const q of verifiable) {
+        const key = `${q.school}__${q.typeName}`;
+        if (!groups[key]) groups[key] = [];
+        const ans = Array.isArray(q.answer) ? q.answer[0] : parseInt(q.answer);
+        if (ans >= 1 && ans <= 5) groups[key].push(ans);
+      }
+      
+      // 분석
+      const issues = [];
+      const normal = [];
+      
+      for (const [key, answers] of Object.entries(groups)) {
+        if (answers.length < 4) continue; // 너무 적으면 패스
+        
+        const [school, type] = key.split('__');
+        const count = [0,0,0,0,0]; // index 0~4 = 답 1~5
+        answers.forEach(a => { if (a >= 1 && a <= 5) count[a-1]++; });
+        
+        const total = answers.length;
+        const expected = total / 5;
+        const distribution = count.map(c => Math.round(c/total*100));
+        
+        // 분포가 한 답에 50% 이상 몰리면 의심
+        const maxRatio = Math.max(...distribution);
+        const minRatio = Math.min(...distribution);
+        const isSkewed = maxRatio >= 50;
+        const isMissing = minRatio === 0 && total >= 5;
+        
+        const info = {
+          school: school.replace('_',' '),
+          type,
+          total,
+          distribution: count,
+          status: isSkewed ? 'skewed' : (isMissing ? 'missing' : 'normal')
+        };
+        
+        if (isSkewed || isMissing) issues.push(info);
+        else normal.push(info);
+      }
+      
+      // 결과 표시
+      let html = `<div style="font-size:14px;font-weight:600;color:#1A3566;margin-bottom:10px">📊 답 분포 분석 결과</div>`;
+      html += `<div style="color:#5A7BAD;margin-bottom:10px">총 ${verifiable.length}개 문제 분석, ${Object.keys(groups).length}개 그룹</div>`;
+      
+      if (issues.length > 0) {
+        html += `<div style="background:#FFE4E4;border-radius:6px;padding:9px 11px;margin-bottom:10px;color:#C62E2E"><b>⚠️ 의심되는 그룹 ${issues.length}개</b></div>`;
+        for (const i of issues) {
+          const dist = i.distribution.map((c,idx) => `①${i.distribution[0]}②${i.distribution[1]}③${i.distribution[2]}④${i.distribution[3]}⑤${i.distribution[4]}`)[0];
+          const reason = i.status === 'skewed' ? '한 답에 몰림' : '0개인 답 있음';
+          html += `<div style="border:0.5px solid #F2A5A5;border-radius:6px;padding:8px 10px;margin-bottom:6px;background:#FFF9F9">
+            <div style="font-weight:600;color:#C62E2E">${i.school} · ${i.type}</div>
+            <div style="font-size:11px;color:#888;margin-top:3px">총 ${i.total}개 · ${reason}</div>
+            <div style="font-family:monospace;font-size:12px;color:#5A7BAD;margin-top:3px">${dist}</div>
+          </div>`;
+        }
+      } else {
+        html += `<div style="background:#EAF3DE;border-radius:6px;padding:9px 11px;margin-bottom:10px;color:#27500A"><b>✅ 답 분포 양호</b></div>`;
+      }
+      
+      if (normal.length > 0) {
+        html += `<div style="font-size:11px;color:#888;margin-top:10px"><b>정상 그룹: ${normal.length}개</b> (자세히 보기 생략)</div>`;
+      }
+      
+      el.innerHTML = html;
+    } catch(e) {
+      el.innerHTML = `❌ 오류: ${e.message}`;
+    }
+  };
+  
+  // ========== 누락 필드 검사 ==========
+  window.analyzeMissingFields = async () => {
+    const el = document.getElementById('analysis-result');
+    el.style.display = 'block';
+    el.innerHTML = '🔍 검사 중...';
+    
+    try {
+      const snap = await getDocs(collection(db, 'questions'));
+      const allQ = [];
+      snap.forEach(d => allQ.push({ id: d.id, ...d.data() }));
+      
+      const issues = [];
+      
+      for (const q of allQ) {
+        const probs = [];
+        
+        // 공통: question 필드
+        if (!q.question) probs.push('질문(question) 없음');
+        
+        // 어휘빈칸
+        if (q.typeName === '어휘빈칸') {
+          const passageBlanks = (q.passage_with_blanks || '').match(/\(\d+\)/g) || [];
+          if (passageBlanks.length < 5) probs.push(`빈칸 ${passageBlanks.length}/5개`);
+          if (!q.blanks || q.blanks.length < 5) probs.push('blanks 5개 미만');
+        }
+        
+        // 글의순서
+        if (q.typeName === '글의순서' || q.typeName === '글의순서_가나') {
+          if (!q.para_a || !q.para_b || !q.para_c) probs.push('(A)(B)(C) 단락 누락');
+          const ans = parseInt(q.answer);
+          if (ans < 1 || ans > 5) probs.push(`답 범위 오류 (${q.answer})`);
+        }
+        
+        // 문장삽입
+        if (q.typeName === '문장삽입') {
+          if (!q.given_sentence) probs.push('주어진 문장 없음');
+          const marks = (q.passage_marked || '').match(/[①②③④⑤]/g) || [];
+          if (marks.length < 5) probs.push(`①~⑤ ${marks.length}/5개`);
+        }
+        
+        // 어법/낱말쓰임
+        if (q.typeName === '어법' || q.typeName === '낱말쓰임') {
+          const brackets = (q.passage_marked || '').match(/\[[^\]]+\]/g) || [];
+          if (brackets.length < 5) probs.push(`대괄호 ${brackets.length}/5개`);
+        }
+        
+        // 이유서술
+        if (q.typeName === '이유서술_한국어' && !q.sub_question) {
+          probs.push('sub_question 없음');
+        }
+        
+        // 요약빈칸
+        if (q.typeName === '요약빈칸') {
+          if (!q.summary_template?.includes('(A)') || !q.summary_template?.includes('(B)')) {
+            probs.push('요약문에 (A)(B) 없음');
+          }
+        }
+        
+        if (probs.length > 0) {
+          issues.push({
+            id: q.id,
+            school: q.school?.replace('_',' '),
+            num: q.num,
+            detail: q.detail,
+            type: q.typeName,
+            problems: probs
+          });
+        }
+      }
+      
+      // 결과 표시
+      let html = `<div style="font-size:14px;font-weight:600;color:#1A3566;margin-bottom:10px">🔍 필드 누락 검사</div>`;
+      html += `<div style="color:#5A7BAD;margin-bottom:10px">총 ${allQ.length}개 검사</div>`;
+      
+      if (issues.length === 0) {
+        html += `<div style="background:#EAF3DE;border-radius:6px;padding:9px 11px;color:#27500A"><b>✅ 모든 문제 정상! 누락 필드 없음</b></div>`;
+      } else {
+        html += `<div style="background:#FFE4E4;border-radius:6px;padding:9px 11px;margin-bottom:10px;color:#C62E2E"><b>⚠️ ${issues.length}개 문제 발견</b></div>`;
+        
+        // 학교별 그룹핑
+        const bySchool = {};
+        issues.forEach(i => {
+          if (!bySchool[i.school]) bySchool[i.school] = [];
+          bySchool[i.school].push(i);
+        });
+        
+        for (const [school, list] of Object.entries(bySchool)) {
+          html += `<div style="font-weight:600;color:#1A3566;margin:8px 0 4px">${school} (${list.length}개)</div>`;
+          for (const i of list.slice(0, 10)) {
+            html += `<div style="border:0.5px solid #F2A5A5;border-radius:5px;padding:6px 9px;margin-bottom:4px;font-size:11px;background:#FFF9F9">
+              <b>${i.detail||''} ${i.num||''}번 · ${i.type}</b><br>
+              <span style="color:#C62E2E">${i.problems.join(' / ')}</span>
+            </div>`;
+          }
+          if (list.length > 10) html += `<div style="font-size:11px;color:#888;text-align:center">...외 ${list.length-10}개</div>`;
+        }
+        
+        html += `<div style="margin-top:12px"><button onclick="autoReportIssues()" style="width:100%;background:#FFE4E4;color:#C62E2E;border:0.5px solid #F2A5A5;border-radius:6px;padding:8px;font-size:12px;cursor:pointer">📋 이 문제들을 신고로 등록 (확인 후 처리)</button></div>`;
+        
+        // 글로벌에 저장 (autoReportIssues에서 사용)
+        window._lastFieldIssues = issues;
+      }
+      
+      el.innerHTML = html;
+    } catch(e) {
+      el.innerHTML = `❌ 오류: ${e.message}`;
+    }
+  };
+  
+  // 누락 필드 문제들을 신고로 등록
+  window.autoReportIssues = async () => {
+    const issues = window._lastFieldIssues || [];
+    if (issues.length === 0) return;
+    if (!confirm(`${issues.length}개를 신고로 등록할까요? 신고 탭에서 처리할 수 있어요.`)) return;
+    
+    let n = 0;
+    for (const i of issues) {
+      const reportId = `field_${i.id}_${Date.now()}`;
+      try {
+        await setDoc(doc(db, 'reports', reportId), {
+          questionId: i.id,
+          reportType: 'field_check',
+          userId: 'system',
+          userName: '필드 검사',
+          school: i.school?.replace(' ','_') || '',
+          passageName: `${i.detail||''} ${i.num||''}번`,
+          typeName: i.type,
+          reason: i.problems.join(' / '),
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        });
+        n++;
+      } catch(e) { console.error(e); }
+    }
+    alert(`✅ ${n}개 신고 등록 완료. [🔄 신고 다시 불러오기] 클릭!`);
+    loadReports();
+  };
+  
+  // ========== AI 자동 검증 ==========
+  window.startAiVerification = async () => {
+    if (!confirm('모든 선택형 문제를 AI로 검증할까요?\n(비용: 문제 수 × 약 0.01달러, 시간: 수십 분)')) return;
+    
+    const progEl = document.getElementById('verification-progress');
+    progEl.style.display = 'block';
+    progEl.innerHTML = '🤖 검증 시작...';
+    
+    try {
+      const snap = await getDocs(collection(db, 'questions'));
+      const allQ = [];
+      snap.forEach(d => allQ.push({ id: d.id, ...d.data() }));
+      
+      // 선택형만 검증 (서답형은 답이 텍스트라 검증 어려움)
+      const choiceFormats = ['blank','grammar','grammar_2','word','title','main_idea_kor','main_idea_eng','main_idea_kor_selectable','irrelevant','order','order_kana','insert','summary_blank','summary_blank_3','underline','match_kor','match_eng','purpose','topic','mood_change','atmosphere','character','chart','infer_set','connector','reference','definition','unanswerable','infinitive_use','vocab_book'];
+      const verifiable = allQ.filter(q => choiceFormats.includes(q.format) && q.choices && q.answer);
+      
+      progEl.innerHTML = `🤖 검증 중: 0 / ${verifiable.length}`;
+      
+      let suspicious = 0;
+      for (let i = 0; i < verifiable.length; i++) {
+        const q = verifiable[i];
+        progEl.innerHTML = `🤖 검증 중: ${i+1} / ${verifiable.length} (의심 ${suspicious})`;
+        
+        try {
+          const verifyPrompt = `다음 문제를 풀고 정답 번호만 알려주세요.
+
+[문제]
+${q.question}
+
+[지문]
+${q.passage_text || q.passage_marked || q.passage_with_blank || q.passage_with_blanks || q.passage_with_underline || ''}
+
+[선택지]
+${q.choices.map((c,idx) => `${idx+1}. ${c}`).join('\n')}
+
+JSON으로만 응답: {"answer": 숫자}`;
+          
+          const res = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'claude-opus-4-5',
+              max_tokens: 100,
+              temperature: 0.0,
+              messages: [{ role: 'user', content: verifyPrompt }]
+            })
+          });
+          
+          const data = await res.json();
+          const text = data.content?.[0]?.text || '';
+          const match = text.match(/\"answer\"\s*:\s*(\d+)/);
+          if (!match) continue;
+          
+          const aiAns = parseInt(match[1]);
+          const origAns = Array.isArray(q.answer) ? q.answer[0] : parseInt(q.answer);
+          
+          if (aiAns !== origAns) {
+            // 답 다름 → 신고 저장
+            suspicious++;
+            const reportId = `ai_${q.id}_${Date.now()}`;
+            await setDoc(doc(db, 'reports', reportId), {
+              questionId: q.id,
+              reportType: 'ai_verification',
+              userId: 'ai-system',
+              userName: 'AI 검증',
+              school: q.school,
+              passageName: `${q.detail||q.unit||''} ${q.num||''}번`,
+              typeName: q.typeName,
+              reason: `AI가 다시 풀어본 답은 ${aiAns}번, 저장된 답은 ${origAns}번`,
+              aiAnswer: aiAns,
+              originalAnswer: origAns,
+              status: 'pending',
+              createdAt: new Date().toISOString()
+            });
+          }
+        } catch(e) {
+          console.error('검증 실패:', q.id, e);
+        }
+      }
+      
+      progEl.innerHTML = `✅ 검증 완료! ${verifiable.length}개 검사, ${suspicious}개 의심 발견. 위에서 확인하세요.`;
+      setTimeout(() => loadReports(), 1000);
+    } catch(e) {
+      progEl.innerHTML = `❌ 오류: ${e.message}`;
     }
   };
 
