@@ -152,8 +152,12 @@
         <button class="btn-sub" onclick="analyzeAnswerDistribution()" style="flex:1;min-width:120px;background:#FFF5E8;color:#854F0B;border-color:#E5B774">📊 답 분포 분석</button>
         <button class="btn-sub" onclick="analyzeMissingFields()" style="flex:1;min-width:120px;background:#FFF5E8;color:#854F0B;border-color:#E5B774">🔍 누락 필드 검사</button>
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
         <button class="btn-sub" onclick="analyzeReportTypes()" style="flex:1;min-width:120px;background:#EBF2FF;color:#2B5EB8;border-color:#A8C4F5">📋 신고 유형별 분포</button>
+        <button class="btn-sub" onclick="reverifySuspicious()" style="flex:1;min-width:120px;background:#EAF3DE;color:#27500A;border-color:#A8D472">🔁 의심문제 정밀 재검증</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn-sub" onclick="dismissAllVisible()" style="flex:1;min-width:120px;background:#FFF5E8;color:#854F0B;border-color:#E5B774">🧹 지금 필터된 거 전부 무시</button>
       </div>
 
       <!-- 유형 필터 (AI 신고 처리용) -->
@@ -561,10 +565,30 @@
           </div>`;
         
         if (qInfo) {
+          const passage = qInfo.passage_text || qInfo.passage_marked || qInfo.passage_with_blank || qInfo.passage_with_blanks || qInfo.passage_with_underline || qInfo.passage_with_boxes || qInfo.passage_with_refs || qInfo.passage_with_korean || '';
+          const marks = ['①','②','③','④','⑤'];
+          const curAns = Array.isArray(qInfo.answer) ? qInfo.answer.join(',') : qInfo.answer;
+          const curSet = String(curAns).split(',').map(s=>s.trim());
+          const aiSet  = r.aiAnswer ? String(r.aiAnswer).split(',').map(s=>s.trim()) : [];
+          let choicesHtml = '';
+          if (Array.isArray(qInfo.choices)) {
+            choicesHtml = qInfo.choices.map((c,idx) => {
+              const isCur = curSet.includes(String(idx+1));
+              const isAi  = aiSet.includes(String(idx+1));
+              const tag = (isCur?' <span style="color:#27500A">✅현재답</span>':'') + (isAi?' <span style="color:#2B5EB8">🤖AI답</span>':'');
+              return `<div style="padding:3px 0;${(isCur||isAi)?'font-weight:600':''}">${marks[idx]||(idx+1)} ${c}${tag}</div>`;
+            }).join('');
+          }
           html += `<div style="font-size:11px;color:#888780;margin-bottom:6px;line-height:1.5">
-            <b>문제:</b> ${(qInfo.question||'').substring(0,80)}<br>
-            <b>현재 답:</b> ${Array.isArray(qInfo.answer) ? qInfo.answer.join(',') : qInfo.answer}
-            ${r.aiAnswer ? `<br><b>AI 검증 답:</b> ${r.aiAnswer}` : ''}
+            <b>현재 답:</b> ${curAns}${r.aiAnswer ? ` · <b>AI 답:</b> ${r.aiAnswer}` : ''}
+          </div>
+          <button onclick="(function(x){x.style.display=x.style.display==='none'?'block':'none'})(document.getElementById('detail-${r.id}'))" style="width:100%;background:#EBF2FF;color:#2B5EB8;border:0.5px solid #A8C4F5;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;margin-bottom:6px">📖 문제 전체 보기 / 접기</button>
+          <div id="detail-${r.id}" style="display:none;background:#F8FAFE;border:0.5px solid #D6E4FF;border-radius:6px;padding:10px 12px;margin-bottom:8px;font-size:12px;color:#2C2C2A;line-height:1.7">
+            <div style="font-weight:600;color:#1A3566;margin-bottom:6px">${qInfo.question||''}</div>
+            ${qInfo.given_sentence?`<div style="background:#FFF5E8;padding:6px 9px;border-radius:5px;margin-bottom:6px"><b>주어진 문장:</b> ${qInfo.given_sentence}</div>`:''}
+            ${passage?`<div style="margin-bottom:7px;white-space:pre-wrap">${passage}</div>`:''}
+            ${choicesHtml?`<div style="border-top:0.5px solid #D6E4FF;padding-top:7px">${choicesHtml}</div>`:''}
+            ${qInfo.explanation?`<div style="margin-top:7px;padding-top:7px;border-top:0.5px solid #D6E4FF;color:#5A7BAD"><b>해설:</b> ${qInfo.explanation}</div>`:''}
           </div>`;
         }
         
@@ -952,6 +976,117 @@
     loadReports();
   };
   
+  // ========== 정밀 재검증 (빠진 정보 다 넣고 다시 풀기) ==========
+  function getQPassage(q) {
+    return q.passage_text || q.passage_marked || q.passage_with_blank || q.passage_with_blanks
+      || q.passage_with_underline || q.passage_with_boxes || q.passage_with_refs || q.passage_with_korean || '';
+  }
+
+  function buildReverifyPrompt(q) {
+    let p = `다음은 한국 고등학교 영어 시험 문제입니다. 차분히 단계적으로 풀고 정답 번호를 고르세요.\n\n[문제]\n${q.question||''}\n`;
+    // 유형별로 빠지면 안 되는 정보 추가
+    if (q.given_sentence) p += `\n[주어진 문장 — 아래 지문의 ①~⑤ 중 한 곳에 들어갑니다]\n${q.given_sentence}\n`;
+    if (q.given_text)   p += `\n[주어진 글]\n${q.given_text}\n`;
+    if (q.given_text_1) p += `\n[(가)]\n${q.given_text_1}\n`;
+    if (q.para_a || q.para_b || q.para_c) {
+      p += `\n[단락]\n(A) ${q.para_a||''}\n(B) ${q.para_b||''}\n(C) ${q.para_c||''}\n`;
+    }
+    if (q.given_text_2) p += `\n[(나)]\n${q.given_text_2}\n`;
+    const passage = getQPassage(q);
+    if (passage) p += `\n[지문]\n${passage}\n`;
+    if (q.summary_template) p += `\n[요약문]\n${q.summary_template}\n`;
+    if (Array.isArray(q.definitions)) p += `\n[영영풀이]\n${q.definitions.map((d,i)=>`${i+1}. ${d.word}: ${d.def}`).join('\n')}\n`;
+    if (Array.isArray(q.choices)) p += `\n[선택지]\n${q.choices.map((c,i)=>`${i+1}. ${c}`).join('\n')}\n`;
+    const isMulti = Array.isArray(q.answer);
+    p += isMulti
+      ? `\n정답이 2개입니다. 마지막에 정답만 JSON으로: {"answers": [숫자, 숫자]}`
+      : `\n마지막에 정답만 JSON으로: {"answer": 숫자}`;
+    return p;
+  }
+
+  window.reverifySuspicious = async () => {
+    if (!confirm('지금 미해결인 AI 검증 신고들을 "정밀 재검증" 할까요?\n\n• 이번엔 주어진 문장 등 빠졌던 정보를 다 주고 AI가 다시 풉니다.\n• AI도 저장된 답과 같다고 하면 → 자동으로 "정상" 처리 (허위 경보 제거).\n• 그래도 다르면 → 검토 목록에만 남깁니다.\n\n비용 약 10달러, 시간 수십 분. 탭을 닫지 마세요.')) return;
+
+    const progEl = document.getElementById('verification-progress');
+    progEl.style.display = 'block';
+    progEl.innerHTML = '🔁 재검증 준비 중...';
+
+    try {
+      const snap = await getDocs(collection(db, 'reports'));
+      const reports = [];
+      snap.forEach(d => {
+        const r = d.data();
+        if (r.status === 'pending' && r.reportType === 'ai_verification') reports.push({ id: d.id, ...r });
+      });
+
+      if (reports.length === 0) { progEl.innerHTML = '재검증할 AI 신고가 없어요.'; return; }
+
+      let cleared = 0, kept = 0, err = 0;
+      for (let i = 0; i < reports.length; i++) {
+        const r = reports[i];
+        progEl.innerHTML = `🔁 재검증 ${i+1} / ${reports.length} · ✅자동정상 ${cleared} · ⚠️검토필요 ${kept}`;
+        try {
+          const qSnap = await getDoc(doc(db, 'questions', r.questionId));
+          if (!qSnap.exists()) {
+            // 문제가 이미 삭제됨 → 신고 닫기
+            await setDoc(doc(db, 'reports', r.id), { status: 'dismissed', resolvedAt: new Date().toISOString(), reverified: true }, { merge: true });
+            cleared++; continue;
+          }
+          const q = qSnap.data();
+          const storedArr = (Array.isArray(q.answer) ? q.answer.map(Number) : [parseInt(q.answer)]).filter(n=>!isNaN(n)).sort();
+
+          const res = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'claude-opus-4-5',
+              max_tokens: 1500,
+              temperature: 0.0,
+              messages: [{ role: 'user', content: buildReverifyPrompt(q) }]
+            })
+          });
+          const data = await res.json();
+          const text = data.content?.[0]?.text || '';
+
+          // AI 답 파싱 (answers 배열 우선, 없으면 answer, 없으면 마지막 숫자)
+          let aiArr = [];
+          const mArr = text.match(/"answers?"\s*:\s*\[([^\]]*)\]/);
+          const mOne = text.match(/"answer"\s*:\s*(\d+)/);
+          if (mArr) aiArr = (mArr[1].match(/\d+/g) || []).map(Number);
+          else if (mOne) aiArr = [parseInt(mOne[1])];
+          else {
+            const allNums = (text.match(/\d+/g) || []).map(Number).filter(n => n >= 1 && n <= 5);
+            aiArr = allNums.slice(-storedArr.length);
+          }
+          aiArr = aiArr.filter(n => n >= 1 && n <= 5).sort();
+
+          const agree = aiArr.length === storedArr.length && aiArr.every((v, idx) => v === storedArr[idx]);
+
+          if (agree) {
+            // AI도 같은 답 → 허위 경보, 자동 정상 처리
+            await setDoc(doc(db, 'reports', r.id), { status: 'dismissed', resolvedAt: new Date().toISOString(), reverified: true }, { merge: true });
+            cleared++;
+          } else {
+            // 여전히 다름 → 검토 목록 유지 (새 AI 답으로 갱신)
+            await setDoc(doc(db, 'reports', r.id), {
+              aiAnswer: aiArr.join(','),
+              reason: `(정밀 재검증) AI 답 ${aiArr.join(',')||'?'}번 · 저장된 답 ${storedArr.join(',')}번`,
+              reverified: true
+            }, { merge: true });
+            kept++;
+          }
+        } catch(e) {
+          err++;
+        }
+      }
+
+      progEl.innerHTML = `✅ 정밀 재검증 완료!<br>총 ${reports.length}개 중<br>• ${cleared}개 자동 정상처리 (허위 경보 제거)<br>• <b>${kept}개만 검토 필요</b>로 남음<br>${err?`• 오류 ${err}개<br>`:''}<br>이제 필터에서 "✅ 신뢰도 높은 유형만" 골라서 남은 것만 보세요.`;
+      setTimeout(() => loadReports(), 1200);
+    } catch(e) {
+      progEl.innerHTML = `❌ 오류: ${e.message}`;
+    }
+  };
+
   // ========== AI 자동 검증 ==========
   window.startAiVerification = async () => {
     if (!confirm('모든 선택형 문제를 AI로 검증할까요?\n(비용: 문제 수 × 약 0.01달러, 시간: 수십 분)')) return;
@@ -2796,4 +2931,3 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
 
 </body>
 </html>
-
