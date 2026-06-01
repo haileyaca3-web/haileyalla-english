@@ -148,9 +148,37 @@
         <button class="btn-sub" onclick="loadReports()" style="flex:1;min-width:120px">🔄 신고 다시 불러오기</button>
         <button class="btn-sub" onclick="startAiVerification()" style="flex:1;min-width:120px;background:#EBF2FF;color:#2B5EB8;border-color:#A8C4F5">🤖 AI 자동 검증</button>
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
         <button class="btn-sub" onclick="analyzeAnswerDistribution()" style="flex:1;min-width:120px;background:#FFF5E8;color:#854F0B;border-color:#E5B774">📊 답 분포 분석</button>
         <button class="btn-sub" onclick="analyzeMissingFields()" style="flex:1;min-width:120px;background:#FFF5E8;color:#854F0B;border-color:#E5B774">🔍 누락 필드 검사</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn-sub" onclick="analyzeReportTypes()" style="flex:1;min-width:120px;background:#EBF2FF;color:#2B5EB8;border-color:#A8C4F5">📋 신고 유형별 분포</button>
+      </div>
+
+      <!-- 유형 필터 (AI 신고 처리용) -->
+      <div id="report-filter-wrap" style="display:none;background:#fff;border:0.5px solid #D6E4FF;border-radius:8px;padding:10px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:600;color:#1A3566;margin-bottom:7px">🔎 유형으로 거르기</div>
+        <select id="report-type-filter" onchange="loadReports()" style="width:100%;padding:8px 10px;border-radius:7px;border:0.5px solid #A8C4F5;font-size:13px;color:#1A3566;background:#fff;margin-bottom:7px">
+          <option value="ALL">전체 보기</option>
+          <option value="HIGH">✅ 신뢰도 높은 유형만 (어법·어휘·내용일치 등)</option>
+          <option value="LOW">⚠️ 신뢰도 낮은 유형만 (문장삽입·순서·빈칸 등)</option>
+        </select>
+        <select id="report-school-filter" onchange="loadReports()" style="width:100%;padding:8px 10px;border-radius:7px;border:0.5px solid #A8C4F5;font-size:13px;color:#1A3566;background:#fff">
+          <option value="ALL">전체 학교</option>
+          <option value="매산고_고2">매산고 고2</option>
+          <option value="매산여고_고2">매산여고 고2</option>
+          <option value="효천고_고2">효천고 고2</option>
+          <option value="강남여고_고1">강남여고 고1</option>
+          <option value="강남여고_고2">강남여고 고2</option>
+          <option value="복성고_고1">복성고 고1</option>
+          <option value="순천고_고1">순천고 고1</option>
+          <option value="순여고_고1">순여고 고1</option>
+          <option value="순여고_고2">순여고 고2</option>
+          <option value="금당고_고1">금당고 고1</option>
+          <option value="금당고_고2">금당고 고2</option>
+          <option value="제일고_고1">제일고 고1</option>
+        </select>
       </div>
       
       <div id="analysis-result" style="display:none;background:#fff;border:0.5px solid #D6E4FF;border-radius:8px;padding:11px;margin-bottom:14px;font-size:12px;color:#1A3566;line-height:1.7;max-height:400px;overflow-y:auto"></div>
@@ -295,6 +323,12 @@
   import { auth, db } from './js/firebase.js';
   import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ============================================
+  // 신뢰도 분류 (AI 검증 신고 처리용) - 공용
+  // ============================================
+  const HIGH_TRUST_TYPES = ['어법','어법_2개','낱말쓰임','어휘빈칸','어휘_네모','어법_네모','내용일치_한국어','내용일치_영어','글의제목','주제','요지','요지_선택형','글의목적','연결어','영영풀이'];
+  const LOW_TRUST_TYPES  = ['문장삽입','글의순서','글의순서_가나','빈칸추론','요약빈칸','요약빈칸_3칸','흐름무관','밑줄의미','심경변화','분위기','지칭대상','추론_보기','답할수없는질문','인물성격'];
 
   // ============================================
   // 11개 학교 유형 정의
@@ -468,21 +502,40 @@
   window.loadReports = async () => {
     const el = document.getElementById('reports-list');
     el.innerHTML = '<div class="empty-msg">불러오는 중...</div>';
+
+    // 필터 값 읽기 (없으면 ALL)
+    const typeFilter   = (document.getElementById('report-type-filter')   || {}).value || 'ALL';
+    const schoolFilter = (document.getElementById('report-school-filter') || {}).value || 'ALL';
+
     try {
       const snap = await getDocs(collection(db, 'reports'));
       const reports = [];
       snap.forEach(d => reports.push({ id: d.id, ...d.data() }));
       
       // 미해결만 + 최신순
-      const pending = reports.filter(r => r.status === 'pending')
-                             .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      let pending = reports.filter(r => r.status === 'pending')
+                           .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      // 필터 적용
+      if (typeFilter === 'HIGH') {
+        pending = pending.filter(r => HIGH_TRUST_TYPES.includes(r.typeName));
+      } else if (typeFilter === 'LOW') {
+        pending = pending.filter(r => LOW_TRUST_TYPES.includes(r.typeName));
+      }
+      if (schoolFilter !== 'ALL') {
+        pending = pending.filter(r => r.school === schoolFilter);
+      }
+
+      // 필터 박스는 신고가 있으면 보이게
+      const filterWrap = document.getElementById('report-filter-wrap');
+      if (filterWrap) filterWrap.style.display = reports.some(r => r.status === 'pending') ? 'block' : 'none';
       
       if (pending.length === 0) {
-        el.innerHTML = '<div class="empty-msg">신고된 문제가 없어요 ✨</div>';
+        el.innerHTML = '<div class="empty-msg">조건에 맞는 신고가 없어요 ✨</div>';
         return;
       }
       
-      let html = `<div style="font-size:12px;color:#5A7BAD;margin-bottom:10px"><b>총 ${pending.length}건</b> 미해결</div>`;
+      let html = `<div style="font-size:12px;color:#5A7BAD;margin-bottom:10px"><b>총 ${pending.length}건</b> 표시 중 ${(typeFilter!=='ALL'||schoolFilter!=='ALL')?'(필터 적용됨)':'미해결'}</div>`;
       
       for (const r of pending) {
         // 문제 정보 가져오기
@@ -495,10 +548,12 @@
         const isAi = r.reportType === 'ai_verification';
         const headerBg = isAi ? '#EBF2FF' : '#FFF5E8';
         const headerCl = isAi ? '#2B5EB8' : '#854F0B';
+        const trustTag = HIGH_TRUST_TYPES.includes(r.typeName) ? ' <span style="background:#EAF3DE;color:#27500A;padding:1px 6px;border-radius:4px">✅신뢰↑</span>'
+                        : (LOW_TRUST_TYPES.includes(r.typeName) ? ' <span style="background:#FFF5E8;color:#854F0B;padding:1px 6px;border-radius:4px">⚠️신뢰↓</span>' : '');
         
         html += `<div style="background:#fff;border:0.5px solid #D6E4FF;border-radius:10px;padding:12px;margin-bottom:10px">
           <div style="background:${headerBg};color:${headerCl};font-size:11px;padding:4px 9px;border-radius:5px;display:inline-block;margin-bottom:8px">
-            ${isAi ? '🤖 AI 검증' : '🚨 학생 신고'} · ${r.school?.replace('_',' ')||''} · ${r.typeName}
+            ${isAi ? '🤖 AI 검증' : '🚨 학생 신고'} · ${r.school?.replace('_',' ')||''} · ${r.typeName}${trustTag}
           </div>
           <div style="font-size:13px;font-weight:500;color:#1A3566;margin-bottom:6px">${r.passageName||'지문'}</div>
           <div style="background:#F8FAFE;border-radius:6px;padding:8px 10px;font-size:12px;color:#5A7BAD;margin-bottom:8px">
@@ -525,6 +580,37 @@
     } catch(e) {
       el.innerHTML = `<div class="empty-msg">로딩 실패: ${e.message}</div>`;
     }
+  };
+
+  // 현재 화면에 보이는 신고를 한 번에 무시 (필터된 것만)
+  window.dismissAllVisible = async () => {
+    const typeFilter   = (document.getElementById('report-type-filter')   || {}).value || 'ALL';
+    const schoolFilter = (document.getElementById('report-school-filter') || {}).value || 'ALL';
+    if (typeFilter === 'ALL' && schoolFilter === 'ALL') {
+      alert('안전을 위해, 전체 보기 상태에서는 일괄 무시를 막아뒀어요.\n먼저 유형이나 학교로 걸러주세요.');
+      return;
+    }
+    try {
+      const snap = await getDocs(collection(db, 'reports'));
+      let targets = [];
+      snap.forEach(d => {
+        const r = d.data();
+        if (r.status !== 'pending') return;
+        if (typeFilter === 'HIGH' && !HIGH_TRUST_TYPES.includes(r.typeName)) return;
+        if (typeFilter === 'LOW'  && !LOW_TRUST_TYPES.includes(r.typeName)) return;
+        if (schoolFilter !== 'ALL' && r.school !== schoolFilter) return;
+        targets.push(d.id);
+      });
+      if (targets.length === 0) { alert('무시할 신고가 없어요.'); return; }
+      if (!confirm(`지금 필터된 ${targets.length}건을 모두 "정상(무시)" 처리할까요?\n(문제는 그대로 두고 신고만 닫아요)`)) return;
+      let n = 0;
+      for (const id of targets) {
+        await setDoc(doc(db, 'reports', id), { status: 'dismissed', resolvedAt: new Date().toISOString() }, { merge: true });
+        n++;
+      }
+      alert(`✅ ${n}건 무시 처리했어요.`);
+      loadReports();
+    } catch(e) { alert('실패: ' + e.message); }
   };
   
   // 답 수정
@@ -645,6 +731,75 @@
         html += `<div style="font-size:11px;color:#888;margin-top:10px"><b>정상 그룹: ${normal.length}개</b> (자세히 보기 생략)</div>`;
       }
       
+      el.innerHTML = html;
+    } catch(e) {
+      el.innerHTML = `❌ 오류: ${e.message}`;
+    }
+  };
+
+  // ========== AI 신고 유형별 분포 분석 (무료/즉시) ==========
+  window.analyzeReportTypes = async () => {
+    const el = document.getElementById('analysis-result');
+    el.style.display = 'block';
+    el.innerHTML = '📋 신고 분석 중...';
+
+    try {
+      const snap = await getDocs(collection(db, 'reports'));
+      const pending = [];
+      snap.forEach(d => {
+        const r = d.data();
+        if (r.status === 'pending' && r.reportType === 'ai_verification') pending.push(r);
+      });
+
+      if (pending.length === 0) {
+        el.innerHTML = '<div style="color:#27500A">AI 검증 신고가 없어요. (이미 다 처리했거나 검증 전)</div>';
+        return;
+      }
+
+      // 유형별 카운트
+      const byType = {};
+      pending.forEach(r => {
+        const t = r.typeName || '미상';
+        byType[t] = (byType[t] || 0) + 1;
+      });
+
+      // 신뢰도별 합계
+      let highN = 0, lowN = 0, otherN = 0;
+      Object.entries(byType).forEach(([t,n]) => {
+        if (HIGH_TRUST_TYPES.includes(t)) highN += n;
+        else if (LOW_TRUST_TYPES.includes(t)) lowN += n;
+        else otherN += n;
+      });
+
+      const sorted = Object.entries(byType).sort((a,b) => b[1]-a[1]);
+
+      let html = `<div style="font-size:14px;font-weight:600;color:#1A3566;margin-bottom:10px">📋 AI 신고 ${pending.length}건 유형별 분포</div>`;
+
+      html += `<div style="background:#EAF3DE;border-radius:6px;padding:9px 11px;margin-bottom:6px;color:#27500A">
+        <b>✅ 신뢰도 높음 (먼저 처리): ${highN}건</b><br>
+        <span style="font-size:11px">어법·어휘·내용일치 등 — AI가 잘 맞히는 유형. 진짜 오류일 확률 높음.</span></div>`;
+
+      html += `<div style="background:#FFF5E8;border-radius:6px;padding:9px 11px;margin-bottom:6px;color:#854F0B">
+        <b>⚠️ 신뢰도 낮음 (나중에/신중히): ${lowN}건</b><br>
+        <span style="font-size:11px">문장삽입·순서·빈칸 등 — AI도 자주 틀림. 멀쩡한데 의심된 것 많음.</span></div>`;
+
+      if (otherN > 0) {
+        html += `<div style="background:#F0F4FB;border-radius:6px;padding:9px 11px;margin-bottom:10px;color:#5A7BAD">
+          <b>기타(서술형 등): ${otherN}건</b></div>`;
+      }
+
+      html += `<div style="font-size:12px;font-weight:600;color:#1A3566;margin:10px 0 6px">유형별 상세</div>`;
+      for (const [t, n] of sorted) {
+        const tag = HIGH_TRUST_TYPES.includes(t) ? '✅' : (LOW_TRUST_TYPES.includes(t) ? '⚠️' : '·');
+        const bg  = HIGH_TRUST_TYPES.includes(t) ? '#EAF3DE' : (LOW_TRUST_TYPES.includes(t) ? '#FFF5E8' : '#F8FAFE');
+        html += `<div style="display:flex;justify-content:space-between;background:${bg};border-radius:5px;padding:6px 10px;margin-bottom:3px;font-size:12px">
+          <span>${tag} ${t.replace(/_/g,' ')}</span><span style="font-weight:600">${n}건</span></div>`;
+      }
+
+      html += `<div style="margin-top:12px;padding-top:10px;border-top:0.5px solid #D6E4FF;font-size:11px;color:#5A7BAD;line-height:1.6">
+        💡 아래 신고 목록 위의 <b>"🔎 유형으로 거르기"</b>에서 <b>✅ 신뢰도 높은 유형만</b>을 선택하면<br>
+        먼저 처리할 것들만 모아 볼 수 있어요.</div>`;
+
       el.innerHTML = html;
     } catch(e) {
       el.innerHTML = `❌ 오류: ${e.message}`;
@@ -1801,8 +1956,8 @@ F. choices 배열에 들어가는 텍스트는 깔끔하게 (①②③④⑤ 번
   "format": "short_arrange",
   "question": "주어진 단어를 활용하여 조건에 맞게 영작하시오.",
   "passage_text": "원본 지문",
-  "scrambled_words": ["w1", "w2", "w3", "w4", "w5", "w6", "w7"],
-  "conditions": ["7단어 활용", "주어진 의미 맞춰"],
+  "scrambled_words": ["w1", "w2", "w3", "w4", "w5"],
+  "conditions": ["5단어 활용", "주어진 의미 맞춰"],
   "answer": "모범 영작",
   "explanation": "구조"
 }`,
