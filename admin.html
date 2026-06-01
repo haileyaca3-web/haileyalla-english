@@ -162,11 +162,17 @@
 
       <!-- 유형 필터 (AI 신고 처리용) -->
       <div id="report-filter-wrap" style="display:none;background:#fff;border:0.5px solid #D6E4FF;border-radius:8px;padding:10px;margin-bottom:12px">
-        <div style="font-size:12px;font-weight:600;color:#1A3566;margin-bottom:7px">🔎 유형으로 거르기</div>
+        <div style="font-size:12px;font-weight:600;color:#1A3566;margin-bottom:7px">🔎 우선순위로 거르기</div>
+        <select id="report-source-filter" onchange="loadReports()" style="width:100%;padding:8px 10px;border-radius:7px;border:0.5px solid #A8C4F5;font-size:13px;color:#1A3566;background:#fff;margin-bottom:7px">
+          <option value="ALL">전체 출처</option>
+          <option value="STUDENT">🚨 ① 학생 신고만 (제일 먼저)</option>
+          <option value="AI">🤖 AI 검증만</option>
+        </select>
         <select id="report-type-filter" onchange="loadReports()" style="width:100%;padding:8px 10px;border-radius:7px;border:0.5px solid #A8C4F5;font-size:13px;color:#1A3566;background:#fff;margin-bottom:7px">
-          <option value="ALL">전체 보기</option>
-          <option value="HIGH">✅ 신뢰도 높은 유형만 (어법·어휘·내용일치 등)</option>
-          <option value="LOW">⚠️ 신뢰도 낮은 유형만 (문장삽입·순서·빈칸 등)</option>
+          <option value="ALL">전체 유형</option>
+          <option value="HIGH_NO2">✅ ② 신뢰도 높은 유형 (어법2개 제외)</option>
+          <option value="HIGH">✅ 신뢰도 높은 유형 전부</option>
+          <option value="LOW">⚠️ 신뢰도 낮은 유형 (문장삽입·순서·빈칸 등)</option>
         </select>
         <select id="report-school-filter" onchange="loadReports()" style="width:100%;padding:8px 10px;border-radius:7px;border:0.5px solid #A8C4F5;font-size:13px;color:#1A3566;background:#fff">
           <option value="ALL">전체 학교</option>
@@ -510,6 +516,7 @@
     // 필터 값 읽기 (없으면 ALL)
     const typeFilter   = (document.getElementById('report-type-filter')   || {}).value || 'ALL';
     const schoolFilter = (document.getElementById('report-school-filter') || {}).value || 'ALL';
+    const sourceFilter = (document.getElementById('report-source-filter') || {}).value || 'ALL';
 
     try {
       const snap = await getDocs(collection(db, 'reports'));
@@ -520,9 +527,18 @@
       let pending = reports.filter(r => r.status === 'pending')
                            .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      // 필터 적용
+      // 출처 필터 (학생 신고 vs AI 검증)
+      if (sourceFilter === 'STUDENT') {
+        pending = pending.filter(r => r.reportType !== 'ai_verification' && r.reportType !== 'field_check');
+      } else if (sourceFilter === 'AI') {
+        pending = pending.filter(r => r.reportType === 'ai_verification');
+      }
+
+      // 유형 필터 적용
       if (typeFilter === 'HIGH') {
         pending = pending.filter(r => HIGH_TRUST_TYPES.includes(r.typeName));
+      } else if (typeFilter === 'HIGH_NO2') {
+        pending = pending.filter(r => HIGH_TRUST_TYPES.includes(r.typeName) && r.typeName !== '어법_2개');
       } else if (typeFilter === 'LOW') {
         pending = pending.filter(r => LOW_TRUST_TYPES.includes(r.typeName));
       }
@@ -533,13 +549,24 @@
       // 필터 박스는 신고가 있으면 보이게
       const filterWrap = document.getElementById('report-filter-wrap');
       if (filterWrap) filterWrap.style.display = reports.some(r => r.status === 'pending') ? 'block' : 'none';
+
+      // "지금 할 일" 안내 배너 (필터 안 걸었을 때만)
+      const studentN = reports.filter(r => r.status==='pending' && r.reportType!=='ai_verification' && r.reportType!=='field_check').length;
+      let guideHtml = '';
+      if (sourceFilter === 'ALL' && typeFilter === 'ALL' && schoolFilter === 'ALL') {
+        guideHtml = `<div style="background:#EBF2FF;border:0.5px solid #A8C4F5;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#1A3566;line-height:1.7">
+          <b>📌 이 순서로 처리하세요</b><br>
+          <b>1)</b> 위 첫 칸에서 <b>🚨 학생 신고만</b> 골라 → 지금 바로 처리 (${studentN}건)<br>
+          <b>2)</b> 둘째 칸에서 <b>✅ 신뢰도 높은 유형(어법2개 제외)</b> → <b>🔁 정밀 재검증</b> 누른 뒤 남는 것만 처리<br>
+          <b>3)</b> 나머지(문장삽입·순서 등)는 학생 신고로 받으며 천천히</div>`;
+      }
       
       if (pending.length === 0) {
-        el.innerHTML = '<div class="empty-msg">조건에 맞는 신고가 없어요 ✨</div>';
+        el.innerHTML = guideHtml + '<div class="empty-msg">조건에 맞는 신고가 없어요 ✨</div>';
         return;
       }
       
-      let html = `<div style="font-size:12px;color:#5A7BAD;margin-bottom:10px"><b>총 ${pending.length}건</b> 표시 중 ${(typeFilter!=='ALL'||schoolFilter!=='ALL')?'(필터 적용됨)':'미해결'}</div>`;
+      let html = guideHtml + `<div style="font-size:12px;color:#5A7BAD;margin-bottom:10px"><b>총 ${pending.length}건</b> 표시 중 ${(typeFilter!=='ALL'||schoolFilter!=='ALL'||sourceFilter!=='ALL')?'(필터 적용됨)':'미해결'}</div>`;
       
       for (const r of pending) {
         // 문제 정보 가져오기
@@ -610,8 +637,9 @@
   window.dismissAllVisible = async () => {
     const typeFilter   = (document.getElementById('report-type-filter')   || {}).value || 'ALL';
     const schoolFilter = (document.getElementById('report-school-filter') || {}).value || 'ALL';
-    if (typeFilter === 'ALL' && schoolFilter === 'ALL') {
-      alert('안전을 위해, 전체 보기 상태에서는 일괄 무시를 막아뒀어요.\n먼저 유형이나 학교로 걸러주세요.');
+    const sourceFilter = (document.getElementById('report-source-filter') || {}).value || 'ALL';
+    if (typeFilter === 'ALL' && schoolFilter === 'ALL' && sourceFilter === 'ALL') {
+      alert('안전을 위해, 아무 필터도 안 건 상태에서는 일괄 무시를 막아뒀어요.\n먼저 출처·유형·학교 중 하나라도 골라주세요.');
       return;
     }
     try {
@@ -620,7 +648,10 @@
       snap.forEach(d => {
         const r = d.data();
         if (r.status !== 'pending') return;
+        if (sourceFilter === 'STUDENT' && (r.reportType === 'ai_verification' || r.reportType === 'field_check')) return;
+        if (sourceFilter === 'AI' && r.reportType !== 'ai_verification') return;
         if (typeFilter === 'HIGH' && !HIGH_TRUST_TYPES.includes(r.typeName)) return;
+        if (typeFilter === 'HIGH_NO2' && (!HIGH_TRUST_TYPES.includes(r.typeName) || r.typeName === '어법_2개')) return;
         if (typeFilter === 'LOW'  && !LOW_TRUST_TYPES.includes(r.typeName)) return;
         if (schoolFilter !== 'ALL' && r.school !== schoolFilter) return;
         targets.push(d.id);
@@ -2931,3 +2962,4 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
 
 </body>
 </html>
+
