@@ -746,13 +746,18 @@
     try {
       const snap = await getDocs(collection(db, 'reports'));
       const pending = [];
+      let aiCount = 0, studentCount = 0, fieldCount = 0;
       snap.forEach(d => {
         const r = d.data();
-        if (r.status === 'pending' && r.reportType === 'ai_verification') pending.push(r);
+        if (r.status !== 'pending') return;
+        pending.push(r);
+        if (r.reportType === 'ai_verification') aiCount++;
+        else if (r.reportType === 'field_check') fieldCount++;
+        else studentCount++;
       });
 
       if (pending.length === 0) {
-        el.innerHTML = '<div style="color:#27500A">AI 검증 신고가 없어요. (이미 다 처리했거나 검증 전)</div>';
+        el.innerHTML = '<div style="color:#27500A">미해결 신고가 없어요 ✨</div>';
         return;
       }
 
@@ -773,7 +778,10 @@
 
       const sorted = Object.entries(byType).sort((a,b) => b[1]-a[1]);
 
-      let html = `<div style="font-size:14px;font-weight:600;color:#1A3566;margin-bottom:10px">📋 AI 신고 ${pending.length}건 유형별 분포</div>`;
+      let html = `<div style="font-size:14px;font-weight:600;color:#1A3566;margin-bottom:10px">📋 미해결 신고 ${pending.length}건 유형별 분포</div>`;
+
+      html += `<div style="font-size:11px;color:#5A7BAD;margin-bottom:10px;line-height:1.5">
+        🤖 AI 검증 ${aiCount}건 · 🚨 학생 신고 ${studentCount}건 · 🔍 필드검사 ${fieldCount}건</div>`;
 
       html += `<div style="background:#EAF3DE;border-radius:6px;padding:9px 11px;margin-bottom:6px;color:#27500A">
         <b>✅ 신뢰도 높음 (먼저 처리): ${highN}건</b><br>
@@ -2788,3 +2796,4 @@ answer: "However, some people suggested that the contest prohibit the use of AI.
 
 </body>
 </html>
+
