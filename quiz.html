@@ -287,7 +287,24 @@
     } catch(e) { showError('문제 로딩 실패: ' + e.message); }
   }
 
+  // 보기 순서 섞기 (정답이 항상 ①번에 몰리는 것 방지)
   function shuffleChoices(q) {
+    // 어휘빈칸: 각 빈칸의 보기 4개를 섞기.
+    // (채점은 번호가 아니라 단어 문자열로 비교하므로 섞어도 안전함)
+    if (q.format === 'vocab_blank' && Array.isArray(q.blanks)) {
+      const newBlanks = q.blanks.map(b => {
+        if (!Array.isArray(b.choices) || b.choices.length < 2) return b;
+        const shuffled = [...b.choices];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return { ...b, choices: shuffled };
+      });
+      return { ...q, blanks: newBlanks };
+    }
+
+    // 일반 객관식: 정답 단어를 따라가며 보기 섞고 answer 번호 다시 계산
     if (!q.choices || !q.choices.length || typeof q.answer !== 'number') return q;
     const correctAnswer = q.choices[q.answer - 1];
     const shuffled = [...q.choices];
@@ -1070,3 +1087,4 @@
 
 </body>
 </html>
+
